@@ -1,6 +1,5 @@
 package com.testpire.testpire.Controller;
 
-import com.testpire.testpire.dto.RegisterRequest;
 import com.testpire.testpire.entity.User;
 import com.testpire.testpire.enums.UserRole;
 import com.testpire.testpire.service.CognitoService;
@@ -8,10 +7,7 @@ import com.testpire.testpire.service.InstituteService;
 import com.testpire.testpire.service.UserService;
 import com.testpire.testpire.util.JwtUtil;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +18,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/super-admin")

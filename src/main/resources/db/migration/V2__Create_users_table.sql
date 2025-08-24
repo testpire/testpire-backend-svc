@@ -11,7 +11,8 @@ CREATE TABLE users (
     enabled BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by VARCHAR(100)
+    created_by VARCHAR(100),
+    updated_by VARCHAR(255)
 );
 
 -- Create indexes for better performance

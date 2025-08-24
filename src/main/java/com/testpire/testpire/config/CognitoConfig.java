@@ -4,6 +4,9 @@ import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.identity.spi.internal.DefaultAwsCredentialsIdentity;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 
@@ -20,10 +23,25 @@ public class CognitoConfig {
   @Value("${aws.cognito.clientId}")
   private String clientId;
 
+  @Value("${aws.accessKeyId:}")
+  private String accessKeyId;
+
+  @Value("${aws.secretKey:}")
+  private String secretKey;
+
   @Bean
   public CognitoIdentityProviderClient cognitoClient() {
+    //
+    //
+    AwsBasicCredentials awsCreds = AwsBasicCredentials.create("",
+        "");
     return CognitoIdentityProviderClient.builder()
         .region(Region.of(region))
+        .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
         .build();
+   /* return CognitoIdentityProviderClient.builder()
+        .credentialsProvider(DefaultAwsCredentialsIdentity...create())
+        .region(Region.of(region))
+        .build();*/
   }
 }
