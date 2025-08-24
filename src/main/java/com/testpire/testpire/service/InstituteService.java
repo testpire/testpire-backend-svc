@@ -1,5 +1,6 @@
 package com.testpire.testpire.service;
 
+import com.testpire.testpire.constants.ApplicationConstants;
 import com.testpire.testpire.dto.InstituteDto;
 import com.testpire.testpire.entity.Institute;
 import com.testpire.testpire.repository.InstituteRepository;
@@ -23,12 +24,12 @@ public class InstituteService {
         
         // Check if institute code already exists
         if (instituteRepository.existsByCode(instituteDto.code())) {
-            throw new IllegalArgumentException("Institute with code " + instituteDto.code() + " already exists");
+            throw new IllegalArgumentException(String.format(ApplicationConstants.Messages.INSTITUTE_ALREADY_EXISTS, instituteDto.code()));
         }
         
         // Check if email already exists
         if (instituteRepository.existsByEmail(instituteDto.email())) {
-            throw new IllegalArgumentException("Institute with email " + instituteDto.email() + " already exists");
+            throw new IllegalArgumentException(String.format(ApplicationConstants.Messages.INSTITUTE_EMAIL_EXISTS, instituteDto.email()));
         }
 
         Institute institute = Institute.builder()

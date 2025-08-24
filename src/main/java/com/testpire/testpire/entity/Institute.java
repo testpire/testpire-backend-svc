@@ -1,5 +1,6 @@
 package com.testpire.testpire.entity;
 
+import com.testpire.testpire.constants.ApplicationConstants;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,7 +12,7 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "institutes")
+@Table(name = ApplicationConstants.Database.INSTITUTES_TABLE)
 @Data
 @Builder
 @NoArgsConstructor
@@ -23,31 +24,31 @@ public class Institute {
     private Long id;
     
     @Column(unique = true, nullable = false)
-    @NotBlank(message = "Institute code is required")
-    @Size(min = 2, max = 20, message = "Institute code must be between 2 and 20 characters")
+    @NotBlank(message = ApplicationConstants.Messages.INSTITUTE_CODE_REQUIRED)
+    @Size(min = ApplicationConstants.Validation.INSTITUTE_CODE_MIN_LENGTH, max = ApplicationConstants.Validation.INSTITUTE_CODE_MAX_LENGTH, message = "Institute code must be between " + ApplicationConstants.Validation.INSTITUTE_CODE_MIN_LENGTH + " and " + ApplicationConstants.Validation.INSTITUTE_CODE_MAX_LENGTH + " characters")
     private String code;
     
     @Column(nullable = false)
-    @NotBlank(message = "Institute name is required")
-    @Size(min = 2, max = 100, message = "Institute name must be between 2 and 100 characters")
+    @NotBlank(message = ApplicationConstants.Messages.INSTITUTE_NAME_REQUIRED)
+    @Size(min = ApplicationConstants.Validation.INSTITUTE_NAME_MIN_LENGTH, max = ApplicationConstants.Validation.INSTITUTE_NAME_MAX_LENGTH, message = "Institute name must be between " + ApplicationConstants.Validation.INSTITUTE_NAME_MIN_LENGTH + " and " + ApplicationConstants.Validation.INSTITUTE_NAME_MAX_LENGTH + " characters")
     private String name;
     
-    @Column(length = 500)
+    @Column(length = ApplicationConstants.Validation.ADDRESS_MAX_LENGTH)
     private String address;
     
-    @Size(max = 100, message = "City must not exceed 100 characters")
+    @Size(max = ApplicationConstants.Validation.CITY_MAX_LENGTH, message = "City must not exceed " + ApplicationConstants.Validation.CITY_MAX_LENGTH + " characters")
     private String city;
     
-    @Size(max = 100, message = "State must not exceed 100 characters")
+    @Size(max = ApplicationConstants.Validation.STATE_MAX_LENGTH, message = "State must not exceed " + ApplicationConstants.Validation.STATE_MAX_LENGTH + " characters")
     private String state;
     
-    @Size(max = 100, message = "Country must not exceed 100 characters")
+    @Size(max = ApplicationConstants.Validation.COUNTRY_MAX_LENGTH, message = "Country must not exceed " + ApplicationConstants.Validation.COUNTRY_MAX_LENGTH + " characters")
     private String country;
     
-    @Size(max = 20, message = "Postal code must not exceed 20 characters")
+    @Size(max = ApplicationConstants.Validation.POSTAL_CODE_MAX_LENGTH, message = "Postal code must not exceed " + ApplicationConstants.Validation.POSTAL_CODE_MAX_LENGTH + " characters")
     private String postalCode;
     
-    @Size(max = 20, message = "Phone number must not exceed 20 characters")
+    @Size(max = ApplicationConstants.Validation.PHONE_MAX_LENGTH, message = "Phone number must not exceed " + ApplicationConstants.Validation.PHONE_MAX_LENGTH + " characters")
     private String phone;
     
     @Column(unique = true)
@@ -55,21 +56,21 @@ public class Institute {
     
     private String website;
     
-    @Column(length = 1000)
+    @Column(length = ApplicationConstants.Validation.DESCRIPTION_MAX_LENGTH)
     private String description;
     
     @Builder.Default
     private boolean active = true;
     
     @Builder.Default
-    @Column(name = "created_at")
+    @Column(name = ApplicationConstants.Database.CREATED_AT_COLUMN)
     private LocalDateTime createdAt = LocalDateTime.now();
     
     @Builder.Default
-    @Column(name = "updated_at")
+    @Column(name = ApplicationConstants.Database.UPDATED_AT_COLUMN)
     private LocalDateTime updatedAt = LocalDateTime.now();
     
-    @Column(name = "created_by")
+    @Column(name = ApplicationConstants.Database.CREATED_BY_COLUMN)
     private String createdBy;
     
     @Column(name = "updated_by")

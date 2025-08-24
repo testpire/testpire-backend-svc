@@ -1,44 +1,45 @@
 package com.testpire.testpire.dto;
 
+import com.testpire.testpire.constants.ApplicationConstants;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 
 public record InstituteDto(
-    @NotBlank(message = "Institute name is required")
-    @Size(min = 2, max = 100, message = "Institute name must be between 2 and 100 characters")
+    @NotBlank(message = ApplicationConstants.Messages.INSTITUTE_NAME_REQUIRED)
+    @Size(min = ApplicationConstants.Validation.INSTITUTE_NAME_MIN_LENGTH, max = ApplicationConstants.Validation.INSTITUTE_NAME_MAX_LENGTH, message = "Institute name must be between " + ApplicationConstants.Validation.INSTITUTE_NAME_MIN_LENGTH + " and " + ApplicationConstants.Validation.INSTITUTE_NAME_MAX_LENGTH + " characters")
     String name,
     
-    @NotBlank(message = "Institute code is required")
-    @Size(min = 2, max = 20, message = "Institute code must be between 2 and 20 characters")
+    @NotBlank(message = ApplicationConstants.Messages.INSTITUTE_CODE_REQUIRED)
+    @Size(min = ApplicationConstants.Validation.INSTITUTE_CODE_MIN_LENGTH, max = ApplicationConstants.Validation.INSTITUTE_CODE_MAX_LENGTH, message = "Institute code must be between " + ApplicationConstants.Validation.INSTITUTE_CODE_MIN_LENGTH + " and " + ApplicationConstants.Validation.INSTITUTE_CODE_MAX_LENGTH + " characters")
     String code,
     
-    @NotBlank(message = "Address is required")
-    @Size(max = 500, message = "Address must not exceed 500 characters")
+    @NotBlank(message = ApplicationConstants.Messages.ADDRESS_REQUIRED)
+    @Size(max = ApplicationConstants.Validation.ADDRESS_MAX_LENGTH, message = "Address must not exceed " + ApplicationConstants.Validation.ADDRESS_MAX_LENGTH + " characters")
     String address,
     
-    @NotBlank(message = "City is required")
-    @Size(max = 100, message = "City must not exceed 100 characters")
+    @NotBlank(message = ApplicationConstants.Messages.CITY_REQUIRED)
+    @Size(max = ApplicationConstants.Validation.CITY_MAX_LENGTH, message = "City must not exceed " + ApplicationConstants.Validation.CITY_MAX_LENGTH + " characters")
     String city,
     
-    @NotBlank(message = "State is required")
-    @Size(max = 100, message = "State must not exceed 100 characters")
+    @NotBlank(message = ApplicationConstants.Messages.STATE_REQUIRED)
+    @Size(max = ApplicationConstants.Validation.STATE_MAX_LENGTH, message = "State must not exceed " + ApplicationConstants.Validation.STATE_MAX_LENGTH + " characters")
     String state,
     
-    @NotBlank(message = "Country is required")
-    @Size(max = 100, message = "Country must not exceed 100 characters")
+    @NotBlank(message = ApplicationConstants.Messages.COUNTRY_REQUIRED)
+    @Size(max = ApplicationConstants.Validation.COUNTRY_MAX_LENGTH, message = "Country must not exceed " + ApplicationConstants.Validation.COUNTRY_MAX_LENGTH + " characters")
     String country,
     
-    @NotBlank(message = "Postal code is required")
-    @Size(max = 20, message = "Postal code must not exceed 20 characters")
+    @NotBlank(message = ApplicationConstants.Messages.POSTAL_CODE_REQUIRED)
+    @Size(max = ApplicationConstants.Validation.POSTAL_CODE_MAX_LENGTH, message = "Postal code must not exceed " + ApplicationConstants.Validation.POSTAL_CODE_MAX_LENGTH + " characters")
     String postalCode,
     
-    @NotBlank(message = "Phone number is required")
-    @Size(max = 20, message = "Phone number must not exceed 20 characters")
+    @NotBlank(message = ApplicationConstants.Messages.PHONE_REQUIRED)
+    @Size(max = ApplicationConstants.Validation.PHONE_MAX_LENGTH, message = "Phone number must not exceed " + ApplicationConstants.Validation.PHONE_MAX_LENGTH + " characters")
     String phone,
     
     @Email(message = "Email must be valid")
-    @NotBlank(message = "Email is required")
+    @NotBlank(message = ApplicationConstants.Messages.EMAIL_REQUIRED)
     String email,
     
     String website,

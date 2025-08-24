@@ -1,5 +1,6 @@
 package com.testpire.testpire.config;
 
+import com.testpire.testpire.constants.ApplicationConstants;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -17,12 +18,12 @@ public class GlobalExceptionHandler {
   public ResponseEntity<?> handleException(Exception e) {
     log.error("error", e);
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .body(Map.of("error", "Internal server error", "message", e.getMessage()));
+        .body(Map.of("error", ApplicationConstants.Messages.INTERNAL_SERVER_ERROR, "message", e.getMessage()));
   }
 
   @ExceptionHandler(AccessDeniedException.class)
   public ResponseEntity<?> handleAccessDeniedException(AccessDeniedException e) {
     return ResponseEntity.status(HttpStatus.FORBIDDEN)
-        .body(Map.of("error", "Access denied", "message", "Insufficient permissions"));
+        .body(Map.of("error", ApplicationConstants.Messages.ACCESS_DENIED, "message", ApplicationConstants.Messages.INSUFFICIENT_PERMISSIONS_MESSAGE));
   }
 }

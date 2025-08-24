@@ -1,5 +1,6 @@
 package com.testpire.testpire.util;
 
+import com.testpire.testpire.constants.ApplicationConstants;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,14 +30,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
       FilterChain filterChain) throws ServletException, IOException {
 
-    final String authHeader = request.getHeader("Authorization");
+    final String authHeader = request.getHeader(ApplicationConstants.Headers.AUTHORIZATION);
 
-    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+    if (authHeader == null || !authHeader.startsWith(ApplicationConstants.Headers.BEARER_PREFIX)) {
       filterChain.doFilter(request, response);
       return;
     }
 
-    final String jwt = authHeader.substring(7);
+    final String jwt = authHeader.substring(ApplicationConstants.Headers.BEARER_PREFIX.length());
     final String username = jwtUtil.extractUsername(jwt);
 
     if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {

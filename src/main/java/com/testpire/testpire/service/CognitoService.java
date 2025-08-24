@@ -1,6 +1,7 @@
 package com.testpire.testpire.service;
 
 import com.testpire.testpire.config.CognitoConfig;
+import com.testpire.testpire.constants.ApplicationConstants;
 import com.testpire.testpire.dto.RegisterRequest;
 import com.testpire.testpire.dto.UserDto;
 import com.testpire.testpire.enums.UserRole;
@@ -40,33 +41,33 @@ public class CognitoService {
   public String signUp(RegisterRequest request, UserRole role) {
     try {
       AttributeType emailAttr = AttributeType.builder()
-          .name("email")
+          .name(ApplicationConstants.CognitoAttributes.EMAIL)
           .value(request.email())
           .build();
 
       AttributeType givenNameAttr = AttributeType.builder()
-          .name("given_name")
+          .name(ApplicationConstants.CognitoAttributes.GIVEN_NAME)
           .value(request.firstName())
           .build();
 
       AttributeType familyNameAttr = AttributeType.builder()
-          .name("family_name")
+          .name(ApplicationConstants.CognitoAttributes.FAMILY_NAME)
           .value(request.lastName())
           .build();
 
       AttributeType customRoleAttr = AttributeType.builder()
-          .name("custom:role")
+          .name(ApplicationConstants.CognitoAttributes.CUSTOM_ROLE)
           .value(role.name())
           .build();
 
       AttributeType instituteIdAttr = AttributeType.builder()
-          .name("custom:instituteId")
+          .name(ApplicationConstants.CognitoAttributes.CUSTOM_INSTITUTE_ID)
           .value(request.instituteId())
           .build();
 
       AttributeType phone = AttributeType.builder()
-          .name("phone_number")
-          .value("+919905536608")
+          .name(ApplicationConstants.CognitoAttributes.PHONE_NUMBER)
+          .value(ApplicationConstants.Phone.DEFAULT_PHONE)
           .build();
 
       // Add SECRET_HASH to signup request
@@ -170,11 +171,11 @@ public class CognitoService {
 
     for (AttributeType attr : attributes) {
       switch (attr.name()) {
-        case "email" -> email = attr.value();
-        case "given_name" -> firstName = attr.value();
-        case "family_name" -> lastName = attr.value();
-        case "custom:role" -> role = UserRole.valueOf(attr.value());
-        case "custom:instituteId" -> instituteId = attr.value();
+        case ApplicationConstants.CognitoAttributes.EMAIL -> email = attr.value();
+        case ApplicationConstants.CognitoAttributes.GIVEN_NAME -> firstName = attr.value();
+        case ApplicationConstants.CognitoAttributes.FAMILY_NAME -> lastName = attr.value();
+        case ApplicationConstants.CognitoAttributes.CUSTOM_ROLE -> role = UserRole.valueOf(attr.value());
+        case ApplicationConstants.CognitoAttributes.CUSTOM_INSTITUTE_ID -> instituteId = attr.value();
         case "email_verified" -> enabled = Boolean.parseBoolean(attr.value());
       }
     }

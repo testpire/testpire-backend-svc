@@ -1,5 +1,6 @@
 package com.testpire.testpire.service;
 
+import com.testpire.testpire.constants.ApplicationConstants;
 import com.testpire.testpire.dto.RegisterRequest;
 import com.testpire.testpire.entity.User;
 import com.testpire.testpire.enums.UserRole;
@@ -25,17 +26,17 @@ public class UserService {
         
         // Check if username already exists
         if (userRepository.existsByUsername(request.username())) {
-            throw new IllegalArgumentException("User with username " + request.username() + " already exists");
+            throw new IllegalArgumentException(String.format(ApplicationConstants.Messages.USER_ALREADY_EXISTS, request.username()));
         }
         
         // Check if email already exists
         if (userRepository.existsByEmail(request.email())) {
-            throw new IllegalArgumentException("User with email " + request.email() + " already exists");
+            throw new IllegalArgumentException(String.format(ApplicationConstants.Messages.USER_EMAIL_EXISTS, request.email()));
         }
 
         // Validate institute exists
         if (!instituteService.instituteExists(request.instituteId())) {
-            throw new IllegalArgumentException("Institute not found with ID: " + request.instituteId());
+            throw new IllegalArgumentException(ApplicationConstants.Messages.INSTITUTE_NOT_FOUND + request.instituteId());
         }
 
         User user = User.builder()

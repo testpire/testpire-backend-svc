@@ -1,5 +1,6 @@
 package com.testpire.testpire.Controller;
 
+import com.testpire.testpire.constants.ApplicationConstants;
 import com.testpire.testpire.dto.LoginRequest;
 import com.testpire.testpire.dto.RegisterRequest;
 import com.testpire.testpire.entity.User;
@@ -48,7 +49,7 @@ public class AuthController {
             
             return ResponseEntity.ok(Map.of(
                 "token", token, 
-                "message", "Login successful",
+                "message", ApplicationConstants.Messages.LOGIN_SUCCESS,
                 "user", Map.of(
                     "id", user.getId(),
                     "username", user.getUsername(),
@@ -62,21 +63,21 @@ public class AuthController {
         } catch (Exception e) {
             log.error("Login failed for user: {}", request.username(), e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Invalid credentials", "message", e.getMessage()));
+                    .body(Map.of("error", ApplicationConstants.Messages.INVALID_CREDENTIALS, "message", e.getMessage()));
         }
     }
 
     @PostMapping("/logout")
     @Operation(summary = "User logout", description = "Logout user and invalidate session")
-    public ResponseEntity<?> logout(@RequestHeader("Authorization") String token) {
+    public ResponseEntity<?> logout(@RequestHeader(ApplicationConstants.Headers.AUTHORIZATION) String token) {
         try {
-            String username = jwtUtil.extractUsername(token.replace("Bearer ", ""));
+            String username = jwtUtil.extractUsername(token.replace(ApplicationConstants.Headers.BEARER_PREFIX, ""));
             cognitoService.logout(username);
-            return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
+            return ResponseEntity.ok(Map.of("message", ApplicationConstants.Messages.LOGOUT_SUCCESS));
         } catch (Exception e) {
             log.error("Logout failed", e);
             return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Logout failed", "message", e.getMessage()));
+                    .body(Map.of("error", ApplicationConstants.Messages.LOGOUT_FAILED, "message", e.getMessage()));
         }
     }
 
@@ -87,7 +88,7 @@ public class AuthController {
             // Validate institute exists
             if (!instituteService.instituteExists(request.instituteId())) {
                 return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Institute not found with ID: " + request.instituteId()));
+                    .body(Map.of("error", ApplicationConstants.Messages.INSTITUTE_NOT_FOUND + request.instituteId()));
             }
 
             // Students can only create student accounts
@@ -102,17 +103,17 @@ public class AuthController {
             );
 
             String cognitoUserId = cognitoService.signUp(studentRequest, UserRole.STUDENT);
-            User createdUser = userService.createUser(studentRequest, UserRole.STUDENT, cognitoUserId, "self-registration");
+            User createdUser = userService.createUser(studentRequest, UserRole.STUDENT, cognitoUserId, ApplicationConstants.Audit.SELF_REGISTRATION);
 
             return ResponseEntity.ok(Map.of(
                     "userId", createdUser.getId(),
                     "cognitoUserId", cognitoUserId,
-                    "message", "Student registered successfully"
+                    "message", ApplicationConstants.Messages.STUDENT_REGISTRATION_SUCCESS
             ));
         } catch (Exception e) {
             log.error("Student registration failed", e);
             return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Registration failed", "message", e.getMessage()));
+                    .body(Map.of("error", ApplicationConstants.Messages.REGISTRATION_FAILED, "message", e.getMessage()));
         }
     }
 
@@ -120,7 +121,7 @@ public class AuthController {
     @Operation(summary = "Get user profile", description = "Get current user's profile")
     public ResponseEntity<?> getProfile(HttpServletRequest request) {
         try {
-            String token = request.getHeader("Authorization").replace("Bearer ", "");
+            String token = request.getHeader(ApplicationConstants.Headers.AUTHORIZATION).replace(ApplicationConstants.Headers.BEARER_PREFIX, "");
             String currentUsername = jwtUtil.extractUsername(token);
             User currentUser = userService.getUserByUsername(currentUsername);
 
@@ -140,7 +141,7 @@ public class AuthController {
         } catch (Exception e) {
             log.error("Error fetching user profile", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Failed to fetch profile"));
+                .body(Map.of("error", ApplicationConstants.Messages.FAILED_TO_FETCH + " profile"));
         }
     }
 }
