@@ -44,9 +44,9 @@ public class SecurityConfiguration {
             ).permitAll()
             .requestMatchers("/api/institute/**").hasRole(UserRole.SUPER_ADMIN.name())
             .requestMatchers("/api/super-admin/**").hasRole(UserRole.SUPER_ADMIN.name())
-            .requestMatchers("/api/inst-admin/**").hasAnyRole(UserRole.SUPER_ADMIN.name(), UserRole.INST_ADMIN.name())
-            .requestMatchers("/api/teacher/**").hasAnyRole(UserRole.SUPER_ADMIN.name(), UserRole.INST_ADMIN.name(), UserRole.TEACHER.name())
-            .requestMatchers("/api/student/**").hasAnyRole(UserRole.SUPER_ADMIN.name(), UserRole.INST_ADMIN.name(), UserRole.TEACHER.name(), UserRole.STUDENT.name())
+            .requestMatchers("/api/users/**").hasAnyRole(UserRole.SUPER_ADMIN.name(), UserRole.INST_ADMIN.name(), UserRole.TEACHER.name())
+            .requestMatchers("/api/teacher/**").hasRole(UserRole.TEACHER.name())
+            .requestMatchers("/api/student/**").hasRole(UserRole.STUDENT.name())
             .anyRequest().authenticated()
         )
         .sessionManagement(session -> session

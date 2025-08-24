@@ -1,7 +1,7 @@
 package com.testpire.testpire.Controller;
 
 import com.testpire.testpire.dto.InstituteDto;
-import com.testpire.testpire.mongoDomain.Institute;
+import com.testpire.testpire.entity.Institute;
 import com.testpire.testpire.service.InstituteService;
 import com.testpire.testpire.util.JwtUtil;
 import io.swagger.v3.oas.annotations.Operation;

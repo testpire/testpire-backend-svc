@@ -1,0 +1,37 @@
+-- Institutes table
+CREATE TABLE institutes (
+id BIGSERIAL PRIMARY KEY,
+code VARCHAR(20) UNIQUE NOT NULL,
+name VARCHAR(100) NOT NULL,
+address VARCHAR(500),
+city VARCHAR(100),
+state VARCHAR(100),
+country VARCHAR(100),
+postal_code VARCHAR(20),
+phone VARCHAR(20),
+email VARCHAR(255) UNIQUE,
+website VARCHAR(255),
+description VARCHAR(1000),
+active BOOLEAN DEFAULT true,
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+created_by VARCHAR(255),
+updated_by VARCHAR(255)
+);
+
+-- Users table
+CREATE TABLE users (
+id BIGSERIAL PRIMARY KEY,
+username VARCHAR(50) UNIQUE NOT NULL,
+email VARCHAR(255) UNIQUE NOT NULL,
+first_name VARCHAR(50) NOT NULL,
+last_name VARCHAR(50) NOT NULL,
+role VARCHAR(20) NOT NULL,
+institute_id VARCHAR(255) NOT NULL,
+cognito_user_id VARCHAR(255),
+enabled BOOLEAN DEFAULT true,
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+created_by VARCHAR(255),
+updated_by VARCHAR(255)
+);

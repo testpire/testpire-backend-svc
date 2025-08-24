@@ -1,4 +1,4 @@
-package com.testpire.testpire.mongoDomain;
+package com.testpire.testpire.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

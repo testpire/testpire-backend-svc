@@ -1,6 +1,6 @@
 package com.testpire.testpire.repository;
 
-import com.testpire.testpire.mongoDomain.Institute;
+import com.testpire.testpire.entity.Institute;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
