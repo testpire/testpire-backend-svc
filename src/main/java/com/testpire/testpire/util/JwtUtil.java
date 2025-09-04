@@ -4,16 +4,29 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import java.util.Date;
 import java.util.function.Function;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-// JwtUtil.java
+@Slf4j
 @Component
 public class JwtUtil {
 
-  @Value("${jwt.secret}")
-  private String secret;
+  @Value("${aws.cognito.userPoolId}")
+  private String userPoolId;
+
+  @Value("${aws.cognito.clientId:cpojsnho1d17v1bh7lkjnbmgf}")
+  private String appClientId;
+
+  @Value("${aws.cognito.region}")
+  private String region;
+
+  private final CognitoJwtParser cognitoJwtParser;
+
+  public JwtUtil(CognitoJwtParser cognitoJwtParser) {
+    this.cognitoJwtParser = cognitoJwtParser;
+  }
 
   public String extractUsername(String token) {
     return extractClaim(token, Claims::getSubject);
@@ -24,24 +37,45 @@ public class JwtUtil {
     return claimsResolver.apply(claims);
   }
 
-  private Claims extractAllClaims(String token) {
+  public Claims extractAllClaims(String token) {
     return Jwts.parserBuilder()
-        .setSigningKey(secret.getBytes())
+        .setSigningKey(cognitoJwtParser.getPublicKey(userPoolId, region))
         .build()
         .parseClaimsJws(token)
         .getBody();
   }
 
-  public boolean validateToken(String token, UserDetails userDetails) {
-    final String username = extractUsername(token);
-    return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+  public boolean isTokenValid(String token) {
+    try {
+      Claims claims = extractAllClaims(token);
+      log.info("claims : {}", claims);
+      // Additional validation for Cognito tokens
+      return isTokenExpired(claims) &&
+          isValidIssuer(claims) &&
+          isValidAudience(claims);
+    } catch (Exception e) {
+      log.error("Error validating token ", e);
+      return false;
+    }
   }
 
-  private boolean isTokenExpired(String token) {
-    return extractExpiration(token).before(new Date());
+  private boolean isTokenExpired(Claims claims) {
+    boolean isExpired =  claims.getExpiration().after(new Date());
+    log.info("is token expired :{} expiration :{} ", isExpired,  claims.getExpiration());
+    return isExpired;
   }
 
-  private Date extractExpiration(String token) {
-    return extractClaim(token, Claims::getExpiration);
+  private boolean isValidIssuer(Claims claims) {
+    String issuer = claims.getIssuer();
+    log.info("is valid issuer :{} ", issuer);
+    return issuer != null && issuer.equals("https://cognito-idp." + region + ".amazonaws.com/" + userPoolId);
   }
+
+  private boolean isValidAudience(Claims claims) {
+    String audience = claims.getAudience();
+    log.info("is valid audience :{} ", audience);
+    // Replace with your actual app client ID
+    return audience != null && audience.equals(appClientId);
+  }
+
 }
