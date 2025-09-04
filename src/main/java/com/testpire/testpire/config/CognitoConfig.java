@@ -31,17 +31,10 @@ public class CognitoConfig {
 
   @Bean
   public CognitoIdentityProviderClient cognitoClient() {
-    //
-    //
-    AwsBasicCredentials awsCreds = AwsBasicCredentials.create("",
-        "");
+    AwsBasicCredentials awsCreds = AwsBasicCredentials.create(accessKeyId, secretKey);
     return CognitoIdentityProviderClient.builder()
         .region(Region.of(region))
         .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
         .build();
-   /* return CognitoIdentityProviderClient.builder()
-        .credentialsProvider(DefaultAwsCredentialsIdentity...create())
-        .region(Region.of(region))
-        .build();*/
   }
 }
