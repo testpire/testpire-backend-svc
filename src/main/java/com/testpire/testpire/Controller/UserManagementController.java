@@ -26,6 +26,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "User Management", description = "Centralized user management operations")
+@CrossOrigin
 public class UserManagementController {
 
     private final CognitoService cognitoService;

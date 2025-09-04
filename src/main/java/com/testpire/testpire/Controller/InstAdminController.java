@@ -23,6 +23,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Institute Admin", description = "Institute admin operations - INST_ADMIN and SUPER_ADMIN")
+@CrossOrigin
 public class InstAdminController {
 
     private final CognitoService cognitoService;

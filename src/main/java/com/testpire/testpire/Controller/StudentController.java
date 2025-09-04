@@ -20,6 +20,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Student Operations", description = "Student-specific operations")
+@CrossOrigin
 public class StudentController {
 
     private final UserService userService;
