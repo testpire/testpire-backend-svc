@@ -1,16 +1,16 @@
 package com.testpire.testpire.Controller;
 
-import com.testpire.testpire.entity.User;
+import com.testpire.testpire.annotation.RequireRole;
+import com.testpire.testpire.dto.UserDto;
+import com.testpire.testpire.enums.UserRole;
 import com.testpire.testpire.service.UserService;
-import com.testpire.testpire.util.JwtUtil;
+import com.testpire.testpire.util.RequestUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -20,28 +20,27 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Teacher Operations", description = "Teacher-specific operations")
-@CrossOrigin
 public class TeacherController {
 
     private final UserService userService;
-    private final JwtUtil jwtUtil;
 
     @GetMapping("/dashboard")
-    @PreAuthorize("hasRole('TEACHER')")
+    @RequireRole(UserRole.TEACHER)
     @Operation(summary = "Get teacher dashboard", description = "Get teacher's dashboard with student information")
-    public ResponseEntity<?> getTeacherDashboard(HttpServletRequest request) {
+    public ResponseEntity<?> getTeacherDashboard() {
         try {
-            String token = request.getHeader("Authorization").replace("Bearer ", "");
-            String currentUsername = jwtUtil.extractUsername(token);
-            User currentUser = userService.getUserByUsername(currentUsername);
+            UserDto currentUser = RequestUtils.getCurrentUser();
+            if (currentUser == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "User not found"));
+            }
 
             // Get student count for the teacher's institute
             var students = userService.getUsersByRoleAndInstitute(
-                com.testpire.testpire.enums.UserRole.STUDENT, currentUser.getInstituteId());
+                UserRole.STUDENT, currentUser.instituteId());
             
             return ResponseEntity.ok(Map.of(
-                "teacherId", currentUser.getId(),
-                "instituteId", currentUser.getInstituteId(),
+                "instituteId", currentUser.instituteId(),
                 "totalStudents", students.size(),
                 "message", "Teacher dashboard retrieved successfully"
             ));
@@ -53,13 +52,15 @@ public class TeacherController {
     }
 
     @GetMapping("/profile")
-    @PreAuthorize("hasRole('TEACHER')")
+    @RequireRole(UserRole.TEACHER)
     @Operation(summary = "Get teacher profile", description = "Get current teacher's profile")
-    public ResponseEntity<?> getProfile(HttpServletRequest request) {
+    public ResponseEntity<?> getProfile() {
         try {
-            String token = request.getHeader("Authorization").replace("Bearer ", "");
-            String currentUsername = jwtUtil.extractUsername(token);
-            User currentUser = userService.getUserByUsername(currentUsername);
+            UserDto currentUser = RequestUtils.getCurrentUser();
+            if (currentUser == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "User not found"));
+            }
 
             return ResponseEntity.ok(currentUser);
         } catch (Exception e) {

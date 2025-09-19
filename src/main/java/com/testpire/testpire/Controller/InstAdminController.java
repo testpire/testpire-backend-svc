@@ -1,19 +1,17 @@
 package com.testpire.testpire.Controller;
 
+import com.testpire.testpire.annotation.RequireRole;
 import com.testpire.testpire.dto.RegisterRequest;
 import com.testpire.testpire.enums.UserRole;
 import com.testpire.testpire.service.CognitoService;
 import com.testpire.testpire.service.InstituteService;
-import com.testpire.testpire.util.JwtUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -23,18 +21,15 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Institute Admin", description = "Institute admin operations - INST_ADMIN and SUPER_ADMIN")
-@CrossOrigin
 public class InstAdminController {
 
     private final CognitoService cognitoService;
     private final InstituteService instituteService;
-    private final JwtUtil jwtUtil;
 
     @PostMapping("/register/teacher")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INST_ADMIN')")
+    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN})
     @Operation(summary = "Register teacher", description = "Register a new teacher (SUPER_ADMIN or INST_ADMIN)")
-    public ResponseEntity<?> registerTeacher(@Valid @RequestBody RegisterRequest request,
-                                          HttpServletRequest httpRequest) {
+    public ResponseEntity<?> registerTeacher(@Valid @RequestBody RegisterRequest request) {
         try {
             // Validate that the user is trying to create a teacher
             if (request.role() != UserRole.TEACHER) {
@@ -43,7 +38,7 @@ public class InstAdminController {
             }
 
             // Validate institute exists
-            if (!instituteService.instituteExists(request.instituteId())) {
+            if (!instituteService.instituteExistsById(request.instituteId())) {
                 return ResponseEntity.badRequest()
                     .body(Map.of("error", "Institute not found with ID: " + request.instituteId()));
             }
@@ -61,10 +56,9 @@ public class InstAdminController {
     }
 
     @PostMapping("/register/student")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INST_ADMIN', 'TEACHER')")
+    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
     @Operation(summary = "Register student", description = "Register a new student (SUPER_ADMIN, INST_ADMIN, or TEACHER)")
-    public ResponseEntity<?> registerStudent(@Valid @RequestBody RegisterRequest request,
-                                          HttpServletRequest httpRequest) {
+    public ResponseEntity<?> registerStudent(@Valid @RequestBody RegisterRequest request) {
         try {
             // Validate that the user is trying to create a student
             if (request.role() != UserRole.STUDENT) {
@@ -73,7 +67,7 @@ public class InstAdminController {
             }
 
             // Validate institute exists
-            if (!instituteService.instituteExists(request.instituteId())) {
+            if (!instituteService.instituteExistsById(request.instituteId())) {
                 return ResponseEntity.badRequest()
                     .body(Map.of("error", "Institute not found with ID: " + request.instituteId()));
             }
@@ -91,9 +85,9 @@ public class InstAdminController {
     }
 
     @GetMapping("/teachers")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INST_ADMIN')")
+    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN})
     @Operation(summary = "Get teachers", description = "Get all teachers in the institute (SUPER_ADMIN or INST_ADMIN)")
-    public ResponseEntity<?> getTeachers(HttpServletRequest request) {
+    public ResponseEntity<?> getTeachers() {
         try {
             // This would need to be implemented in CognitoService to get users by role and institute
             // For now, returning a placeholder
@@ -106,9 +100,9 @@ public class InstAdminController {
     }
 
     @GetMapping("/students")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INST_ADMIN', 'TEACHER')")
+    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
     @Operation(summary = "Get students", description = "Get all students in the institute (SUPER_ADMIN, INST_ADMIN, or TEACHER)")
-    public ResponseEntity<?> getStudents(HttpServletRequest request) {
+    public ResponseEntity<?> getStudents() {
         try {
             // This would need to be implemented in CognitoService to get users by role and institute
             // For now, returning a placeholder

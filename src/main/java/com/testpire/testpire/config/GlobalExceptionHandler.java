@@ -5,7 +5,6 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -19,11 +18,5 @@ public class GlobalExceptionHandler {
     log.error("error", e);
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
         .body(Map.of("error", ApplicationConstants.Messages.INTERNAL_SERVER_ERROR, "message", e.getMessage()));
-  }
-
-  @ExceptionHandler(AccessDeniedException.class)
-  public ResponseEntity<?> handleAccessDeniedException(AccessDeniedException e) {
-    return ResponseEntity.status(HttpStatus.FORBIDDEN)
-        .body(Map.of("error", ApplicationConstants.Messages.ACCESS_DENIED, "message", ApplicationConstants.Messages.INSUFFICIENT_PERMISSIONS_MESSAGE));
   }
 }

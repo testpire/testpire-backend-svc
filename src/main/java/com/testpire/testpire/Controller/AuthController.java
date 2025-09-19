@@ -1,14 +1,17 @@
 package com.testpire.testpire.Controller;
 
+import com.testpire.testpire.annotation.RequireRole;
 import com.testpire.testpire.constants.ApplicationConstants;
 import com.testpire.testpire.dto.LoginRequest;
 import com.testpire.testpire.dto.RegisterRequest;
+import com.testpire.testpire.dto.UserDto;
 import com.testpire.testpire.entity.User;
 import com.testpire.testpire.enums.UserRole;
 import com.testpire.testpire.service.CognitoService;
 import com.testpire.testpire.service.InstituteService;
 import com.testpire.testpire.service.UserService;
 import com.testpire.testpire.util.JwtUtil;
+import com.testpire.testpire.util.RequestUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -65,10 +68,11 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
+    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
     @Operation(summary = "User logout", description = "Logout user and invalidate session")
-    public ResponseEntity<?> logout(@RequestHeader(ApplicationConstants.Headers.AUTHORIZATION) String token) {
+    public ResponseEntity<?> logout() {
         try {
-            String username = jwtUtil.extractUsername(token.replace(ApplicationConstants.Headers.BEARER_PREFIX, ""));
+            String username = RequestUtils.getCurrentUsername();
             cognitoService.logout(username);
             return ResponseEntity.ok(Map.of("message", ApplicationConstants.Messages.LOGOUT_SUCCESS));
         } catch (Exception e) {
@@ -83,7 +87,8 @@ public class AuthController {
     public ResponseEntity<?> registerStudent(@Valid @RequestBody RegisterRequest request) {
         try {
             // Validate institute exists
-            if (!instituteService.instituteExists(request.instituteId())) {
+            if (request.instituteId() != null &&
+                !instituteService.instituteExistsById(request.instituteId())) {
                 return ResponseEntity.badRequest()
                     .body(Map.of("error", ApplicationConstants.Messages.INSTITUTE_NOT_FOUND + request.instituteId()));
             }
@@ -114,13 +119,19 @@ public class AuthController {
         }
     }
 
-    @PostMapping("/profile")
+    @GetMapping("/profile")
+    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
     @Operation(summary = "Get user profile", description = "Get current user's profile")
-    public ResponseEntity<?> getProfile(HttpServletRequest request) {
+    public ResponseEntity<?> getProfile() {
         try {
-            String token = request.getHeader(ApplicationConstants.Headers.AUTHORIZATION).replace(ApplicationConstants.Headers.BEARER_PREFIX, "");
-            String currentUsername = jwtUtil.extractUsername(token);
-            User currentUser = userService.getUserByUsername(currentUsername);
+            String username = RequestUtils.getCurrentUsername();
+            if (username == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "User not found"));
+            }
+
+            // Get complete user details from database
+            User currentUser = userService.getUserByCognitoUserId(username);
 
             return ResponseEntity.ok(Map.of(
                 "user", Map.of(
@@ -132,7 +143,8 @@ public class AuthController {
                     "role", currentUser.getRole(),
                     "instituteId", currentUser.getInstituteId(),
                     "enabled", currentUser.isEnabled(),
-                    "createdAt", currentUser.getCreatedAt()
+                    "createdAt", currentUser.getCreatedAt(),
+                    "updatedAt", currentUser.getUpdatedAt()
                 )
             ));
         } catch (Exception e) {

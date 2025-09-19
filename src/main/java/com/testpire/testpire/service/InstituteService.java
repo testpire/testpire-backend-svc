@@ -118,7 +118,7 @@ public class InstituteService {
         return instituteRepository.findByActiveTrueAndNameOrCodeContaining(searchTerm);
     }
 
-    public boolean instituteExists(String code) {
+    public boolean instituteExistsByCode(String code) {
         return instituteRepository.existsByCode(code);
     }
 

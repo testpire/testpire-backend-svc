@@ -52,8 +52,7 @@ public class User {
     private UserRole role;
     
     @Column(name = ApplicationConstants.Database.INSTITUTE_ID_COLUMN, nullable = false)
-    @NotBlank(message = ApplicationConstants.Messages.INSTITUTE_ID_REQUIRED)
-    private String instituteId;
+    private Long instituteId;
     
     @Column(name = ApplicationConstants.Database.COGNITO_USER_ID_COLUMN)
     private String cognitoUserId;

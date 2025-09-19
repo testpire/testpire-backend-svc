@@ -31,6 +31,5 @@ public record RegisterRequest(
     @NotNull(message = ApplicationConstants.Messages.USER_ROLE_REQUIRED)
     UserRole role,
 
-    @NotBlank(message = ApplicationConstants.Messages.INSTITUTE_ID_REQUIRED)
-    String instituteId
+    Long instituteId
 ) {}

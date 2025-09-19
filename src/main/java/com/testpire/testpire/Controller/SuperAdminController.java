@@ -1,11 +1,11 @@
 package com.testpire.testpire.Controller;
 
+import com.testpire.testpire.annotation.RequireRole;
 import com.testpire.testpire.entity.User;
 import com.testpire.testpire.enums.UserRole;
 import com.testpire.testpire.service.CognitoService;
 import com.testpire.testpire.service.InstituteService;
 import com.testpire.testpire.service.UserService;
-import com.testpire.testpire.util.JwtUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
@@ -14,9 +14,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,18 +23,16 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Super Admin Controller", description = "Super admin specific operations")
-@CrossOrigin
 public class SuperAdminController {
 
     private final CognitoService cognitoService;
     private final InstituteService instituteService;
     private final UserService userService;
-    private final JwtUtil jwtUtil;
 
     // ========== GENERAL USER MANAGEMENT ==========
 
     @GetMapping("/users")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @RequireRole(UserRole.SUPER_ADMIN)
     @Operation(summary = "Get all users", description = "Get all users (SUPER_ADMIN only)")
     public ResponseEntity<?> getAllUsers() {
         try {
@@ -51,7 +46,7 @@ public class SuperAdminController {
     }
 
     @GetMapping("/users/{id}")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @RequireRole(UserRole.SUPER_ADMIN)
     @Operation(summary = "Get user by ID", description = "Get user details by ID")
     public ResponseEntity<?> getUserById(@PathVariable Long id) {
         try {
@@ -67,7 +62,7 @@ public class SuperAdminController {
     // ========== SYSTEM OVERVIEW ==========
 
     @GetMapping("/dashboard")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @RequireRole(UserRole.SUPER_ADMIN)
     @Operation(summary = "Get system dashboard", description = "Get system overview and statistics")
     public ResponseEntity<?> getSystemDashboard() {
         try {
@@ -95,13 +90,4 @@ public class SuperAdminController {
         }
     }
 
-    private UserRole getUserRoleFromAuthentication(Authentication authentication) {
-        return authentication.getAuthorities().stream()
-            .map(GrantedAuthority::getAuthority)
-            .filter(authority -> authority.startsWith("ROLE_"))
-            .map(authority -> authority.replace("ROLE_", ""))
-            .map(UserRole::valueOf)
-            .findFirst()
-            .orElse(UserRole.STUDENT);
-    }
 }

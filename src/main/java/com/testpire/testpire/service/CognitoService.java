@@ -46,13 +46,8 @@ public class CognitoService {
           .build();
 
       AttributeType givenNameAttr = AttributeType.builder()
-          .name(ApplicationConstants.CognitoAttributes.GIVEN_NAME)
-          .value(request.firstName())
-          .build();
-
-      AttributeType familyNameAttr = AttributeType.builder()
-          .name(ApplicationConstants.CognitoAttributes.FAMILY_NAME)
-          .value(request.lastName())
+          .name(ApplicationConstants.CognitoAttributes.NAME)
+          .value(request.firstName().concat(" ").concat(request.lastName()))
           .build();
 
       AttributeType customRoleAttr = AttributeType.builder()
@@ -62,7 +57,7 @@ public class CognitoService {
 
       AttributeType instituteIdAttr = AttributeType.builder()
           .name(ApplicationConstants.CognitoAttributes.CUSTOM_INSTITUTE_ID)
-          .value(request.instituteId())
+          .value(String.valueOf(request.instituteId()))
           .build();
 
       AttributeType phone = AttributeType.builder()
@@ -78,7 +73,7 @@ public class CognitoService {
           .clientId(cognitoConfig.getClientId())
           .username(request.username())
           .password(request.password())
-          .userAttributes(emailAttr, givenNameAttr, familyNameAttr, customRoleAttr, instituteIdAttr, phone)
+          .userAttributes(emailAttr, givenNameAttr, customRoleAttr, instituteIdAttr, phone)
           .build();
 
       SignUpResponse result = cognitoClient.signUp(signUpRequest);
@@ -165,21 +160,28 @@ public class CognitoService {
     String email = "";
     String firstName = "";
     String lastName = "";
-    String instituteId = "";
+    Long instituteId = -1L;
     UserRole role = UserRole.STUDENT;
     boolean enabled = true;
 
+    log.info("Extracting user attributes for username: {}", username);
     for (AttributeType attr : attributes) {
+      log.info("Attribute: {} = {}", attr.name(), attr.value());
       switch (attr.name()) {
         case ApplicationConstants.CognitoAttributes.EMAIL -> email = attr.value();
         case ApplicationConstants.CognitoAttributes.GIVEN_NAME -> firstName = attr.value();
         case ApplicationConstants.CognitoAttributes.FAMILY_NAME -> lastName = attr.value();
-        case ApplicationConstants.CognitoAttributes.CUSTOM_ROLE -> role = UserRole.valueOf(attr.value());
-        case ApplicationConstants.CognitoAttributes.CUSTOM_INSTITUTE_ID -> instituteId = attr.value();
+        case ApplicationConstants.CognitoAttributes.CUSTOM_ROLE -> {
+          log.info("Found CUSTOM_ROLE attribute: {}", attr.value());
+          role = UserRole.valueOf(attr.value());
+        }
+        case ApplicationConstants.CognitoAttributes.CUSTOM_INSTITUTE_ID -> instituteId =
+            Long.valueOf(attr.value());
         case "email_verified" -> enabled = Boolean.parseBoolean(attr.value());
       }
     }
 
+    log.info("Final extracted user: username={}, role={}, email={}", username, role, email);
     return new UserDto(username, email, firstName, lastName, role, enabled, instituteId);
   }
 

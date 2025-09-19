@@ -1,18 +1,18 @@
 package com.testpire.testpire.Controller;
 
+import com.testpire.testpire.annotation.RequireRole;
 import com.testpire.testpire.dto.InstituteDto;
 import com.testpire.testpire.entity.Institute;
+import com.testpire.testpire.enums.UserRole;
 import com.testpire.testpire.service.InstituteService;
-import com.testpire.testpire.util.JwtUtil;
+import com.testpire.testpire.util.RequestUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,17 +27,13 @@ import java.util.Map;
 public class InstituteController {
 
     private final InstituteService instituteService;
-    private final JwtUtil jwtUtil;
 
     @PostMapping
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @RequireRole(UserRole.SUPER_ADMIN)
     @Operation(summary = "Create institute", description = "Create a new institute (SUPER_ADMIN only)")
-    public ResponseEntity<?> createInstitute(@Valid @RequestBody InstituteDto instituteDto, 
-                                          HttpServletRequest request) {
+    public ResponseEntity<?> createInstitute(@Valid @RequestBody InstituteDto instituteDto) {
         try {
-            String token = request.getHeader("Authorization").replace("Bearer ", "");
-            String username = jwtUtil.extractUsername(token);
-            
+            String username = RequestUtils.getCurrentUsername();
             Institute createdInstitute = instituteService.createInstitute(instituteDto, username);
             
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
@@ -55,15 +51,12 @@ public class InstituteController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @RequireRole(UserRole.SUPER_ADMIN)
     @Operation(summary = "Update institute", description = "Update an existing institute (SUPER_ADMIN only)")
     public ResponseEntity<?> updateInstitute(@PathVariable Long id, 
-                                          @Valid @RequestBody InstituteDto instituteDto,
-                                          HttpServletRequest request) {
+                                          @Valid @RequestBody InstituteDto instituteDto) {
         try {
-            String token = request.getHeader("Authorization").replace("Bearer ", "");
-            String username = jwtUtil.extractUsername(token);
-            
+            String username = RequestUtils.getCurrentUsername();
             Institute updatedInstitute = instituteService.updateInstitute(id, instituteDto, username);
             
             return ResponseEntity.ok(Map.of(
@@ -81,7 +74,7 @@ public class InstituteController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @RequireRole(UserRole.SUPER_ADMIN)
     @Operation(summary = "Delete institute", description = "Deactivate an institute (SUPER_ADMIN only)")
     public ResponseEntity<?> deleteInstitute(@PathVariable Long id) {
         try {
@@ -97,7 +90,7 @@ public class InstituteController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @RequireRole(UserRole.SUPER_ADMIN)
     @Operation(summary = "Get institute by ID", description = "Get institute details by ID (SUPER_ADMIN only)")
     public ResponseEntity<?> getInstituteById(@PathVariable Long id) {
         try {
@@ -113,7 +106,7 @@ public class InstituteController {
     }
 
     @GetMapping("/code/{code}")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @RequireRole(UserRole.SUPER_ADMIN)
     @Operation(summary = "Get institute by code", description = "Get institute details by code (SUPER_ADMIN only)")
     public ResponseEntity<?> getInstituteByCode(@PathVariable String code) {
         try {
@@ -129,7 +122,7 @@ public class InstituteController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @RequireRole(UserRole.SUPER_ADMIN)
     @Operation(summary = "Get all institutes", description = "Get all active institutes (SUPER_ADMIN only)")
     public ResponseEntity<?> getAllInstitutes() {
         try {
@@ -143,7 +136,7 @@ public class InstituteController {
     }
 
     @GetMapping("/search")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @RequireRole(UserRole.SUPER_ADMIN)
     @Operation(summary = "Search institutes", description = "Search institutes by name or code (SUPER_ADMIN only)")
     public ResponseEntity<?> searchInstitutes(@RequestParam String searchTerm) {
         try {

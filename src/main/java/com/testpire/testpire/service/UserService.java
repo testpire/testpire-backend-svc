@@ -35,7 +35,7 @@ public class UserService {
         }
 
         // Validate institute exists
-        if (!instituteService.instituteExists(request.instituteId())) {
+        if (!instituteService.instituteExistsById(request.instituteId())) {
             throw new IllegalArgumentException(ApplicationConstants.Messages.INSTITUTE_NOT_FOUND + request.instituteId());
         }
 
@@ -75,7 +75,7 @@ public class UserService {
         }
 
         // Validate institute exists
-        if (!instituteService.instituteExists(request.instituteId())) {
+        if (!instituteService.instituteExistsById(request.instituteId())) {
             throw new IllegalArgumentException("Institute not found with ID: " + request.instituteId());
         }
 
@@ -112,6 +112,11 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found with username: " + username));
     }
 
+    public User getUserByCognitoUserId(String cognitoUserId) {
+        return userRepository.findByCognitoUserId(cognitoUserId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found with cognitoUserId: " + cognitoUserId));
+    }
+
     public User getUserByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
@@ -121,15 +126,15 @@ public class UserService {
         return userRepository.findByRoleAndEnabledTrue(role);
     }
 
-    public List<User> getUsersByInstitute(String instituteId) {
+    public List<User> getUsersByInstitute(Long instituteId) {
         return userRepository.findByInstituteIdAndEnabledTrue(instituteId);
     }
 
-    public List<User> getUsersByRoleAndInstitute(UserRole role, String instituteId) {
+    public List<User> getUsersByRoleAndInstitute(UserRole role, Long instituteId) {
         return userRepository.findByRoleAndInstituteIdAndEnabledTrue(role, instituteId);
     }
 
-    public List<User> searchUsersByRoleAndInstitute(UserRole role, String instituteId, String searchTerm) {
+    public List<User> searchUsersByRoleAndInstitute(UserRole role, Long instituteId, String searchTerm) {
         if (instituteId == null) {
             // For SUPER_ADMIN - search across all institutes
             return userRepository.findByRoleAndEnabledTrueAndNameOrEmailContaining(role, searchTerm);

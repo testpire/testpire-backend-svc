@@ -6,7 +6,6 @@ import java.util.Date;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -28,8 +27,22 @@ public class JwtUtil {
     this.cognitoJwtParser = cognitoJwtParser;
   }
 
-  public String extractUsername(String token) {
+  public String extractCognitoUserId(String token) {
     return extractClaim(token, Claims::getSubject);
+  }
+
+  public String extractUsername(String token) {
+    Claims claims = extractAllClaims(token);
+    log.info("JWT Claims: {}", claims);
+    
+    // Try to get username from 'cognito:username' claim first, then fallback to 'sub'
+    String username = claims.get("cognito:username", String.class);
+    if (username == null) {
+      username = claims.getSubject();
+    }
+    
+    log.info("Extracted username from JWT: {}", username);
+    return username;
   }
 
   public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {

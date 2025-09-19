@@ -10,5 +10,5 @@ public record UserDto(
     String lastName,
     UserRole role,
     boolean enabled,
-    String instituteId
+    Long instituteId
 ) {}
