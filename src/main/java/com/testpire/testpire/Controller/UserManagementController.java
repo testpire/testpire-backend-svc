@@ -3,6 +3,11 @@ package com.testpire.testpire.Controller;
 import com.testpire.testpire.annotation.RequireRole;
 import com.testpire.testpire.dto.RegisterRequest;
 import com.testpire.testpire.dto.UserDto;
+import com.testpire.testpire.dto.request.CreateUserRequestDto;
+import com.testpire.testpire.dto.request.UpdateUserRequestDto;
+import com.testpire.testpire.dto.response.UserResponseDto;
+import com.testpire.testpire.dto.response.UserListResponseDto;
+import com.testpire.testpire.dto.response.ApiResponseDto;
 import com.testpire.testpire.entity.User;
 import com.testpire.testpire.enums.UserRole;
 import com.testpire.testpire.service.CognitoService;
@@ -37,42 +42,56 @@ public class UserManagementController {
     @PostMapping("/register")
     @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
     @Operation(summary = "Register user", description = "Register a new user based on role and permissions")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<ApiResponseDto> registerUser(@Valid @RequestBody CreateUserRequestDto request) {
         try {
             // Get current user's context
             UserDto currentUser = RequestUtils.getCurrentUser();
             if (currentUser == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "User not found"));
+                    .body(ApiResponseDto.error("User not found"));
             }
 
             // Validate institute exists
             if (!instituteService.instituteExistsById(request.instituteId())) {
                 return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Institute not found with ID: " + request.instituteId()));
+                    .body(ApiResponseDto.error("Institute not found with ID: " + request.instituteId()));
             }
 
             // Role-based permission validation
             if (!canCreateUser(currentUser, request.role(), request.instituteId())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", "Insufficient permissions to create this user type"));
+                    .body(ApiResponseDto.error("Insufficient permissions to create this user type"));
             }
 
+            // Convert to RegisterRequest for Cognito
+            RegisterRequest registerRequest = new RegisterRequest(
+                request.username(),
+                request.username(), // email same as username
+                request.password(),
+                request.firstName(),
+                request.lastName(),
+                request.role(),
+                request.instituteId()
+            );
+
             // Create user in Cognito
-            String cognitoUserId = cognitoService.signUp(request, request.role());
+            String cognitoUserId = cognitoService.signUp(registerRequest, request.role());
             
             // Create user in local database
-            User createdUser = userService.createUser(request, request.role(), cognitoUserId, currentUser.username());
+            User createdUser = userService.createUser(registerRequest, request.role(), cognitoUserId, currentUser.username());
 
-            return ResponseEntity.ok(Map.of(
-                "userId", createdUser.getId(),
-                "cognitoUserId", cognitoUserId,
-                "message", request.role() + " registered successfully"
+            return ResponseEntity.ok(ApiResponseDto.success(
+                request.role() + " registered successfully",
+                Map.of(
+                    "userId", createdUser.getId(),
+                    "cognitoUserId", cognitoUserId,
+                    "instituteId", request.instituteId()
+                )
             ));
         } catch (Exception e) {
             log.error("User registration failed", e);
             return ResponseEntity.badRequest()
-                .body(Map.of("error", "Registration failed", "message", e.getMessage()));
+                .body(ApiResponseDto.error("Registration failed: " + e.getMessage()));
         }
     }
 
@@ -81,13 +100,13 @@ public class UserManagementController {
     @GetMapping("/{role}")
     @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
     @Operation(summary = "Get users by role", description = "Get users by role with institute-based filtering")
-    public ResponseEntity<?> getUsersByRole(@PathVariable String role) {
+    public ResponseEntity<UserListResponseDto> getUsersByRole(@PathVariable String role) {
         try {
             UserRole userRole = UserRole.valueOf(role.toUpperCase());
             UserDto currentUser = RequestUtils.getCurrentUser();
             if (currentUser == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "User not found"));
+                    .body(UserListResponseDto.error("User not found"));
             }
 
             List<User> users;
@@ -99,11 +118,22 @@ public class UserManagementController {
                 users = userService.getUsersByRoleAndInstitute(userRole, currentUser.instituteId());
             }
 
-            return ResponseEntity.ok(users);
+            List<UserResponseDto> userDtos = users.stream()
+                .map(UserResponseDto::fromEntity)
+                .toList();
+
+            UserListResponseDto response = UserListResponseDto.success(
+                userDtos, 
+                users.size(), 
+                0, 
+                users.size()
+            );
+
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error fetching users by role", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Failed to fetch users"));
+                .body(UserListResponseDto.error("Failed to fetch users: " + e.getMessage()));
         }
     }
 

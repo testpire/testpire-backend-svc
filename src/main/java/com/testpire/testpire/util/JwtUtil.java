@@ -2,6 +2,7 @@ package com.testpire.testpire.util;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import java.security.PublicKey;
 import java.util.Date;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,9 @@ public class JwtUtil {
 
   @Value("${aws.cognito.region}")
   private String region;
+
+  @Value("${aws.cognito.jwt.issuer-uri}")
+  private String expectedIssuer;
 
   private final CognitoJwtParser cognitoJwtParser;
 
@@ -60,6 +64,7 @@ public class JwtUtil {
 
   public boolean isTokenValid(String token) {
     try {
+      log.info("Validating token: {}", token.substring(0, Math.min(50, token.length())) + "...");
       Claims claims = extractAllClaims(token);
       log.info("claims : {}", claims);
       // Additional validation for Cognito tokens
@@ -67,7 +72,7 @@ public class JwtUtil {
           isValidIssuer(claims) &&
           isValidAudience(claims);
     } catch (Exception e) {
-      log.error("Error validating token ", e);
+      log.error("Error validating token: {}", e.getMessage(), e);
       return false;
     }
   }
@@ -81,7 +86,7 @@ public class JwtUtil {
   private boolean isValidIssuer(Claims claims) {
     String issuer = claims.getIssuer();
     log.info("is valid issuer :{} ", issuer);
-    return issuer != null && issuer.equals("https://cognito-idp." + region + ".amazonaws.com/" + userPoolId);
+    return issuer != null && issuer.equals(expectedIssuer);
   }
 
   private boolean isValidAudience(Claims claims) {

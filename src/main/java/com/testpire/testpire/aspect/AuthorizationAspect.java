@@ -5,7 +5,7 @@ import com.testpire.testpire.constants.ApplicationConstants;
 import com.testpire.testpire.dto.UserDto;
 import com.testpire.testpire.enums.UserRole;
 import com.testpire.testpire.service.CognitoService;
-import com.testpire.testpire.util.JwtUtil;
+import com.testpire.testpire.util.JwksJwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +27,7 @@ import java.util.Map;
 @Slf4j
 public class AuthorizationAspect {
 
-    private final JwtUtil jwtUtil;
+    private final JwksJwtUtil jwtUtil;
     private final CognitoService cognitoService;
 
     @Around("@annotation(requireRole)")

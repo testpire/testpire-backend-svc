@@ -5,6 +5,7 @@ import com.testpire.testpire.dto.RegisterRequest;
 import com.testpire.testpire.entity.User;
 import com.testpire.testpire.enums.UserRole;
 import com.testpire.testpire.repository.UserRepository;
+import com.testpire.testpire.util.RequestUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -89,6 +90,24 @@ public class UserService {
         User updatedUser = userRepository.save(existingUser);
         log.info("User updated successfully with ID: {}", updatedUser.getId());
         return updatedUser;
+    }
+
+    public User updateUser(User user) {
+        log.info("Updating user with ID: {}", user.getId());
+        
+        User existingUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + user.getId()));
+
+        // Update the user entity
+        existingUser.setFirstName(user.getFirstName());
+        existingUser.setLastName(user.getLastName());
+        existingUser.setInstituteId(user.getInstituteId());
+        existingUser.setEnabled(user.isEnabled());
+        existingUser.setUpdatedBy(RequestUtils.getCurrentUsername());
+
+        User savedUser = userRepository.save(existingUser);
+        log.info("User updated successfully with ID: {}", savedUser.getId());
+        return savedUser;
     }
 
     public void deleteUser(Long id) {
