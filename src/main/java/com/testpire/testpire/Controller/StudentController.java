@@ -155,7 +155,7 @@ public class StudentController {
             
             // Update student details
             com.testpire.testpire.entity.StudentDetails studentDetails = studentDetailsService.updateStudentDetails(
-                student.getId(),
+                student,
                 request.phone(),
                 request.course(),
                 request.yearOfStudy(),

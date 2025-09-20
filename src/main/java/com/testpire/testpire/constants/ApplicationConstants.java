@@ -105,11 +105,18 @@ public final class ApplicationConstants {
     public static final class Database {
         public static final String USERS_TABLE = "users";
         public static final String INSTITUTES_TABLE = "institutes";
+        public static final String TEACHER_DETAILS_TABLE = "teacher_details";
+        public static final String STUDENT_DETAILS_TABLE = "student_details";
+        public static final String COURSES_TABLE = "courses";
+        public static final String SUBJECTS_TABLE = "subjects";
+        public static final String CHAPTERS_TABLE = "chapters";
+        public static final String TOPICS_TABLE = "topics";
         public static final String CREATED_AT_COLUMN = "created_at";
         public static final String UPDATED_AT_COLUMN = "updated_at";
         public static final String CREATED_BY_COLUMN = "created_by";
         public static final String INSTITUTE_ID_COLUMN = "institute_id";
         public static final String COGNITO_USER_ID_COLUMN = "cognito_user_id";
+        public static final String USER_ID_COLUMN = "user_id";
 
         private Database() {}
     }
@@ -146,6 +153,7 @@ public final class ApplicationConstants {
         public static final String TEACHER_BASE = API_BASE + "/teacher";
         public static final String STUDENT_BASE = API_BASE + "/student";
         public static final String INST_ADMIN_BASE = API_BASE + "/inst-admin";
+        public static final String COURSE_BASE = API_BASE + "/course";
 
         // Auth endpoints
         public static final String LOGIN = "/login";
