@@ -74,3 +74,4 @@ public class Subject {
         updatedAt = LocalDateTime.now();
     }
 }
+

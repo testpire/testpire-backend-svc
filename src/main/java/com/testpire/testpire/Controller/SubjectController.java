@@ -385,7 +385,7 @@ public class SubjectController {
     }
 
     @GetMapping
-    @RequireRole({UserRole.SUPER_ADMIN})
+    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
     @Operation(
         summary = "Get all subjects",
         description = "Retrieves all subjects across all institutes. Only SUPER_ADMIN users can access this endpoint."
@@ -419,3 +419,4 @@ public class SubjectController {
         }
     }
 }
+

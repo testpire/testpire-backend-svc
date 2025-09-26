@@ -23,3 +23,4 @@ public record CreateCourseRequestDto(
         String level,
         String prerequisites
 ) {}
+

@@ -17,3 +17,4 @@ public record UpdateChapterRequestDto(
         String objectives,
         Boolean active
 ) {}
+

@@ -27,3 +27,4 @@ public record CreateTopicRequestDto(
         String content,
         String learningOutcomes
 ) {}
+

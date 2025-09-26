@@ -10,3 +10,4 @@ public record TopicListResponseDto(
         return new TopicListResponseDto(topics, topics.size());
     }
 }
+

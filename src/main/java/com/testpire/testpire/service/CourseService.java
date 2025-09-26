@@ -129,3 +129,4 @@ public class CourseService {
         return CourseListResponseDto.of(courseDtos);
     }
 }
+

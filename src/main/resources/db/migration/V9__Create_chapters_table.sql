@@ -39,3 +39,4 @@ COMMENT ON COLUMN chapters.order_index IS 'Order of chapter within subject';
 COMMENT ON COLUMN chapters.duration IS 'Chapter duration';
 COMMENT ON COLUMN chapters.objectives IS 'Chapter learning objectives';
 COMMENT ON COLUMN chapters.active IS 'Whether the chapter is active';
+

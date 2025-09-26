@@ -1,6 +1,7 @@
 package com.testpire.testpire.service;
 
 import com.testpire.testpire.dto.request.CreateTopicRequestDto;
+import com.testpire.testpire.dto.request.TopicSearchRequestDto;
 import com.testpire.testpire.dto.request.UpdateTopicRequestDto;
 import com.testpire.testpire.dto.response.TopicListResponseDto;
 import com.testpire.testpire.dto.response.TopicResponseDto;
@@ -151,5 +152,36 @@ public class TopicService {
                 .map(TopicResponseDto::fromEntity)
                 .toList();
         return TopicListResponseDto.of(topicDtos);
+    }
+
+    @Transactional(readOnly = true)
+    public TopicListResponseDto searchTopicsWithFilters(TopicSearchRequestDto request) {
+        log.info("Searching topics with filters: instituteId={}, courseId={}, subjectId={}, chapterId={}, searchQuery={}, active={}", 
+                request.instituteId(), request.courseId(), request.subjectId(), request.chapterId(), 
+                request.searchQuery(), request.active());
+
+        List<Topic> topics = topicRepository.findTopicsWithFilters(
+                request.instituteId(),
+                request.courseId(),
+                request.subjectId(),
+                request.chapterId(),
+                request.searchQuery(),
+                request.active()
+        );
+
+        List<TopicResponseDto> topicDtos = topics.stream()
+                .map(TopicResponseDto::fromEntity)
+                .toList();
+
+        Long totalCount = topicRepository.countTopicsWithFilters(
+                request.instituteId(),
+                request.courseId(),
+                request.subjectId(),
+                request.chapterId(),
+                request.searchQuery(),
+                request.active()
+        );
+
+        return new TopicListResponseDto(topicDtos, totalCount.intValue());
     }
 }

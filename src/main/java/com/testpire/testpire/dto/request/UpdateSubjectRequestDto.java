@@ -17,3 +17,4 @@ public record UpdateSubjectRequestDto(
         String prerequisites,
         Boolean active
 ) {}
+

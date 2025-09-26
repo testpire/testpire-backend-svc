@@ -26,3 +26,4 @@ public record CreateChapterRequestDto(
         String duration,
         String objectives
 ) {}
+

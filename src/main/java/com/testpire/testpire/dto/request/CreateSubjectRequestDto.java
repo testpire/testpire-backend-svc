@@ -26,3 +26,4 @@ public record CreateSubjectRequestDto(
         Integer credits,
         String prerequisites
 ) {}
+

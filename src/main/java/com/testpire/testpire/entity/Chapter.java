@@ -74,3 +74,4 @@ public class Chapter {
         updatedAt = LocalDateTime.now();
     }
 }
+

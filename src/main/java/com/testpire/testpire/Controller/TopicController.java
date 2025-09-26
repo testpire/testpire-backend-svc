@@ -2,6 +2,7 @@ package com.testpire.testpire.Controller;
 
 import com.testpire.testpire.annotation.RequireRole;
 import com.testpire.testpire.dto.request.CreateTopicRequestDto;
+import com.testpire.testpire.dto.request.TopicSearchRequestDto;
 import com.testpire.testpire.dto.request.UpdateTopicRequestDto;
 import com.testpire.testpire.dto.response.ApiResponseDto;
 import com.testpire.testpire.dto.response.TopicListResponseDto;
@@ -348,13 +349,24 @@ public class TopicController {
     @GetMapping("/search")
     @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
     @Operation(
-        summary = "Search topics",
-        description = "Searches for topics by name or code within a specific institute. All authenticated users can search topics."
+        summary = "Search topics with advanced filters",
+        description = "Searches for topics with flexible filtering options including institute, course, subject, chapter, and text search. All authenticated users can search topics."
     )
     @ApiResponses(value = {
         @ApiResponse(
             responseCode = "200",
             description = "Topics retrieved successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiResponseDto.class),
+                examples = @ExampleObject(
+                    value = "{\"message\": \"Topics retrieved successfully\", \"success\": true, \"data\": {\"topics\": [...], \"totalCount\": 10}}"
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Bad request - validation failed",
             content = @Content(
                 mediaType = "application/json",
                 schema = @Schema(implementation = ApiResponseDto.class)
@@ -369,17 +381,82 @@ public class TopicController {
             )
         )
     })
-    public ResponseEntity<ApiResponseDto> searchTopics(
+    public ResponseEntity<ApiResponseDto> searchTopicsWithFilters(
             @Parameter(description = "Institute ID", required = true, example = "1")
-            @RequestParam Long instituteId, 
-            @Parameter(description = "Search query", required = true, example = "Arrays")
-            @RequestParam String query) {
+            @RequestParam Long instituteId,
+            @Parameter(description = "Course ID (optional)", example = "1")
+            @RequestParam(required = false) Long courseId,
+            @Parameter(description = "Subject ID (optional)", example = "1")
+            @RequestParam(required = false) Long subjectId,
+            @Parameter(description = "Chapter ID (optional)", example = "1")
+            @RequestParam(required = false) Long chapterId,
+            @Parameter(description = "Search query for name, code, or description (optional)", example = "Arrays")
+            @RequestParam(required = false) String searchQuery,
+            @Parameter(description = "Filter by active status (optional)", example = "true")
+            @RequestParam(required = false) Boolean active) {
         try {
-            log.info("Searching topics in institute: {} with query: {}", instituteId, query);
-            TopicListResponseDto topics = topicService.searchTopics(instituteId, query);
+            log.info("Searching topics with filters: instituteId={}, courseId={}, subjectId={}, chapterId={}, searchQuery={}, active={}", 
+                    instituteId, courseId, subjectId, chapterId, searchQuery, active);
+            
+            TopicSearchRequestDto request = TopicSearchRequestDto.builder()
+                    .instituteId(instituteId)
+                    .courseId(courseId)
+                    .subjectId(subjectId)
+                    .chapterId(chapterId)
+                    .searchQuery(searchQuery)
+                    .active(active)
+                    .build();
+            
+            TopicListResponseDto topics = topicService.searchTopicsWithFilters(request);
             return ResponseEntity.ok(ApiResponseDto.success("Topics retrieved successfully", topics));
         } catch (Exception e) {
-            log.error("Error searching topics", e);
+            log.error("Error searching topics with filters", e);
+            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to search topics: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/search")
+    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @Operation(
+        summary = "Search topics with advanced filters (POST)",
+        description = "Searches for topics with flexible filtering options using POST request body. Useful for complex filter combinations. All authenticated users can search topics."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Topics retrieved successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiResponseDto.class),
+                examples = @ExampleObject(
+                    value = "{\"message\": \"Topics retrieved successfully\", \"success\": true, \"data\": {\"topics\": [...], \"totalCount\": 10}}"
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Bad request - validation failed",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiResponseDto.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "403",
+            description = "Forbidden - insufficient permissions",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiResponseDto.class)
+            )
+        )
+    })
+    public ResponseEntity<ApiResponseDto> searchTopicsWithFiltersPost(@Valid @RequestBody TopicSearchRequestDto request) {
+        try {
+            log.info("Searching topics with filters (POST): {}", request);
+            TopicListResponseDto topics = topicService.searchTopicsWithFilters(request);
+            return ResponseEntity.ok(ApiResponseDto.success("Topics retrieved successfully", topics));
+        } catch (Exception e) {
+            log.error("Error searching topics with filters (POST)", e);
             return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to search topics: " + e.getMessage()));
         }
     }

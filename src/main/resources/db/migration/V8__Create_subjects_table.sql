@@ -38,3 +38,4 @@ COMMENT ON COLUMN subjects.duration IS 'Subject duration';
 COMMENT ON COLUMN subjects.credits IS 'Number of credits for this subject';
 COMMENT ON COLUMN subjects.prerequisites IS 'Subject prerequisites';
 COMMENT ON COLUMN subjects.active IS 'Whether the subject is active';
+

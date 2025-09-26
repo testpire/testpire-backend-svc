@@ -6,43 +6,40 @@ import lombok.*;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = ApplicationConstants.Database.TOPICS_TABLE)
+@Table(name = ApplicationConstants.Database.OPTION_TABLE)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@SQLDelete(sql = "UPDATE " + ApplicationConstants.Database.TOPICS_TABLE + " SET deleted = true WHERE id=?")
+@SQLDelete(sql = "UPDATE " + ApplicationConstants.Database.OPTION_TABLE + " SET deleted = true WHERE id=?")
 @Where(clause = "deleted = false")
-public class Topic {
+public class Option implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String name;
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String text;
 
-    @Column(columnDefinition = "TEXT")
-    private String description;
-
-    @Column(nullable = false)
-    private String code;
+    @Column(name = "option_image_path")
+    private String optionImagePath;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "chapter_id", nullable = false)
-    private Chapter chapter;
+    @JoinColumn(name = "question_id", nullable = false)
+    private Question question;
 
-    @Column(nullable = false)
-    private Long instituteId;
+    @Column(name = "option_order")
+    private Integer optionOrder;
 
-    private Integer orderIndex;
-    private String duration;
-    private String content;
-    private String learningOutcomes;
+    @Column(name = "is_correct")
+    @Builder.Default
+    private boolean isCorrect = false;
 
     @Builder.Default
     @Column(name = ApplicationConstants.Database.CREATED_AT_COLUMN)
@@ -69,4 +66,3 @@ public class Topic {
         updatedAt = LocalDateTime.now();
     }
 }
-

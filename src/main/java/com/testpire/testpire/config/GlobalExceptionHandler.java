@@ -13,10 +13,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Slf4j
 public class GlobalExceptionHandler {
 
-  @ExceptionHandler(Exception.class)
+  /*@ExceptionHandler(Exception.class)
   public ResponseEntity<?> handleException(Exception e) {
     log.error("error", e);
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
         .body(Map.of("error", ApplicationConstants.Messages.INTERNAL_SERVER_ERROR, "message", e.getMessage()));
-  }
+  }*/
 }

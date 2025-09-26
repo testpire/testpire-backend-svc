@@ -10,3 +10,4 @@ public record CourseListResponseDto(
         return new CourseListResponseDto(courses, courses.size());
     }
 }
+

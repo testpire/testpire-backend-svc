@@ -19,3 +19,4 @@ public interface ChapterRepository extends JpaRepository<Chapter, Long> {
     List<Chapter> findByNameContainingIgnoreCaseOrCodeContainingIgnoreCase(String name, String code);
     List<Chapter> findBySubjectIdOrderByOrderIndex(Long subjectId);
 }
+

@@ -10,3 +10,4 @@ public record SubjectListResponseDto(
         return new SubjectListResponseDto(subjects, subjects.size());
     }
 }
+

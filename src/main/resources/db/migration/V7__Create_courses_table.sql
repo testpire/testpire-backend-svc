@@ -34,3 +34,4 @@ COMMENT ON COLUMN courses.duration IS 'Course duration';
 COMMENT ON COLUMN courses.level IS 'Course level (e.g., Beginner, Intermediate, Advanced)';
 COMMENT ON COLUMN courses.prerequisites IS 'Course prerequisites';
 COMMENT ON COLUMN courses.active IS 'Whether the course is active';
+

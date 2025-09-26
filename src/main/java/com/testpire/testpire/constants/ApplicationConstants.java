@@ -105,6 +105,8 @@ public final class ApplicationConstants {
     public static final class Database {
         public static final String USERS_TABLE = "users";
         public static final String INSTITUTES_TABLE = "institutes";
+        public static final String QUESTION_TABLE = "questions";
+        public static final String OPTION_TABLE = "options";
         public static final String TEACHER_DETAILS_TABLE = "teacher_details";
         public static final String STUDENT_DETAILS_TABLE = "student_details";
         public static final String COURSES_TABLE = "courses";

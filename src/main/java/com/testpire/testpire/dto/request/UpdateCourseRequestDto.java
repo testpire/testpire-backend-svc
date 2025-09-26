@@ -17,3 +17,4 @@ public record UpdateCourseRequestDto(
         String prerequisites,
         Boolean active
 ) {}
+
