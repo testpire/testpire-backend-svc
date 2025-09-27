@@ -17,7 +17,6 @@ public record CreateTeacherRequestDto(
     @NotBlank(message = "Last name is required")
     String lastName,
     
-    @NotBlank(message = "Institute ID is required")
     Long instituteId,
     
     String phone,

@@ -27,3 +27,4 @@ public record CreateSubjectRequestDto(
         String prerequisites
 ) {}
 
+

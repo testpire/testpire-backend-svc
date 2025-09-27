@@ -1,7 +1,14 @@
 package com.testpire.testpire.service;
 
 import com.testpire.testpire.dto.request.CreateSubjectRequestDto;
+import com.testpire.testpire.dto.request.SubjectSearchRequestDto;
 import com.testpire.testpire.dto.request.UpdateSubjectRequestDto;
+import com.testpire.testpire.repository.specification.SubjectSpecification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import com.testpire.testpire.dto.response.SubjectListResponseDto;
 import com.testpire.testpire.dto.response.SubjectResponseDto;
 import com.testpire.testpire.entity.Course;
@@ -115,40 +122,59 @@ public class SubjectService {
     }
 
     @Transactional(readOnly = true)
-    public SubjectListResponseDto getSubjectsByInstitute(Long instituteId) {
-        List<Subject> subjects = subjectRepository.findByInstituteIdAndActiveTrue(instituteId);
-        List<SubjectResponseDto> subjectDtos = subjects.stream()
+    public SubjectListResponseDto searchSubjectsWithSpecification(SubjectSearchRequestDto request) {
+        log.info("Searching subjects with specification: {}", request);
+
+        // Build specification
+        Specification<Subject> spec = buildSpecification(request);
+
+        // Create pageable
+        Pageable pageable = createPageable(request);
+
+        // Execute search
+        Page<Subject> subjectPage = subjectRepository.findAll(spec, pageable);
+
+        // Convert to DTOs
+        List<SubjectResponseDto> subjectDtos = subjectPage.getContent().stream()
                 .map(SubjectResponseDto::fromEntity)
                 .toList();
-        return SubjectListResponseDto.of(subjectDtos);
+
+        return SubjectListResponseDto.of(subjectDtos, subjectPage.getTotalElements());
     }
 
-    @Transactional(readOnly = true)
-    public SubjectListResponseDto getSubjectsByCourse(Long courseId, Long instituteId) {
-        List<Subject> subjects = subjectRepository.findByCourseIdAndInstituteIdAndActiveTrue(courseId, instituteId);
-        List<SubjectResponseDto> subjectDtos = subjects.stream()
-                .map(SubjectResponseDto::fromEntity)
-                .toList();
-        return SubjectListResponseDto.of(subjectDtos);
+    private Specification<Subject> buildSpecification(SubjectSearchRequestDto request) {
+        return Specification.where(SubjectSpecification.hasInstituteId(request.getInstituteId()))
+                .and(SubjectSpecification.hasCourseId(request.getCourseId()))
+                .and(SubjectSpecification.hasTextContaining(request.getSearchText()))
+                .and(SubjectSpecification.hasNameContaining(request.getName()))
+                .and(SubjectSpecification.hasCodeContaining(request.getCode()))
+                .and(SubjectSpecification.hasDescriptionContaining(request.getDescription()))
+                .and(SubjectSpecification.hasDurationRange(request.getMinDuration(), request.getMaxDuration()))
+                .and(SubjectSpecification.hasCreditsRange(request.getMinCredits(), request.getMaxCredits()))
+                .and(SubjectSpecification.hasPrerequisitesContaining(request.getPrerequisites()))
+                .and(SubjectSpecification.isActive(request.getActive()))
+                .and(SubjectSpecification.isNotDeleted())
+                .and(request.getHasChapters() != null && request.getHasChapters() ? 
+                     SubjectSpecification.hasChapters() : null)
+                .and(SubjectSpecification.hasMinimumChapters(request.getMinChapters()))
+                .and(SubjectSpecification.hasMaximumChapters(request.getMaxChapters()))
+                .and(SubjectSpecification.createdAfter(request.getCreatedAfter()))
+                .and(SubjectSpecification.createdBefore(request.getCreatedBefore()))
+                .and(SubjectSpecification.createdBy(request.getCreatedBy()));
     }
 
-    @Transactional(readOnly = true)
-    public SubjectListResponseDto searchSubjects(Long instituteId, String query) {
-        List<Subject> subjects = subjectRepository.findByInstituteIdAndNameContainingIgnoreCaseOrInstituteIdAndCodeContainingIgnoreCase(
-                instituteId, query, instituteId, query);
-        List<SubjectResponseDto> subjectDtos = subjects.stream()
-                .map(SubjectResponseDto::fromEntity)
-                .toList();
-        return SubjectListResponseDto.of(subjectDtos);
+    private Pageable createPageable(SubjectSearchRequestDto request) {
+        int page = request.getPage() != null ? request.getPage() : 0;
+        int size = request.getSize() != null ? request.getSize() : 20;
+        
+        String sortBy = request.getSortBy() != null ? request.getSortBy() : "createdAt";
+        String sortDirection = request.getSortDirection() != null ? request.getSortDirection() : "desc";
+        
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
+        
+        return PageRequest.of(page, size, sort);
     }
 
-    @Transactional(readOnly = true)
-    public SubjectListResponseDto getAllSubjects() {
-        List<Subject> subjects = subjectRepository.findAll();
-        List<SubjectResponseDto> subjectDtos = subjects.stream()
-                .map(SubjectResponseDto::fromEntity)
-                .toList();
-        return SubjectListResponseDto.of(subjectDtos);
-    }
 }
+
 

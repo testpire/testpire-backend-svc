@@ -2,7 +2,13 @@ package com.testpire.testpire.Controller;
 
 import com.testpire.testpire.annotation.RequireRole;
 import com.testpire.testpire.dto.request.CreateCourseRequestDto;
+import com.testpire.testpire.dto.request.CourseCriteriaDto;
+import com.testpire.testpire.dto.request.CourseSearchRequestDto;
+import com.testpire.testpire.dto.request.PaginationRequestDto;
+import com.testpire.testpire.dto.request.SortingRequestDto;
 import com.testpire.testpire.dto.request.UpdateCourseRequestDto;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import com.testpire.testpire.dto.response.ApiResponseDto;
 import com.testpire.testpire.dto.response.CourseListResponseDto;
 import com.testpire.testpire.dto.response.CourseResponseDto;
@@ -26,7 +32,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/course")
+@RequestMapping("/api/courses")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Course Management", description = "APIs for managing courses in the institute management system")
@@ -77,8 +83,21 @@ public class CourseController {
     public ResponseEntity<ApiResponseDto> createCourse(
             @Valid @RequestBody CreateCourseRequestDto request) {
         try {
-            log.info("Creating course: {} for institute: {}", request.name(), request.instituteId());
-            CourseResponseDto course = courseService.createCourse(request);
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            log.info("Creating course: {} for institute: {}", request.name(), instituteId);
+            
+            // Create a new request with instituteId from JWT
+            CreateCourseRequestDto requestWithInstituteId = new CreateCourseRequestDto(
+                    request.name(),
+                    request.description(),
+                    request.code(),
+                    instituteId,
+                    request.duration(),
+                    request.level(),
+                    request.prerequisites()
+            );
+                    
+            CourseResponseDto course = courseService.createCourse(requestWithInstituteId);
             return ResponseEntity.ok(ApiResponseDto.success("Course created successfully", course));
         } catch (Exception e) {
             log.error("Error creating course", e);
@@ -256,10 +275,9 @@ public class CourseController {
     })
     public ResponseEntity<ApiResponseDto> getCourseByCode(
             @Parameter(description = "Course code", required = true, example = "CS101")
-            @PathVariable String code, 
-            @Parameter(description = "Institute ID", required = true, example = "1")
-            @RequestParam Long instituteId) {
+            @PathVariable String code) {
         try {
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
             log.info("Getting course with code: {} for institute: {}", code, instituteId);
             CourseResponseDto course = courseService.getCourseByCode(code, instituteId);
             return ResponseEntity.ok(ApiResponseDto.success("Course retrieved successfully", course));
@@ -269,16 +287,24 @@ public class CourseController {
         }
     }
 
-    @GetMapping("/institute/{instituteId}")
+    @PostMapping("/search/advanced")
     @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
     @Operation(
-        summary = "Get courses by institute",
-        description = "Retrieves all active courses for a specific institute. All authenticated users can view courses."
+        summary = "Advanced search for courses",
+        description = "Performs advanced search for courses using multiple criteria including name, code, description, duration, level, and more. Supports pagination and sorting. All authenticated users can search courses."
     )
     @ApiResponses(value = {
         @ApiResponse(
             responseCode = "200",
             description = "Courses retrieved successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiResponseDto.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Bad request - validation failed",
             content = @Content(
                 mediaType = "application/json",
                 schema = @Schema(implementation = ApiResponseDto.class)
@@ -293,68 +319,37 @@ public class CourseController {
             )
         )
     })
-    public ResponseEntity<ApiResponseDto> getCoursesByInstitute(
-            @Parameter(description = "Institute ID", required = true, example = "1")
-            @PathVariable Long instituteId) {
+    public ResponseEntity<ApiResponseDto> searchCoursesAdvanced(@Valid @RequestBody CourseSearchRequestDto request) {
         try {
-            log.info("Getting courses for institute: {}", instituteId);
-            CourseListResponseDto courses = courseService.getCoursesByInstitute(instituteId);
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            log.info("Advanced search for courses with criteria: {}", request);
+            request.getCriteria().setInstituteId(instituteId);
+            CourseListResponseDto courses = courseService.searchCoursesWithSpecification(request);
             return ResponseEntity.ok(ApiResponseDto.success("Courses retrieved successfully", courses));
         } catch (Exception e) {
-            log.error("Error getting courses by institute", e);
-            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to get courses: " + e.getMessage()));
-        }
-    }
-
-    @GetMapping("/search")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
-    @Operation(
-        summary = "Search courses",
-        description = "Searches for courses by name or code within a specific institute. All authenticated users can search courses."
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Courses retrieved successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class)
-            )
-        ),
-        @ApiResponse(
-            responseCode = "403",
-            description = "Forbidden - insufficient permissions",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class)
-            )
-        )
-    })
-    public ResponseEntity<ApiResponseDto> searchCourses(
-            @Parameter(description = "Institute ID", required = true, example = "1")
-            @RequestParam Long instituteId, 
-            @Parameter(description = "Search query", required = true, example = "Computer Science")
-            @RequestParam String query) {
-        try {
-            log.info("Searching courses in institute: {} with query: {}", instituteId, query);
-            CourseListResponseDto courses = courseService.searchCourses(instituteId, query);
-            return ResponseEntity.ok(ApiResponseDto.success("Courses retrieved successfully", courses));
-        } catch (Exception e) {
-            log.error("Error searching courses", e);
+            log.error("Error in advanced search", e);
             return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to search courses: " + e.getMessage()));
         }
     }
 
-    @GetMapping
-    @RequireRole({UserRole.SUPER_ADMIN})
+    @GetMapping("/search/advanced")
+    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
     @Operation(
-        summary = "Get all courses",
-        description = "Retrieves all courses across all institutes. Only SUPER_ADMIN users can access this endpoint."
+        summary = "Advanced search for courses (GET)",
+        description = "Performs advanced search for courses using query parameters. Supports filtering by name, code, description, duration, level, and more. Supports pagination and sorting. All authenticated users can search courses."
     )
     @ApiResponses(value = {
         @ApiResponse(
             responseCode = "200",
             description = "Courses retrieved successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiResponseDto.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Bad request - validation failed",
             content = @Content(
                 mediaType = "application/json",
                 schema = @Schema(implementation = ApiResponseDto.class)
@@ -369,14 +364,111 @@ public class CourseController {
             )
         )
     })
-    public ResponseEntity<ApiResponseDto> getAllCourses() {
+    public ResponseEntity<ApiResponseDto> searchCoursesAdvancedGet(
+            @Parameter(description = "Search text (optional)", example = "Computer Science")
+            @RequestParam(required = false) String searchText,
+            @Parameter(description = "Name (optional)", example = "Computer Science")
+            @RequestParam(required = false) String name,
+            @Parameter(description = "Code (optional)", example = "CS101")
+            @RequestParam(required = false) String code,
+            @Parameter(description = "Description (optional)", example = "Introduction to programming")
+            @RequestParam(required = false) String description,
+            @Parameter(description = "Minimum duration (optional)", example = "30")
+            @RequestParam(required = false) Integer minDuration,
+            @Parameter(description = "Maximum duration (optional)", example = "120")
+            @RequestParam(required = false) Integer maxDuration,
+            @Parameter(description = "Level (optional)", example = "BEGINNER")
+            @RequestParam(required = false) String level,
+            @Parameter(description = "Prerequisites (optional)", example = "Basic math")
+            @RequestParam(required = false) String prerequisites,
+            @Parameter(description = "Active status (optional)", example = "true")
+            @RequestParam(required = false) Boolean active,
+            @Parameter(description = "Has subjects (optional)", example = "true")
+            @RequestParam(required = false) Boolean hasSubjects,
+            @Parameter(description = "Minimum subjects (optional)", example = "1")
+            @RequestParam(required = false) Integer minSubjects,
+            @Parameter(description = "Maximum subjects (optional)", example = "10")
+            @RequestParam(required = false) Integer maxSubjects,
+            @Parameter(description = "Created after (optional)", example = "2024-01-01")
+            @RequestParam(required = false) String createdAfter,
+            @Parameter(description = "Created before (optional)", example = "2024-12-31")
+            @RequestParam(required = false) String createdBefore,
+            @Parameter(description = "Created by (optional)", example = "admin")
+            @RequestParam(required = false) String createdBy,
+            @Parameter(description = "Page number (optional)", example = "0")
+            @RequestParam(required = false, defaultValue = "0") Integer page,
+            @Parameter(description = "Page size (optional)", example = "20")
+            @RequestParam(required = false, defaultValue = "20") Integer size,
+            @Parameter(description = "Sort by field (optional)", example = "createdAt")
+            @RequestParam(required = false, defaultValue = "createdAt") String sortBy,
+            @Parameter(description = "Sort direction (optional)", example = "desc")
+            @RequestParam(required = false, defaultValue = "desc") String sortDirection) {
         try {
-            log.info("Getting all courses");
-            CourseListResponseDto courses = courseService.getAllCourses();
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            log.info("Advanced search for courses with GET parameters");
+            
+            // Parse date strings to LocalDateTime
+            LocalDateTime parsedCreatedAfter = null;
+            LocalDateTime parsedCreatedBefore = null;
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            
+            if (createdAfter != null && !createdAfter.trim().isEmpty()) {
+                try {
+                    parsedCreatedAfter = LocalDateTime.parse(createdAfter + " 00:00:00", formatter);
+                } catch (Exception e) {
+                    log.warn("Invalid createdAfter date format: {}", createdAfter);
+                }
+            }
+            
+            if (createdBefore != null && !createdBefore.trim().isEmpty()) {
+                try {
+                    parsedCreatedBefore = LocalDateTime.parse(createdBefore + " 23:59:59", formatter);
+                } catch (Exception e) {
+                    log.warn("Invalid createdBefore date format: {}", createdBefore);
+                }
+            }
+            
+            CourseCriteriaDto criteria = CourseCriteriaDto.builder()
+                    .instituteId(instituteId)
+                    .searchText(searchText)
+                    .name(name)
+                    .code(code)
+                    .description(description)
+                    .minDuration(minDuration)
+                    .maxDuration(maxDuration)
+                    .level(level)
+                    .prerequisites(prerequisites)
+                    .active(active)
+                    .hasSubjects(hasSubjects)
+                    .minSubjects(minSubjects)
+                    .maxSubjects(maxSubjects)
+                    .createdAfter(parsedCreatedAfter)
+                    .createdBefore(parsedCreatedBefore)
+                    .createdBy(createdBy)
+                    .build();
+                    
+            PaginationRequestDto pagination = PaginationRequestDto.builder()
+                    .page(page)
+                    .size(size)
+                    .build();
+                    
+            SortingRequestDto sorting = SortingRequestDto.builder()
+                    .field(sortBy)
+                    .direction(sortDirection)
+                    .build();
+                    
+            CourseSearchRequestDto request = CourseSearchRequestDto.builder()
+                    .criteria(criteria)
+                    .pagination(pagination)
+                    .sorting(sorting)
+                    .build();
+            
+            CourseListResponseDto courses = courseService.searchCoursesWithSpecification(request);
             return ResponseEntity.ok(ApiResponseDto.success("Courses retrieved successfully", courses));
         } catch (Exception e) {
-            log.error("Error getting all courses", e);
-            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to get courses: " + e.getMessage()));
+            log.error("Error in advanced search", e);
+            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to search courses: " + e.getMessage()));
         }
     }
+
 }

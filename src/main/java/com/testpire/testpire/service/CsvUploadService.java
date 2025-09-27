@@ -111,6 +111,7 @@ public class CsvUploadService {
         String marksStr = columns.length > 4 ? columns[4].replaceAll("\"", "") : "1";
         String negativeMarksStr = columns.length > 5 ? columns[5].replaceAll("\"", "") : "0";
         String explanation = columns.length > 6 ? columns[6].replaceAll("\"", "") : "";
+        String topicId = columns.length > 7 ? columns[7].replaceAll("\"", "") : "1";
 
         // Parse difficulty level
         DifficultyLevel difficultyLevel;
@@ -140,7 +141,7 @@ public class CsvUploadService {
         List<CreateOptionRequestDto> options = new ArrayList<>();
         int optionIndex = 1;
         
-        for (int i = 7; i < columns.length; i += 3) {
+        for (int i = 8; i < columns.length; i += 3) {
             if (i + 2 < columns.length) {
                 String optionText = columns[i].replaceAll("\"", "");
                 String optionImageUrl = columns[i + 1].replaceAll("\"", "");
@@ -186,10 +187,12 @@ public class CsvUploadService {
                 .instituteId(instituteId)
                 .questionType(questionType)
                 .marks(marks)
+                .topicId(Long.valueOf(topicId))
                 .negativeMarks(negativeMarks)
                 .explanation(explanation)
                 .options(options)
                 .build();
     }
 }
+
 

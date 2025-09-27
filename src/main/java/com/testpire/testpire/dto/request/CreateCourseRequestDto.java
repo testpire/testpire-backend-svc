@@ -16,11 +16,11 @@ public record CreateCourseRequestDto(
         @Size(max = 20, message = "Course code must not exceed 20 characters")
         String code,
 
-        @NotNull(message = "Institute ID is required")
-        Long instituteId,
+        Long instituteId, // Will be extracted from JWT token
 
         String duration,
         String level,
         String prerequisites
 ) {}
+
 

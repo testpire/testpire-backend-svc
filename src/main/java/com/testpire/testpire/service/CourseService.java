@@ -1,14 +1,21 @@
 package com.testpire.testpire.service;
 
 import com.testpire.testpire.dto.request.CreateCourseRequestDto;
+import com.testpire.testpire.dto.request.CourseSearchRequestDto;
 import com.testpire.testpire.dto.request.UpdateCourseRequestDto;
 import com.testpire.testpire.dto.response.CourseListResponseDto;
 import com.testpire.testpire.dto.response.CourseResponseDto;
 import com.testpire.testpire.entity.Course;
 import com.testpire.testpire.repository.CourseRepository;
+import com.testpire.testpire.repository.specification.CourseSpecification;
 import com.testpire.testpire.util.RequestUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -101,32 +108,59 @@ public class CourseService {
         return CourseResponseDto.fromEntity(course);
     }
 
-    @Transactional(readOnly = true)
-    public CourseListResponseDto getCoursesByInstitute(Long instituteId) {
-        List<Course> courses = courseRepository.findByInstituteIdAndActiveTrue(instituteId);
-        List<CourseResponseDto> courseDtos = courses.stream()
-                .map(CourseResponseDto::fromEntity)
-                .toList();
-        return CourseListResponseDto.of(courseDtos);
-    }
 
     @Transactional(readOnly = true)
-    public CourseListResponseDto searchCourses(Long instituteId, String query) {
-        List<Course> courses = courseRepository.findByInstituteIdAndNameContainingIgnoreCaseOrInstituteIdAndCodeContainingIgnoreCase(
-                instituteId, query, instituteId, query);
-        List<CourseResponseDto> courseDtos = courses.stream()
+    public CourseListResponseDto searchCoursesWithSpecification(CourseSearchRequestDto request) {
+        log.info("Searching courses with specification: {}", request);
+
+        // Build specification
+        Specification<Course> spec = buildSpecification(request);
+
+        // Create pageable
+        Pageable pageable = createPageable(request);
+
+        // Execute search
+        Page<Course> coursePage = courseRepository.findAll(spec, pageable);
+
+        // Convert to DTOs
+        List<CourseResponseDto> courseDtos = coursePage.getContent().stream()
                 .map(CourseResponseDto::fromEntity)
                 .toList();
-        return CourseListResponseDto.of(courseDtos);
+
+        return CourseListResponseDto.of(courseDtos, coursePage.getTotalElements());
     }
 
-    @Transactional(readOnly = true)
-    public CourseListResponseDto getAllCourses() {
-        List<Course> courses = courseRepository.findAll();
-        List<CourseResponseDto> courseDtos = courses.stream()
-                .map(CourseResponseDto::fromEntity)
-                .toList();
-        return CourseListResponseDto.of(courseDtos);
+    private Specification<Course> buildSpecification(CourseSearchRequestDto request) {
+        return Specification.where(CourseSpecification.hasInstituteId(request.getInstituteId()))
+                .and(CourseSpecification.hasTextContaining(request.getSearchText()))
+                .and(CourseSpecification.hasNameContaining(request.getName()))
+                .and(CourseSpecification.hasCodeContaining(request.getCode()))
+                .and(CourseSpecification.hasDescriptionContaining(request.getDescription()))
+                .and(CourseSpecification.hasDurationRange(request.getMinDuration(), request.getMaxDuration()))
+                .and(CourseSpecification.hasLevel(request.getLevel()))
+                .and(CourseSpecification.hasPrerequisitesContaining(request.getPrerequisites()))
+                .and(CourseSpecification.isActive(request.getActive()))
+                .and(CourseSpecification.isNotDeleted())
+                .and(request.getHasSubjects() != null && request.getHasSubjects() ? 
+                     CourseSpecification.hasSubjects() : null)
+                .and(CourseSpecification.hasMinimumSubjects(request.getMinSubjects()))
+                .and(CourseSpecification.hasMaximumSubjects(request.getMaxSubjects()))
+                .and(CourseSpecification.createdAfter(request.getCreatedAfter()))
+                .and(CourseSpecification.createdBefore(request.getCreatedBefore()))
+                .and(CourseSpecification.createdBy(request.getCreatedBy()));
+    }
+
+    private Pageable createPageable(CourseSearchRequestDto request) {
+        int page = request.getPage() != null ? request.getPage() : 0;
+        int size = request.getSize() != null ? request.getSize() : 20;
+        
+        String sortBy = request.getSortBy() != null ? request.getSortBy() : "createdAt";
+        String sortDirection = request.getSortDirection() != null ? request.getSortDirection() : "desc";
+        
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
+        
+        return PageRequest.of(page, size, sort);
     }
 }
+
 

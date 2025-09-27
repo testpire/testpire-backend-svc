@@ -6,6 +6,10 @@ import com.testpire.testpire.dto.RegisterRequest;
 import com.testpire.testpire.dto.request.CreateInstituteRequestDto;
 import com.testpire.testpire.dto.request.UpdateInstituteRequestDto;
 import com.testpire.testpire.dto.request.CreateUserRequestDto;
+import com.testpire.testpire.dto.request.InstituteSearchRequestDto;
+import com.testpire.testpire.dto.request.InstituteCriteriaDto;
+import com.testpire.testpire.dto.request.PaginationRequestDto;
+import com.testpire.testpire.dto.request.SortingRequestDto;
 import com.testpire.testpire.dto.response.InstituteResponseDto;
 import com.testpire.testpire.dto.response.InstituteListResponseDto;
 import com.testpire.testpire.dto.response.UserListResponseDto;
@@ -18,6 +22,7 @@ import com.testpire.testpire.service.InstituteService;
 import com.testpire.testpire.service.UserService;
 import com.testpire.testpire.util.RequestUtils;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,11 +34,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/institute")
+@RequestMapping("/api/institutes")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Institute Management", description = "Institute and user management operations")
@@ -218,6 +225,134 @@ public class InstituteController {
             log.error("Error searching institutes", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(InstituteListResponseDto.error("Failed to search institutes: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/search/advanced")
+    @RequireRole(UserRole.INST_ADMIN)
+    @Operation(summary = "Advanced search institutes", description = "Search institutes with advanced criteria, pagination, and sorting (SUPER_ADMIN only)")
+    public ResponseEntity<ApiResponseDto> searchInstitutesAdvanced(@Valid @RequestBody InstituteSearchRequestDto request) {
+        try {
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            log.info("Advanced search for institutes with instId: {}, criteria: {}", instituteId, request);
+            request.getCriteria().setInstituteId(instituteId);
+            InstituteListResponseDto institutes = instituteService.searchInstitutesWithSpecification(request);
+            return ResponseEntity.ok(ApiResponseDto.success("Institutes retrieved successfully", institutes));
+        } catch (Exception e) {
+            log.error("Error in advanced search", e);
+            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to search institutes: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/search/advanced")
+    @RequireRole(UserRole.INST_ADMIN)
+    @Operation(summary = "Advanced search institutes (GET)", description = "Search institutes with advanced criteria via GET parameters (SUPER_ADMIN only)")
+    public ResponseEntity<ApiResponseDto> searchInstitutesAdvancedGet(
+            @Parameter(description = "Search text for name, code, address, city, state, country, email, website, or description")
+            @RequestParam(required = false) String searchText,
+            @Parameter(description = "Institute name")
+            @RequestParam(required = false) String name,
+            @Parameter(description = "Institute code")
+            @RequestParam(required = false) String code,
+            @Parameter(description = "Address")
+            @RequestParam(required = false) String address,
+            @Parameter(description = "City")
+            @RequestParam(required = false) String city,
+            @Parameter(description = "State")
+            @RequestParam(required = false) String state,
+            @Parameter(description = "Country")
+            @RequestParam(required = false) String country,
+            @Parameter(description = "Postal code")
+            @RequestParam(required = false) String postalCode,
+            @Parameter(description = "Phone number")
+            @RequestParam(required = false) String phone,
+            @Parameter(description = "Email address")
+            @RequestParam(required = false) String email,
+            @Parameter(description = "Website URL")
+            @RequestParam(required = false) String website,
+            @Parameter(description = "Description")
+            @RequestParam(required = false) String description,
+            @Parameter(description = "Active status")
+            @RequestParam(required = false) Boolean active,
+            @Parameter(description = "Created after date (yyyy-MM-dd HH:mm:ss)")
+            @RequestParam(required = false) String createdAfter,
+            @Parameter(description = "Created before date (yyyy-MM-dd HH:mm:ss)")
+            @RequestParam(required = false) String createdBefore,
+            @Parameter(description = "Created by username")
+            @RequestParam(required = false) String createdBy,
+            @Parameter(description = "Updated by username")
+            @RequestParam(required = false) String updatedBy,
+            @Parameter(description = "Page number (0-based)")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size")
+            @RequestParam(defaultValue = "20") int size,
+            @Parameter(description = "Sort field")
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @Parameter(description = "Sort direction (asc/desc)")
+            @RequestParam(defaultValue = "desc") String sortDirection) {
+        try {
+            log.info("Advanced search for institutes with GET parameters");
+            
+            // Parse date parameters
+            LocalDateTime parsedCreatedAfter = null;
+            if (createdAfter != null && !createdAfter.isEmpty()) {
+                try {
+                    parsedCreatedAfter = LocalDateTime.parse(createdAfter, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                } catch (Exception e) {
+                    log.warn("Invalid createdAfter date format: {}", createdAfter);
+                }
+            }
+            
+            LocalDateTime parsedCreatedBefore = null;
+            if (createdBefore != null && !createdBefore.isEmpty()) {
+                try {
+                    parsedCreatedBefore = LocalDateTime.parse(createdBefore, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                } catch (Exception e) {
+                    log.warn("Invalid createdBefore date format: {}", createdBefore);
+                }
+            }
+            
+            InstituteCriteriaDto criteria = InstituteCriteriaDto.builder()
+                    .searchText(searchText)
+                    .name(name)
+                    .code(code)
+                    .address(address)
+                    .city(city)
+                    .state(state)
+                    .country(country)
+                    .postalCode(postalCode)
+                    .phone(phone)
+                    .email(email)
+                    .website(website)
+                    .description(description)
+                    .active(active)
+                    .createdAfter(parsedCreatedAfter)
+                    .createdBefore(parsedCreatedBefore)
+                    .createdBy(createdBy)
+                    .updatedBy(updatedBy)
+                    .build();
+            
+            PaginationRequestDto pagination = PaginationRequestDto.builder()
+                    .page(page)
+                    .size(size)
+                    .build();
+            
+            SortingRequestDto sorting = SortingRequestDto.builder()
+                    .field(sortBy)
+                    .direction(sortDirection)
+                    .build();
+            
+            InstituteSearchRequestDto request = InstituteSearchRequestDto.builder()
+                    .criteria(criteria)
+                    .pagination(pagination)
+                    .sorting(sorting)
+                    .build();
+            
+            InstituteListResponseDto institutes = instituteService.searchInstitutesWithSpecification(request);
+            return ResponseEntity.ok(ApiResponseDto.success("Institutes retrieved successfully", institutes));
+        } catch (Exception e) {
+            log.error("Error in advanced search", e);
+            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to search institutes: " + e.getMessage()));
         }
     }
 

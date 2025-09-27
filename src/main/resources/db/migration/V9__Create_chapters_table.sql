@@ -40,3 +40,4 @@ COMMENT ON COLUMN chapters.duration IS 'Chapter duration';
 COMMENT ON COLUMN chapters.objectives IS 'Chapter learning objectives';
 COMMENT ON COLUMN chapters.active IS 'Whether the chapter is active';
 
+

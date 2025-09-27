@@ -1,6 +1,7 @@
 package com.testpire.testpire.service;
 
 import com.testpire.testpire.dto.request.CreateQuestionRequestDto;
+import com.testpire.testpire.dto.request.QuestionSearchRequestDto;
 import com.testpire.testpire.dto.request.UpdateQuestionRequestDto;
 import com.testpire.testpire.dto.response.QuestionListResponseDto;
 import com.testpire.testpire.dto.response.QuestionResponseDto;
@@ -11,9 +12,15 @@ import com.testpire.testpire.enums.DifficultyLevel;
 import com.testpire.testpire.repository.OptionRepository;
 import com.testpire.testpire.repository.QuestionRepository;
 import com.testpire.testpire.repository.TopicRepository;
+import com.testpire.testpire.repository.specification.QuestionSpecification;
 import com.testpire.testpire.util.JwksJwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,7 +42,7 @@ public class QuestionService {
         log.info("Creating question for topic: {} in institute: {}", request.topicId(), request.instituteId());
 
         // Validate topic exists and user has access
-        Topic topic = topicRepository.findById(1L)
+        Topic topic = topicRepository.findById(request.topicId())
                 .orElseThrow(() -> new IllegalArgumentException("Topic not found with ID: " + request.topicId()));
 
         if (!topic.getInstituteId().equals(request.instituteId())) {
@@ -250,65 +257,68 @@ public class QuestionService {
                 .build();
     }
 
-    public QuestionListResponseDto getQuestionsByDifficulty(Long topicId, Long instituteId, DifficultyLevel difficultyLevel) {
-        log.info("Getting questions for topic: {} in institute: {} with difficulty: {}", topicId, instituteId, difficultyLevel);
 
-        List<Question> questions = questionRepository.findByTopicIdAndInstituteIdAndDifficultyLevelAndActiveTrueAndDeletedFalse(
-                topicId, instituteId, difficultyLevel);
-        
-        List<QuestionResponseDto> questionDtos = questions.stream()
+    @Transactional(readOnly = true)
+    public QuestionListResponseDto searchQuestionsWithSpecification(QuestionSearchRequestDto request) {
+        log.info("Searching questions with specification: {}", request);
+
+        // Build specification
+        Specification<Question> spec = buildSpecification(request);
+
+        // Create pageable
+        Pageable pageable = createPageable(request);
+
+        // Execute search
+        Page<Question> questionPage = questionRepository.findAll(spec, pageable);
+
+        // Convert to DTOs
+        List<QuestionResponseDto> questionDtos = questionPage.getContent().stream()
                 .map(this::convertToResponseDto)
                 .collect(Collectors.toList());
 
         return QuestionListResponseDto.builder()
                 .questions(questionDtos)
-                .totalCount((long) questionDtos.size())
+                .totalCount(questionPage.getTotalElements())
                 .build();
     }
 
-    public QuestionListResponseDto searchQuestions(Long instituteId, String query) {
-        log.info("Searching questions in institute: {} with query: {}", instituteId, query);
-
-        List<Question> questions = questionRepository.searchQuestions(instituteId, query);
-        
-        List<QuestionResponseDto> questionDtos = questions.stream()
-                .map(this::convertToResponseDto)
-                .collect(Collectors.toList());
-
-        return QuestionListResponseDto.builder()
-                .questions(questionDtos)
-                .totalCount((long) questionDtos.size())
-                .build();
+    private Specification<Question> buildSpecification(QuestionSearchRequestDto request) {
+        return Specification.where(QuestionSpecification.hasInstituteId(request.getInstituteId()))
+                .and(QuestionSpecification.hasCourseId(request.getCourseId()))
+                .and(QuestionSpecification.hasSubjectId(request.getSubjectId()))
+                .and(QuestionSpecification.hasChapterId(request.getChapterId()))
+                .and(QuestionSpecification.hasTopicId(request.getTopicId()))
+                .and(QuestionSpecification.hasTextContaining(request.getSearchText()))
+                .and(QuestionSpecification.hasDifficultyLevel(request.getDifficultyLevel()))
+                .and(QuestionSpecification.hasQuestionType(request.getQuestionType()))
+                .and(QuestionSpecification.hasMarksRange(request.getMinMarks(), request.getMaxMarks()))
+                .and(QuestionSpecification.hasNegativeMarksRange(request.getMinNegativeMarks(), request.getMaxNegativeMarks()))
+                .and(QuestionSpecification.isActive(request.getActive()))
+                .and(QuestionSpecification.isNotDeleted())
+                .and(request.getHasQuestionImage() != null && request.getHasQuestionImage() ? 
+                     QuestionSpecification.hasQuestionImage() : null)
+                .and(request.getHasExplanation() != null && request.getHasExplanation() ? 
+                     QuestionSpecification.hasExplanation() : null)
+                .and(request.getHasCorrectOption() != null && request.getHasCorrectOption() ? 
+                     QuestionSpecification.hasCorrectOption() : null)
+                .and(request.getHasOptions() != null && request.getHasOptions() ? 
+                     QuestionSpecification.hasOptions() : null)
+                .and(QuestionSpecification.hasMinimumOptions(request.getMinOptions()))
+                .and(QuestionSpecification.hasMaximumOptions(request.getMaxOptions()))
+                .and(QuestionSpecification.createdAfter(request.getCreatedAfter()))
+                .and(QuestionSpecification.createdBefore(request.getCreatedBefore()))
+                .and(QuestionSpecification.createdBy(request.getCreatedBy()));
     }
 
-    public QuestionListResponseDto searchQuestionsByTopic(Long topicId, Long instituteId, String query) {
-        log.info("Searching questions for topic: {} in institute: {} with query: {}", topicId, instituteId, query);
-
-        List<Question> questions = questionRepository.searchQuestionsByTopic(topicId, instituteId, query);
+    private Pageable createPageable(QuestionSearchRequestDto request) {
+        int page = request.getPage() != null ? request.getPage() : 0;
+        int size = request.getSize() != null ? request.getSize() : 20;
         
-        List<QuestionResponseDto> questionDtos = questions.stream()
-                .map(this::convertToResponseDto)
-                .collect(Collectors.toList());
-
-        return QuestionListResponseDto.builder()
-                .questions(questionDtos)
-                .totalCount((long) questionDtos.size())
-                .build();
-    }
-
-    public QuestionListResponseDto getAllQuestions() {
-        log.info("Getting all questions");
-
-        List<Question> questions = questionRepository.findAll();
+        String sortBy = request.getSortBy() != null ? request.getSortBy() : "createdAt";
+        String sortDirection = request.getSortDirection() != null ? request.getSortDirection() : "desc";
         
-        List<QuestionResponseDto> questionDtos = questions.stream()
-                .filter(q -> q.isActive() && !q.isDeleted())
-                .map(this::convertToResponseDto)
-                .collect(Collectors.toList());
-
-        return QuestionListResponseDto.builder()
-                .questions(questionDtos)
-                .totalCount((long) questionDtos.size())
-                .build();
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
+        
+        return PageRequest.of(page, size, sort);
     }
 }

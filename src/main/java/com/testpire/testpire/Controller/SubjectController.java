@@ -2,7 +2,13 @@ package com.testpire.testpire.Controller;
 
 import com.testpire.testpire.annotation.RequireRole;
 import com.testpire.testpire.dto.request.CreateSubjectRequestDto;
+import com.testpire.testpire.dto.request.SubjectCriteriaDto;
+import com.testpire.testpire.dto.request.SubjectSearchRequestDto;
+import com.testpire.testpire.dto.request.PaginationRequestDto;
+import com.testpire.testpire.dto.request.SortingRequestDto;
 import com.testpire.testpire.dto.request.UpdateSubjectRequestDto;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import com.testpire.testpire.dto.response.ApiResponseDto;
 import com.testpire.testpire.dto.response.SubjectListResponseDto;
 import com.testpire.testpire.dto.response.SubjectResponseDto;
@@ -26,7 +32,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/subject")
+@RequestMapping("/api/subjects")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Subject Management", description = "APIs for managing subjects within courses")
@@ -76,9 +82,23 @@ public class SubjectController {
     })
     public ResponseEntity<ApiResponseDto> createSubject(@Valid @RequestBody CreateSubjectRequestDto request) {
         try {
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
             log.info("Creating subject: {} for course: {} in institute: {}", 
-                    request.name(), request.courseId(), request.instituteId());
-            SubjectResponseDto subject = subjectService.createSubject(request);
+                    request.name(), request.courseId(), instituteId);
+            
+            // Create a new request with instituteId from JWT
+            CreateSubjectRequestDto requestWithInstituteId = new CreateSubjectRequestDto(
+                    request.name(),
+                    request.description(),
+                    request.code(),
+                    request.courseId(),
+                    instituteId,
+                    request.duration(),
+                    request.credits(),
+                    request.prerequisites()
+            );
+            
+            SubjectResponseDto subject = subjectService.createSubject(requestWithInstituteId);
             return ResponseEntity.ok(ApiResponseDto.success("Subject created successfully", subject));
         } catch (Exception e) {
             log.error("Error creating subject", e);
@@ -256,10 +276,9 @@ public class SubjectController {
     })
     public ResponseEntity<ApiResponseDto> getSubjectByCode(
             @Parameter(description = "Subject code", required = true, example = "DS101")
-            @PathVariable String code, 
-            @Parameter(description = "Institute ID", required = true, example = "1")
-            @RequestParam Long instituteId) {
+            @PathVariable String code) {
         try {
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
             log.info("Getting subject with code: {} for institute: {}", code, instituteId);
             SubjectResponseDto subject = subjectService.getSubjectByCode(code, instituteId);
             return ResponseEntity.ok(ApiResponseDto.success("Subject retrieved successfully", subject));
@@ -269,16 +288,24 @@ public class SubjectController {
         }
     }
 
-    @GetMapping("/institute/{instituteId}")
+    @PostMapping("/search/advanced")
     @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
     @Operation(
-        summary = "Get subjects by institute",
-        description = "Retrieves all active subjects for a specific institute. All authenticated users can view subjects."
+        summary = "Advanced search for subjects",
+        description = "Performs advanced search for subjects using multiple criteria including name, code, description, duration, credits, and more. Supports pagination and sorting. All authenticated users can search subjects."
     )
     @ApiResponses(value = {
         @ApiResponse(
             responseCode = "200",
             description = "Subjects retrieved successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiResponseDto.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Bad request - validation failed",
             content = @Content(
                 mediaType = "application/json",
                 schema = @Schema(implementation = ApiResponseDto.class)
@@ -293,107 +320,65 @@ public class SubjectController {
             )
         )
     })
-    public ResponseEntity<ApiResponseDto> getSubjectsByInstitute(
-            @Parameter(description = "Institute ID", required = true, example = "1")
-            @PathVariable Long instituteId) {
+    public ResponseEntity<ApiResponseDto> searchSubjectsAdvanced(@Valid @RequestBody SubjectSearchRequestDto request) {
         try {
-            log.info("Getting subjects for institute: {}", instituteId);
-            SubjectListResponseDto subjects = subjectService.getSubjectsByInstitute(instituteId);
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            log.info("Advanced search for subjects with criteria: {}", request);
+            
+            // Set instituteId from JWT token
+            SubjectCriteriaDto criteria = SubjectCriteriaDto.builder()
+                    .instituteId(instituteId)
+                    .courseId(request.getCourseId())
+                    .searchText(request.getSearchText())
+                    .name(request.getName())
+                    .code(request.getCode())
+                    .description(request.getDescription())
+                    .minDuration(request.getMinDuration())
+                    .maxDuration(request.getMaxDuration())
+                    .minCredits(request.getMinCredits())
+                    .maxCredits(request.getMaxCredits())
+                    .prerequisites(request.getPrerequisites())
+                    .active(request.getActive())
+                    .hasChapters(request.getHasChapters())
+                    .minChapters(request.getMinChapters())
+                    .maxChapters(request.getMaxChapters())
+                    .createdAfter(request.getCreatedAfter())
+                    .createdBefore(request.getCreatedBefore())
+                    .createdBy(request.getCreatedBy())
+                    .build();
+                    
+            SubjectSearchRequestDto requestWithInstituteId = SubjectSearchRequestDto.builder()
+                    .criteria(criteria)
+                    .pagination(request.getPagination())
+                    .sorting(request.getSorting())
+                    .build();
+                    
+            SubjectListResponseDto subjects = subjectService.searchSubjectsWithSpecification(requestWithInstituteId);
             return ResponseEntity.ok(ApiResponseDto.success("Subjects retrieved successfully", subjects));
         } catch (Exception e) {
-            log.error("Error getting subjects by institute", e);
-            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to get subjects: " + e.getMessage()));
-        }
-    }
-
-    @GetMapping("/course/{courseId}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
-    @Operation(
-        summary = "Get subjects by course",
-        description = "Retrieves all active subjects for a specific course within an institute. All authenticated users can view subjects."
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Subjects retrieved successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class)
-            )
-        ),
-        @ApiResponse(
-            responseCode = "403",
-            description = "Forbidden - insufficient permissions",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class)
-            )
-        )
-    })
-    public ResponseEntity<ApiResponseDto> getSubjectsByCourse(
-            @Parameter(description = "Course ID", required = true, example = "1")
-            @PathVariable Long courseId, 
-            @Parameter(description = "Institute ID", required = true, example = "1")
-            @RequestParam Long instituteId) {
-        try {
-            log.info("Getting subjects for course: {} in institute: {}", courseId, instituteId);
-            SubjectListResponseDto subjects = subjectService.getSubjectsByCourse(courseId, instituteId);
-            return ResponseEntity.ok(ApiResponseDto.success("Subjects retrieved successfully", subjects));
-        } catch (Exception e) {
-            log.error("Error getting subjects by course", e);
-            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to get subjects: " + e.getMessage()));
-        }
-    }
-
-    @GetMapping("/search")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
-    @Operation(
-        summary = "Search subjects",
-        description = "Searches for subjects by name or code within a specific institute. All authenticated users can search subjects."
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Subjects retrieved successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class)
-            )
-        ),
-        @ApiResponse(
-            responseCode = "403",
-            description = "Forbidden - insufficient permissions",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class)
-            )
-        )
-    })
-    public ResponseEntity<ApiResponseDto> searchSubjects(
-            @Parameter(description = "Institute ID", required = true, example = "1")
-            @RequestParam Long instituteId, 
-            @Parameter(description = "Search query", required = true, example = "Data Structures")
-            @RequestParam String query) {
-        try {
-            log.info("Searching subjects in institute: {} with query: {}", instituteId, query);
-            SubjectListResponseDto subjects = subjectService.searchSubjects(instituteId, query);
-            return ResponseEntity.ok(ApiResponseDto.success("Subjects retrieved successfully", subjects));
-        } catch (Exception e) {
-            log.error("Error searching subjects", e);
+            log.error("Error in advanced search", e);
             return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to search subjects: " + e.getMessage()));
         }
     }
 
-    @GetMapping
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @GetMapping("/search/advanced")
+    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
     @Operation(
-        summary = "Get all subjects",
-        description = "Retrieves all subjects across all institutes. Only SUPER_ADMIN users can access this endpoint."
+        summary = "Advanced search for subjects (GET)",
+        description = "Performs advanced search for subjects using query parameters. Supports filtering by name, code, description, duration, credits, and more. Supports pagination and sorting. All authenticated users can search subjects."
     )
     @ApiResponses(value = {
         @ApiResponse(
             responseCode = "200",
             description = "Subjects retrieved successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiResponseDto.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Bad request - validation failed",
             content = @Content(
                 mediaType = "application/json",
                 schema = @Schema(implementation = ApiResponseDto.class)
@@ -408,15 +393,120 @@ public class SubjectController {
             )
         )
     })
-    public ResponseEntity<ApiResponseDto> getAllSubjects() {
+    public ResponseEntity<ApiResponseDto> searchSubjectsAdvancedGet(
+            @Parameter(description = "Course ID (optional)", example = "1")
+            @RequestParam(required = false) Long courseId,
+            @Parameter(description = "Search text (optional)", example = "Data Structures")
+            @RequestParam(required = false) String searchText,
+            @Parameter(description = "Name (optional)", example = "Data Structures")
+            @RequestParam(required = false) String name,
+            @Parameter(description = "Code (optional)", example = "DS101")
+            @RequestParam(required = false) String code,
+            @Parameter(description = "Description (optional)", example = "Introduction to data structures")
+            @RequestParam(required = false) String description,
+            @Parameter(description = "Minimum duration (optional)", example = "30")
+            @RequestParam(required = false) Integer minDuration,
+            @Parameter(description = "Maximum duration (optional)", example = "120")
+            @RequestParam(required = false) Integer maxDuration,
+            @Parameter(description = "Minimum credits (optional)", example = "3")
+            @RequestParam(required = false) Integer minCredits,
+            @Parameter(description = "Maximum credits (optional)", example = "6")
+            @RequestParam(required = false) Integer maxCredits,
+            @Parameter(description = "Prerequisites (optional)", example = "Basic programming")
+            @RequestParam(required = false) String prerequisites,
+            @Parameter(description = "Active status (optional)", example = "true")
+            @RequestParam(required = false) Boolean active,
+            @Parameter(description = "Has chapters (optional)", example = "true")
+            @RequestParam(required = false) Boolean hasChapters,
+            @Parameter(description = "Minimum chapters (optional)", example = "1")
+            @RequestParam(required = false) Integer minChapters,
+            @Parameter(description = "Maximum chapters (optional)", example = "10")
+            @RequestParam(required = false) Integer maxChapters,
+            @Parameter(description = "Created after (optional)", example = "2024-01-01")
+            @RequestParam(required = false) String createdAfter,
+            @Parameter(description = "Created before (optional)", example = "2024-12-31")
+            @RequestParam(required = false) String createdBefore,
+            @Parameter(description = "Created by (optional)", example = "admin")
+            @RequestParam(required = false) String createdBy,
+            @Parameter(description = "Page number (optional)", example = "0")
+            @RequestParam(required = false, defaultValue = "0") Integer page,
+            @Parameter(description = "Page size (optional)", example = "20")
+            @RequestParam(required = false, defaultValue = "20") Integer size,
+            @Parameter(description = "Sort by field (optional)", example = "createdAt")
+            @RequestParam(required = false, defaultValue = "createdAt") String sortBy,
+            @Parameter(description = "Sort direction (optional)", example = "desc")
+            @RequestParam(required = false, defaultValue = "desc") String sortDirection) {
         try {
-            log.info("Getting all subjects");
-            SubjectListResponseDto subjects = subjectService.getAllSubjects();
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            log.info("Advanced search for subjects with GET parameters");
+            
+            // Parse date strings to LocalDateTime
+            LocalDateTime parsedCreatedAfter = null;
+            LocalDateTime parsedCreatedBefore = null;
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            
+            if (createdAfter != null && !createdAfter.trim().isEmpty()) {
+                try {
+                    parsedCreatedAfter = LocalDateTime.parse(createdAfter + " 00:00:00", formatter);
+                } catch (Exception e) {
+                    log.warn("Invalid createdAfter date format: {}", createdAfter);
+                }
+            }
+            
+            if (createdBefore != null && !createdBefore.trim().isEmpty()) {
+                try {
+                    parsedCreatedBefore = LocalDateTime.parse(createdBefore + " 23:59:59", formatter);
+                } catch (Exception e) {
+                    log.warn("Invalid createdBefore date format: {}", createdBefore);
+                }
+            }
+            
+            SubjectCriteriaDto criteria = SubjectCriteriaDto.builder()
+                    .instituteId(instituteId)
+                    .courseId(courseId)
+                    .searchText(searchText)
+                    .name(name)
+                    .code(code)
+                    .description(description)
+                    .minDuration(minDuration)
+                    .maxDuration(maxDuration)
+                    .minCredits(minCredits)
+                    .maxCredits(maxCredits)
+                    .prerequisites(prerequisites)
+                    .active(active)
+                    .hasChapters(hasChapters)
+                    .minChapters(minChapters)
+                    .maxChapters(maxChapters)
+                    .createdAfter(parsedCreatedAfter)
+                    .createdBefore(parsedCreatedBefore)
+                    .createdBy(createdBy)
+                    .build();
+                    
+            PaginationRequestDto pagination = PaginationRequestDto.builder()
+                    .page(page)
+                    .size(size)
+                    .build();
+                    
+            SortingRequestDto sorting = SortingRequestDto.builder()
+                    .field(sortBy)
+                    .direction(sortDirection)
+                    .build();
+                    
+            SubjectSearchRequestDto request = SubjectSearchRequestDto.builder()
+                    .criteria(criteria)
+                    .pagination(pagination)
+                    .sorting(sorting)
+                    .build();
+            
+            SubjectListResponseDto subjects = subjectService.searchSubjectsWithSpecification(request);
             return ResponseEntity.ok(ApiResponseDto.success("Subjects retrieved successfully", subjects));
         } catch (Exception e) {
-            log.error("Error getting all subjects", e);
-            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to get subjects: " + e.getMessage()));
+            log.error("Error in advanced search", e);
+            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to search subjects: " + e.getMessage()));
         }
     }
+
 }
+
+
 

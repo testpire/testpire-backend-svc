@@ -3,6 +3,7 @@ package com.testpire.testpire.repository;
 import com.testpire.testpire.entity.StudentDetails;
 import com.testpire.testpire.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface StudentDetailsRepository extends JpaRepository<StudentDetails, Long> {
+public interface StudentDetailsRepository extends JpaRepository<StudentDetails, Long>, JpaSpecificationExecutor<StudentDetails> {
     
     Optional<StudentDetails> findByUser(User user);
     

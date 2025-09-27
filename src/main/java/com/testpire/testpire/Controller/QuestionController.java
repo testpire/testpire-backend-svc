@@ -3,6 +3,10 @@ package com.testpire.testpire.Controller;
 import com.testpire.testpire.annotation.RequireRole;
 import com.testpire.testpire.dto.request.BulkUploadQuestionsRequestDto;
 import com.testpire.testpire.dto.request.CreateQuestionRequestDto;
+import com.testpire.testpire.dto.request.QuestionCriteriaDto;
+import com.testpire.testpire.dto.request.QuestionSearchRequestDto;
+import com.testpire.testpire.dto.request.PaginationRequestDto;
+import com.testpire.testpire.dto.request.SortingRequestDto;
 import com.testpire.testpire.dto.request.UpdateQuestionRequestDto;
 import com.testpire.testpire.dto.response.ApiResponseDto;
 import com.testpire.testpire.dto.response.BulkUploadResponseDto;
@@ -13,6 +17,7 @@ import com.testpire.testpire.enums.UserRole;
 import com.testpire.testpire.service.CsvUploadService;
 import com.testpire.testpire.service.QuestionService;
 import com.testpire.testpire.util.JwksJwtUtil;
+import com.testpire.testpire.util.RequestUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -81,8 +86,24 @@ public class QuestionController {
     })
     public ResponseEntity<ApiResponseDto> createQuestion(@Valid @RequestBody CreateQuestionRequestDto request) {
         try {
-            log.info("Creating question for topic: {} in institute: {}", request.topicId(), request.instituteId());
-            QuestionResponseDto question = questionService.createQuestion(request);
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            log.info("Creating question for topic: {} in institute: {}", request.topicId(), instituteId);
+            
+            // Create a new request with instituteId from JWT
+            CreateQuestionRequestDto requestWithInstituteId = CreateQuestionRequestDto.builder()
+                    .text(request.text())
+                    .difficultyLevel(request.difficultyLevel())
+                    .questionType(request.questionType())
+                    .marks(request.marks())
+                    .negativeMarks(request.negativeMarks())
+                    .explanation(request.explanation())
+                    .questionImagePath(request.questionImagePath())
+                    .topicId(request.topicId())
+                    .instituteId(instituteId)
+                    .options(request.options())
+                    .build();
+            
+            QuestionResponseDto question = questionService.createQuestion(requestWithInstituteId);
             return ResponseEntity.ok(ApiResponseDto.success("Question created successfully", question));
         } catch (Exception e) {
             log.error("Error creating question", e);
@@ -252,10 +273,9 @@ public class QuestionController {
     })
     public ResponseEntity<ApiResponseDto> getQuestionsByTopic(
             @Parameter(description = "Topic ID", required = true, example = "1")
-            @PathVariable Long topicId,
-            @Parameter(description = "Institute ID", required = true, example = "1")
-            @RequestParam Long instituteId) {
+            @PathVariable Long topicId) {
         try {
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
             log.info("Getting questions for topic: {} in institute: {}", topicId, instituteId);
             QuestionListResponseDto questions = questionService.getQuestionsByTopic(topicId, instituteId);
             return ResponseEntity.ok(ApiResponseDto.success("Questions retrieved successfully", questions));
@@ -289,10 +309,9 @@ public class QuestionController {
             )
         )
     })
-    public ResponseEntity<ApiResponseDto> getQuestionsByInstitute(
-            @Parameter(description = "Institute ID", required = true, example = "1")
-            @PathVariable Long instituteId) {
+    public ResponseEntity<ApiResponseDto> getQuestionsByInstitute() {
         try {
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
             log.info("Getting questions for institute: {}", instituteId);
             QuestionListResponseDto questions = questionService.getQuestionsByInstitute(instituteId);
             return ResponseEntity.ok(ApiResponseDto.success("Questions retrieved successfully", questions));
@@ -302,126 +321,6 @@ public class QuestionController {
         }
     }
 
-    @GetMapping("/difficulty/{difficultyLevel}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
-    @Operation(
-        summary = "Get questions by difficulty level",
-        description = "Retrieves all active questions for a specific topic and difficulty level within an institute. All authenticated users can view questions."
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Questions retrieved successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class)
-            )
-        ),
-        @ApiResponse(
-            responseCode = "403",
-            description = "Forbidden - insufficient permissions",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class)
-            )
-        )
-    })
-    public ResponseEntity<ApiResponseDto> getQuestionsByDifficulty(
-            @Parameter(description = "Difficulty Level", required = true, example = "EASY")
-            @PathVariable DifficultyLevel difficultyLevel,
-            @Parameter(description = "Topic ID", required = true, example = "1")
-            @RequestParam Long topicId,
-            @Parameter(description = "Institute ID", required = true, example = "1")
-            @RequestParam Long instituteId) {
-        try {
-            log.info("Getting questions for topic: {} in institute: {} with difficulty: {}", topicId, instituteId, difficultyLevel);
-            QuestionListResponseDto questions = questionService.getQuestionsByDifficulty(topicId, instituteId, difficultyLevel);
-            return ResponseEntity.ok(ApiResponseDto.success("Questions retrieved successfully", questions));
-        } catch (Exception e) {
-            log.error("Error getting questions by difficulty", e);
-            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to get questions: " + e.getMessage()));
-        }
-    }
-
-    @GetMapping("/search")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
-    @Operation(
-        summary = "Search questions",
-        description = "Searches for questions by text or question type within a specific institute. All authenticated users can search questions."
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Questions retrieved successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class)
-            )
-        ),
-        @ApiResponse(
-            responseCode = "403",
-            description = "Forbidden - insufficient permissions",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class)
-            )
-        )
-    })
-    public ResponseEntity<ApiResponseDto> searchQuestions(
-            @Parameter(description = "Institute ID", required = true, example = "1")
-            @RequestParam Long instituteId, 
-            @Parameter(description = "Search query", required = true, example = "What is")
-            @RequestParam String query) {
-        try {
-            log.info("Searching questions in institute: {} with query: {}", instituteId, query);
-            QuestionListResponseDto questions = questionService.searchQuestions(instituteId, query);
-            return ResponseEntity.ok(ApiResponseDto.success("Questions retrieved successfully", questions));
-        } catch (Exception e) {
-            log.error("Error searching questions", e);
-            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to search questions: " + e.getMessage()));
-        }
-    }
-
-    @GetMapping("/search/topic/{topicId}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
-    @Operation(
-        summary = "Search questions by topic",
-        description = "Searches for questions by text or question type within a specific topic and institute. All authenticated users can search questions."
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Questions retrieved successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class)
-            )
-        ),
-        @ApiResponse(
-            responseCode = "403",
-            description = "Forbidden - insufficient permissions",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class)
-            )
-        )
-    })
-    public ResponseEntity<ApiResponseDto> searchQuestionsByTopic(
-            @Parameter(description = "Topic ID", required = true, example = "1")
-            @PathVariable Long topicId,
-            @Parameter(description = "Institute ID", required = true, example = "1")
-            @RequestParam Long instituteId, 
-            @Parameter(description = "Search query", required = true, example = "What is")
-            @RequestParam String query) {
-        try {
-            log.info("Searching questions for topic: {} in institute: {} with query: {}", topicId, instituteId, query);
-            QuestionListResponseDto questions = questionService.searchQuestionsByTopic(topicId, instituteId, query);
-            return ResponseEntity.ok(ApiResponseDto.success("Questions retrieved successfully", questions));
-        } catch (Exception e) {
-            log.error("Error searching questions by topic", e);
-            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to search questions: " + e.getMessage()));
-        }
-    }
 
     @PostMapping("/bulk-upload")
     @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
@@ -460,11 +359,10 @@ public class QuestionController {
     })
     public ResponseEntity<ApiResponseDto> bulkUploadQuestions(
             @Parameter(description = "CSV file containing questions", required = true)
-            @RequestParam("file") MultipartFile file,
-            @Parameter(description = "Institute ID", required = true, example = "1")
-            @RequestParam Long instituteId) {
+            @RequestParam("file") MultipartFile file) {
         try {
-            log.info("Bulk uploading questions for institute: {}",  instituteId);
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            log.info("Bulk uploading questions for institute: {}", instituteId);
             BulkUploadResponseDto result = csvUploadService.processBulkUpload(file, instituteId, "system");
             return ResponseEntity.ok(ApiResponseDto.success("Bulk upload completed", result));
         } catch (Exception e) {
@@ -473,16 +371,27 @@ public class QuestionController {
         }
     }
 
-    @GetMapping
+    @PostMapping("/search/advanced")
     @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
     @Operation(
-        summary = "Get all questions",
-        description = "Retrieves all questions across all institutes. Only SUPER_ADMIN users can access this endpoint."
+        summary = "Advanced search for questions",
+        description = "Performs advanced search for questions using multiple criteria including institute, course, subject, chapter, topic, difficulty level, question type, marks range, text search, and more. Supports pagination and sorting. All authenticated users can search questions."
     )
     @ApiResponses(value = {
         @ApiResponse(
             responseCode = "200",
             description = "Questions retrieved successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiResponseDto.class),
+                examples = @ExampleObject(
+                    value = "{\"message\": \"Questions retrieved successfully\", \"success\": true, \"data\": {\"questions\": [...], \"totalCount\": 10}}"
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Bad request - validation failed",
             content = @Content(
                 mediaType = "application/json",
                 schema = @Schema(implementation = ApiResponseDto.class)
@@ -497,15 +406,164 @@ public class QuestionController {
             )
         )
     })
-    public ResponseEntity<ApiResponseDto> getAllQuestions() {
+    public ResponseEntity<ApiResponseDto> searchQuestionsAdvanced(@Valid @RequestBody QuestionSearchRequestDto request) {
         try {
-            log.info("Getting all questions");
-            QuestionListResponseDto questions = questionService.getAllQuestions();
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            log.info("Advanced search for questions with criteria: {}", request);
+            
+            // Set instituteId from JWT token
+            QuestionCriteriaDto criteria = QuestionCriteriaDto.builder()
+                    .instituteId(instituteId)
+                    .courseId(request.getCourseId())
+                    .subjectId(request.getSubjectId())
+                    .chapterId(request.getChapterId())
+                    .topicId(request.getTopicId())
+                    .searchText(request.getSearchText())
+                    .difficultyLevel(request.getDifficultyLevel())
+                    .questionType(request.getQuestionType())
+                    .minMarks(request.getMinMarks())
+                    .maxMarks(request.getMaxMarks())
+                    .minNegativeMarks(request.getMinNegativeMarks())
+                    .maxNegativeMarks(request.getMaxNegativeMarks())
+                    .hasQuestionImage(request.getHasQuestionImage())
+                    .hasExplanation(request.getHasExplanation())
+                    .hasCorrectOption(request.getHasCorrectOption())
+                    .hasOptions(request.getHasOptions())
+                    .minOptions(request.getMinOptions())
+                    .maxOptions(request.getMaxOptions())
+                    .active(request.getActive())
+                    .createdAfter(request.getCreatedAfter())
+                    .createdBefore(request.getCreatedBefore())
+                    .createdBy(request.getCreatedBy())
+                    .build();
+                    
+            QuestionSearchRequestDto requestWithInstituteId = QuestionSearchRequestDto.builder()
+                    .criteria(criteria)
+                    .pagination(request.getPagination())
+                    .sorting(request.getSorting())
+                    .build();
+            
+            QuestionListResponseDto questions = questionService.searchQuestionsWithSpecification(requestWithInstituteId);
             return ResponseEntity.ok(ApiResponseDto.success("Questions retrieved successfully", questions));
         } catch (Exception e) {
-            log.error("Error getting all questions", e);
-            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to get questions: " + e.getMessage()));
+            log.error("Error in advanced search", e);
+            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to search questions: " + e.getMessage()));
         }
     }
+
+    @GetMapping("/search/advanced")
+    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @Operation(
+        summary = "Advanced search for questions (GET)",
+        description = "Performs advanced search for questions using query parameters. Supports filtering by institute, course, subject, chapter, topic, difficulty level, question type, marks range, text search, and more. Supports pagination and sorting. All authenticated users can search questions."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Questions retrieved successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiResponseDto.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Bad request - validation failed",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiResponseDto.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "403",
+            description = "Forbidden - insufficient permissions",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiResponseDto.class)
+            )
+        )
+    })
+    public ResponseEntity<ApiResponseDto> searchQuestionsAdvancedGet(
+            @Parameter(description = "Course ID (optional)", example = "1")
+            @RequestParam(required = false) Long courseId,
+            @Parameter(description = "Subject ID (optional)", example = "1")
+            @RequestParam(required = false) Long subjectId,
+            @Parameter(description = "Chapter ID (optional)", example = "1")
+            @RequestParam(required = false) Long chapterId,
+            @Parameter(description = "Topic ID (optional)", example = "1")
+            @RequestParam(required = false) Long topicId,
+            @Parameter(description = "Search text (optional)", example = "What is")
+            @RequestParam(required = false) String searchText,
+            @Parameter(description = "Difficulty Level (optional)", example = "EASY")
+            @RequestParam(required = false) String difficultyLevel,
+            @Parameter(description = "Question Type (optional)", example = "MCQ")
+            @RequestParam(required = false) String questionType,
+            @Parameter(description = "Minimum marks (optional)", example = "1")
+            @RequestParam(required = false) Integer minMarks,
+            @Parameter(description = "Maximum marks (optional)", example = "10")
+            @RequestParam(required = false) Integer maxMarks,
+            @Parameter(description = "Active status (optional)", example = "true")
+            @RequestParam(required = false) Boolean active,
+            @Parameter(description = "Page number (optional)", example = "0")
+            @RequestParam(required = false, defaultValue = "0") Integer page,
+            @Parameter(description = "Page size (optional)", example = "20")
+            @RequestParam(required = false, defaultValue = "20") Integer size,
+            @Parameter(description = "Sort by field (optional)", example = "createdAt")
+            @RequestParam(required = false, defaultValue = "createdAt") String sortBy,
+            @Parameter(description = "Sort direction (optional)", example = "desc")
+            @RequestParam(required = false, defaultValue = "desc") String sortDirection) {
+        try {
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            log.info("Advanced search for questions with GET parameters");
+            
+            // Convert string difficultyLevel to enum
+            DifficultyLevel difficultyLevelEnum = null;
+            if (difficultyLevel != null && !difficultyLevel.isEmpty()) {
+                try {
+                    difficultyLevelEnum = DifficultyLevel.valueOf(difficultyLevel.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    log.warn("Invalid difficulty level: {}", difficultyLevel);
+                }
+            }
+            
+            QuestionCriteriaDto criteria = QuestionCriteriaDto.builder()
+                    .instituteId(instituteId)
+                    .courseId(courseId)
+                    .subjectId(subjectId)
+                    .chapterId(chapterId)
+                    .topicId(topicId)
+                    .searchText(searchText)
+                    .difficultyLevel(difficultyLevelEnum)
+                    .questionType(questionType)
+                    .minMarks(minMarks)
+                    .maxMarks(maxMarks)
+                    .active(active)
+                    .build();
+                    
+            PaginationRequestDto pagination = PaginationRequestDto.builder()
+                    .page(page)
+                    .size(size)
+                    .build();
+                    
+            SortingRequestDto sorting = SortingRequestDto.builder()
+                    .field(sortBy)
+                    .direction(sortDirection)
+                    .build();
+                    
+            QuestionSearchRequestDto request = QuestionSearchRequestDto.builder()
+                    .criteria(criteria)
+                    .pagination(pagination)
+                    .sorting(sorting)
+                    .build();
+            
+            QuestionListResponseDto questions = questionService.searchQuestionsWithSpecification(request);
+            return ResponseEntity.ok(ApiResponseDto.success("Questions retrieved successfully", questions));
+        } catch (Exception e) {
+            log.error("Error in advanced search", e);
+            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to search questions: " + e.getMessage()));
+        }
+    }
+
 }
+
 

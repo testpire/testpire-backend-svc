@@ -9,5 +9,10 @@ public record CourseListResponseDto(
     public static CourseListResponseDto of(List<CourseResponseDto> courses) {
         return new CourseListResponseDto(courses, courses.size());
     }
+    
+    public static CourseListResponseDto of(List<CourseResponseDto> courses, long totalCount) {
+        return new CourseListResponseDto(courses, (int) totalCount);
+    }
 }
+
 

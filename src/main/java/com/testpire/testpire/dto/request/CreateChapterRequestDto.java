@@ -19,11 +19,11 @@ public record CreateChapterRequestDto(
         @NotNull(message = "Subject ID is required")
         Long subjectId,
 
-        @NotNull(message = "Institute ID is required")
-        Long instituteId,
+        Long instituteId, // Will be extracted from JWT token
 
         Integer orderIndex,
         String duration,
         String objectives
 ) {}
+
 

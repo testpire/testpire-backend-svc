@@ -87,7 +87,7 @@ public class AuthController {
         }
     }
 
-    @PostMapping("/register/student")
+   /* @PostMapping("/register/student")
     @Operation(summary = "Register student", description = "Register a new student account")
     public ResponseEntity<ApiResponseDto> registerStudent(@Valid @RequestBody RegisterStudentRequestDto request) {
         try {
@@ -125,7 +125,7 @@ public class AuthController {
             return ResponseEntity.badRequest()
                     .body(ApiResponseDto.error("Registration failed: " + e.getMessage()));
         }
-    }
+    }*/
 
     @GetMapping("/profile")
     @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})

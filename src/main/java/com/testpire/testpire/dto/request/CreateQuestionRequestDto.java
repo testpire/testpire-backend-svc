@@ -20,7 +20,7 @@ public record CreateQuestionRequestDto(
     
     Long topicId,
     
-    Long instituteId,
+    Long instituteId, // Will be extracted from JWT token
     
     @NotBlank(message = "Question type is required")
     @Size(max = 50, message = "Question type cannot exceed 50 characters")
@@ -42,4 +42,5 @@ public record CreateQuestionRequestDto(
     @Valid
     List<CreateOptionRequestDto> options
 ) {}
+
 

@@ -3,6 +3,12 @@ package com.testpire.testpire.service;
 import com.testpire.testpire.dto.request.CreateTopicRequestDto;
 import com.testpire.testpire.dto.request.TopicSearchRequestDto;
 import com.testpire.testpire.dto.request.UpdateTopicRequestDto;
+import com.testpire.testpire.repository.specification.TopicSpecification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import com.testpire.testpire.dto.response.TopicListResponseDto;
 import com.testpire.testpire.dto.response.TopicResponseDto;
 import com.testpire.testpire.entity.Chapter;
@@ -117,56 +123,20 @@ public class TopicService {
         return TopicResponseDto.fromEntity(topic);
     }
 
-    @Transactional(readOnly = true)
-    public TopicListResponseDto getTopicsByInstitute(Long instituteId) {
-        List<Topic> topics = topicRepository.findByInstituteIdAndActiveTrue(instituteId);
-        List<TopicResponseDto> topicDtos = topics.stream()
-                .map(TopicResponseDto::fromEntity)
-                .toList();
-        return TopicListResponseDto.of(topicDtos);
-    }
-
-    @Transactional(readOnly = true)
-    public TopicListResponseDto getTopicsByChapter(Long chapterId, Long instituteId) {
-        List<Topic> topics = topicRepository.findByChapterIdAndInstituteIdAndActiveTrue(chapterId, instituteId);
-        List<TopicResponseDto> topicDtos = topics.stream()
-                .map(TopicResponseDto::fromEntity)
-                .toList();
-        return TopicListResponseDto.of(topicDtos);
-    }
-
-    @Transactional(readOnly = true)
-    public TopicListResponseDto searchTopics(Long instituteId, String query) {
-        List<Topic> topics = topicRepository.findByInstituteIdAndNameContainingIgnoreCaseOrInstituteIdAndCodeContainingIgnoreCase(
-                instituteId, query, instituteId, query);
-        List<TopicResponseDto> topicDtos = topics.stream()
-                .map(TopicResponseDto::fromEntity)
-                .toList();
-        return TopicListResponseDto.of(topicDtos);
-    }
-
-    @Transactional(readOnly = true)
-    public TopicListResponseDto getAllTopics() {
-        List<Topic> topics = topicRepository.findAll();
-        List<TopicResponseDto> topicDtos = topics.stream()
-                .map(TopicResponseDto::fromEntity)
-                .toList();
-        return TopicListResponseDto.of(topicDtos);
-    }
 
     @Transactional(readOnly = true)
     public TopicListResponseDto searchTopicsWithFilters(TopicSearchRequestDto request) {
-        log.info("Searching topics with filters: instituteId={}, courseId={}, subjectId={}, chapterId={}, searchQuery={}, active={}", 
-                request.instituteId(), request.courseId(), request.subjectId(), request.chapterId(), 
-                request.searchQuery(), request.active());
+        log.info("Searching topics with filters: instituteId={}, courseId={}, subjectId={}, chapterId={}, searchText={}, active={}", 
+                request.getInstituteId(), request.getCourseId(), request.getSubjectId(), request.getChapterId(), 
+                request.getSearchText(), request.getActive());
 
         List<Topic> topics = topicRepository.findTopicsWithFilters(
-                request.instituteId(),
-                request.courseId(),
-                request.subjectId(),
-                request.chapterId(),
-                request.searchQuery(),
-                request.active()
+                request.getInstituteId(),
+                request.getCourseId(),
+                request.getSubjectId(),
+                request.getChapterId(),
+                request.getSearchText(),
+                request.getActive()
         );
 
         List<TopicResponseDto> topicDtos = topics.stream()
@@ -174,14 +144,71 @@ public class TopicService {
                 .toList();
 
         Long totalCount = topicRepository.countTopicsWithFilters(
-                request.instituteId(),
-                request.courseId(),
-                request.subjectId(),
-                request.chapterId(),
-                request.searchQuery(),
-                request.active()
+                request.getInstituteId(),
+                request.getCourseId(),
+                request.getSubjectId(),
+                request.getChapterId(),
+                request.getSearchText(),
+                request.getActive()
         );
 
         return new TopicListResponseDto(topicDtos, totalCount.intValue());
+    }
+
+    @Transactional(readOnly = true)
+    public TopicListResponseDto searchTopicsWithSpecification(TopicSearchRequestDto request) {
+        log.info("Searching topics with specification: {}", request);
+
+        // Build specification
+        Specification<Topic> spec = buildSpecification(request);
+
+        // Create pageable
+        Pageable pageable = createPageable(request);
+
+        // Execute search
+        Page<Topic> topicPage = topicRepository.findAll(spec, pageable);
+
+        // Convert to DTOs
+        List<TopicResponseDto> topicDtos = topicPage.getContent().stream()
+                .map(TopicResponseDto::fromEntity)
+                .toList();
+
+        return TopicListResponseDto.of(topicDtos, topicPage.getTotalElements());
+    }
+
+    private Specification<Topic> buildSpecification(TopicSearchRequestDto request) {
+        return Specification.where(TopicSpecification.hasInstituteId(request.getInstituteId()))
+                .and(TopicSpecification.hasCourseId(request.getCourseId()))
+                .and(TopicSpecification.hasSubjectId(request.getSubjectId()))
+                .and(TopicSpecification.hasChapterId(request.getChapterId()))
+                .and(TopicSpecification.hasTextContaining(request.getSearchText()))
+                .and(TopicSpecification.hasNameContaining(request.getName()))
+                .and(TopicSpecification.hasCodeContaining(request.getCode()))
+                .and(TopicSpecification.hasDescriptionContaining(request.getDescription()))
+                .and(TopicSpecification.hasContentContaining(request.getContent()))
+                .and(TopicSpecification.hasLearningOutcomesContaining(request.getLearningOutcomes()))
+                .and(TopicSpecification.hasOrderIndexRange(request.getMinOrderIndex(), request.getMaxOrderIndex()))
+                .and(TopicSpecification.hasDurationRange(request.getMinDuration(), request.getMaxDuration()))
+                .and(TopicSpecification.isActive(request.getActive()))
+                .and(TopicSpecification.isNotDeleted())
+                .and(request.getHasQuestions() != null && request.getHasQuestions() ? 
+                     TopicSpecification.hasQuestions() : null)
+                .and(TopicSpecification.hasMinimumQuestions(request.getMinQuestions()))
+                .and(TopicSpecification.hasMaximumQuestions(request.getMaxQuestions()))
+                .and(TopicSpecification.createdAfter(request.getCreatedAfter()))
+                .and(TopicSpecification.createdBefore(request.getCreatedBefore()))
+                .and(TopicSpecification.createdBy(request.getCreatedBy()));
+    }
+
+    private Pageable createPageable(TopicSearchRequestDto request) {
+        int page = request.getPage() != null ? request.getPage() : 0;
+        int size = request.getSize() != null ? request.getSize() : 20;
+        
+        String sortBy = request.getSortBy() != null ? request.getSortBy() : "createdAt";
+        String sortDirection = request.getSortDirection() != null ? request.getSortDirection() : "desc";
+        
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
+        
+        return PageRequest.of(page, size, sort);
     }
 }

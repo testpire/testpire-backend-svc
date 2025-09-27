@@ -2,6 +2,7 @@ package com.testpire.testpire.repository;
 
 import com.testpire.testpire.entity.Option;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -10,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface OptionRepository extends JpaRepository<Option, Long> {
+public interface OptionRepository extends JpaRepository<Option, Long>, JpaSpecificationExecutor<Option> {
     
     @Query("SELECT o FROM Option o WHERE o.question.id = :questionId AND o.active = true AND o.deleted = false ORDER BY o.optionOrder")
     List<Option> findByQuestionIdAndActiveTrueAndDeletedFalseOrderByOptionOrder(@Param("questionId") Long questionId);

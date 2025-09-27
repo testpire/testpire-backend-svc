@@ -1,8 +1,14 @@
 package com.testpire.testpire.Controller;
 
 import com.testpire.testpire.annotation.RequireRole;
+import com.testpire.testpire.dto.request.ChapterCriteriaDto;
+import com.testpire.testpire.dto.request.ChapterSearchRequestDto;
 import com.testpire.testpire.dto.request.CreateChapterRequestDto;
+import com.testpire.testpire.dto.request.PaginationRequestDto;
+import com.testpire.testpire.dto.request.SortingRequestDto;
 import com.testpire.testpire.dto.request.UpdateChapterRequestDto;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import com.testpire.testpire.dto.response.ApiResponseDto;
 import com.testpire.testpire.dto.response.ChapterListResponseDto;
 import com.testpire.testpire.dto.response.ChapterResponseDto;
@@ -26,7 +32,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/chapter")
+@RequestMapping("/api/chapters")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Chapter Management", description = "APIs for managing chapters within subjects")
@@ -76,9 +82,23 @@ public class ChapterController {
     })
     public ResponseEntity<ApiResponseDto> createChapter(@Valid @RequestBody CreateChapterRequestDto request) {
         try {
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
             log.info("Creating chapter: {} for subject: {} in institute: {}", 
-                    request.name(), request.subjectId(), request.instituteId());
-            ChapterResponseDto chapter = chapterService.createChapter(request);
+                    request.name(), request.subjectId(), instituteId);
+            
+            // Create a new request with instituteId from JWT
+            CreateChapterRequestDto requestWithInstituteId = new CreateChapterRequestDto(
+                    request.name(),
+                    request.description(),
+                    request.code(),
+                    request.subjectId(),
+                    instituteId,
+                    request.orderIndex(),
+                    request.duration(),
+                    request.objectives()
+            );
+            
+            ChapterResponseDto chapter = chapterService.createChapter(requestWithInstituteId);
             return ResponseEntity.ok(ApiResponseDto.success("Chapter created successfully", chapter));
         } catch (Exception e) {
             log.error("Error creating chapter", e);
@@ -256,10 +276,9 @@ public class ChapterController {
     })
     public ResponseEntity<ApiResponseDto> getChapterByCode(
             @Parameter(description = "Chapter code", required = true, example = "CH01")
-            @PathVariable String code, 
-            @Parameter(description = "Institute ID", required = true, example = "1")
-            @RequestParam Long instituteId) {
+            @PathVariable String code) {
         try {
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
             log.info("Getting chapter with code: {} for institute: {}", code, instituteId);
             ChapterResponseDto chapter = chapterService.getChapterByCode(code, instituteId);
             return ResponseEntity.ok(ApiResponseDto.success("Chapter retrieved successfully", chapter));
@@ -269,16 +288,24 @@ public class ChapterController {
         }
     }
 
-    @GetMapping("/institute/{instituteId}")
+    @PostMapping("/search/advanced")
     @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
     @Operation(
-        summary = "Get chapters by institute",
-        description = "Retrieves all active chapters for a specific institute. All authenticated users can view chapters."
+        summary = "Advanced search for chapters",
+        description = "Performs advanced search for chapters using multiple criteria including name, code, description, order index, duration, and more. Supports pagination and sorting. All authenticated users can search chapters."
     )
     @ApiResponses(value = {
         @ApiResponse(
             responseCode = "200",
             description = "Chapters retrieved successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiResponseDto.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Bad request - validation failed",
             content = @Content(
                 mediaType = "application/json",
                 schema = @Schema(implementation = ApiResponseDto.class)
@@ -293,107 +320,65 @@ public class ChapterController {
             )
         )
     })
-    public ResponseEntity<ApiResponseDto> getChaptersByInstitute(
-            @Parameter(description = "Institute ID", required = true, example = "1")
-            @PathVariable Long instituteId) {
+    public ResponseEntity<ApiResponseDto> searchChaptersAdvanced(@Valid @RequestBody ChapterSearchRequestDto request) {
         try {
-            log.info("Getting chapters for institute: {}", instituteId);
-            ChapterListResponseDto chapters = chapterService.getChaptersByInstitute(instituteId);
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            log.info("Advanced search for chapters with criteria: {}", request);
+            
+            // Set instituteId from JWT token
+            ChapterCriteriaDto criteria = ChapterCriteriaDto.builder()
+                    .instituteId(instituteId)
+                    .subjectId(request.getSubjectId())
+                    .searchText(request.getSearchText())
+                    .name(request.getName())
+                    .code(request.getCode())
+                    .description(request.getDescription())
+                    .minOrderIndex(request.getMinOrderIndex())
+                    .maxOrderIndex(request.getMaxOrderIndex())
+                    .minDuration(request.getMinDuration())
+                    .maxDuration(request.getMaxDuration())
+                    .objectives(request.getObjectives())
+                    .active(request.getActive())
+                    .hasTopics(request.getHasTopics())
+                    .minTopics(request.getMinTopics())
+                    .maxTopics(request.getMaxTopics())
+                    .createdAfter(request.getCreatedAfter())
+                    .createdBefore(request.getCreatedBefore())
+                    .createdBy(request.getCreatedBy())
+                    .build();
+                    
+            ChapterSearchRequestDto requestWithInstituteId = ChapterSearchRequestDto.builder()
+                    .criteria(criteria)
+                    .pagination(request.getPagination())
+                    .sorting(request.getSorting())
+                    .build();
+                    
+            ChapterListResponseDto chapters = chapterService.searchChaptersWithSpecification(requestWithInstituteId);
             return ResponseEntity.ok(ApiResponseDto.success("Chapters retrieved successfully", chapters));
         } catch (Exception e) {
-            log.error("Error getting chapters by institute", e);
-            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to get chapters: " + e.getMessage()));
-        }
-    }
-
-    @GetMapping("/subject/{subjectId}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
-    @Operation(
-        summary = "Get chapters by subject",
-        description = "Retrieves all active chapters for a specific subject within an institute. All authenticated users can view chapters."
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Chapters retrieved successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class)
-            )
-        ),
-        @ApiResponse(
-            responseCode = "403",
-            description = "Forbidden - insufficient permissions",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class)
-            )
-        )
-    })
-    public ResponseEntity<ApiResponseDto> getChaptersBySubject(
-            @Parameter(description = "Subject ID", required = true, example = "1")
-            @PathVariable Long subjectId, 
-            @Parameter(description = "Institute ID", required = true, example = "1")
-            @RequestParam Long instituteId) {
-        try {
-            log.info("Getting chapters for subject: {} in institute: {}", subjectId, instituteId);
-            ChapterListResponseDto chapters = chapterService.getChaptersBySubject(subjectId, instituteId);
-            return ResponseEntity.ok(ApiResponseDto.success("Chapters retrieved successfully", chapters));
-        } catch (Exception e) {
-            log.error("Error getting chapters by subject", e);
-            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to get chapters: " + e.getMessage()));
-        }
-    }
-
-    @GetMapping("/search")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
-    @Operation(
-        summary = "Search chapters",
-        description = "Searches for chapters by name or code within a specific institute. All authenticated users can search chapters."
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Chapters retrieved successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class)
-            )
-        ),
-        @ApiResponse(
-            responseCode = "403",
-            description = "Forbidden - insufficient permissions",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class)
-            )
-        )
-    })
-    public ResponseEntity<ApiResponseDto> searchChapters(
-            @Parameter(description = "Institute ID", required = true, example = "1")
-            @RequestParam Long instituteId, 
-            @Parameter(description = "Search query", required = true, example = "Arrays")
-            @RequestParam String query) {
-        try {
-            log.info("Searching chapters in institute: {} with query: {}", instituteId, query);
-            ChapterListResponseDto chapters = chapterService.searchChapters(instituteId, query);
-            return ResponseEntity.ok(ApiResponseDto.success("Chapters retrieved successfully", chapters));
-        } catch (Exception e) {
-            log.error("Error searching chapters", e);
+            log.error("Error in advanced search", e);
             return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to search chapters: " + e.getMessage()));
         }
     }
 
-    @GetMapping
-    @RequireRole({UserRole.SUPER_ADMIN})
+    @GetMapping("/search/advanced")
+    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
     @Operation(
-        summary = "Get all chapters",
-        description = "Retrieves all chapters across all institutes. Only SUPER_ADMIN users can access this endpoint."
+        summary = "Advanced search for chapters (GET)",
+        description = "Performs advanced search for chapters using query parameters. Supports filtering by name, code, description, order index, duration, and more. Supports pagination and sorting. All authenticated users can search chapters."
     )
     @ApiResponses(value = {
         @ApiResponse(
             responseCode = "200",
             description = "Chapters retrieved successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiResponseDto.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Bad request - validation failed",
             content = @Content(
                 mediaType = "application/json",
                 schema = @Schema(implementation = ApiResponseDto.class)
@@ -408,15 +393,119 @@ public class ChapterController {
             )
         )
     })
-    public ResponseEntity<ApiResponseDto> getAllChapters() {
+    public ResponseEntity<ApiResponseDto> searchChaptersAdvancedGet(
+            @Parameter(description = "Subject ID (optional)", example = "1")
+            @RequestParam(required = false) Long subjectId,
+            @Parameter(description = "Search text (optional)", example = "Arrays")
+            @RequestParam(required = false) String searchText,
+            @Parameter(description = "Name (optional)", example = "Arrays and Linked Lists")
+            @RequestParam(required = false) String name,
+            @Parameter(description = "Code (optional)", example = "CH01")
+            @RequestParam(required = false) String code,
+            @Parameter(description = "Description (optional)", example = "Introduction to arrays")
+            @RequestParam(required = false) String description,
+            @Parameter(description = "Minimum order index (optional)", example = "1")
+            @RequestParam(required = false) Integer minOrderIndex,
+            @Parameter(description = "Maximum order index (optional)", example = "10")
+            @RequestParam(required = false) Integer maxOrderIndex,
+            @Parameter(description = "Minimum duration (optional)", example = "30")
+            @RequestParam(required = false) Integer minDuration,
+            @Parameter(description = "Maximum duration (optional)", example = "120")
+            @RequestParam(required = false) Integer maxDuration,
+            @Parameter(description = "Objectives (optional)", example = "Learn arrays")
+            @RequestParam(required = false) String objectives,
+            @Parameter(description = "Active status (optional)", example = "true")
+            @RequestParam(required = false) Boolean active,
+            @Parameter(description = "Has topics (optional)", example = "true")
+            @RequestParam(required = false) Boolean hasTopics,
+            @Parameter(description = "Minimum topics (optional)", example = "1")
+            @RequestParam(required = false) Integer minTopics,
+            @Parameter(description = "Maximum topics (optional)", example = "10")
+            @RequestParam(required = false) Integer maxTopics,
+            @Parameter(description = "Created after (optional)", example = "2024-01-01")
+            @RequestParam(required = false) String createdAfter,
+            @Parameter(description = "Created before (optional)", example = "2024-12-31")
+            @RequestParam(required = false) String createdBefore,
+            @Parameter(description = "Created by (optional)", example = "admin")
+            @RequestParam(required = false) String createdBy,
+            @Parameter(description = "Page number (optional)", example = "0")
+            @RequestParam(required = false, defaultValue = "0") Integer page,
+            @Parameter(description = "Page size (optional)", example = "20")
+            @RequestParam(required = false, defaultValue = "20") Integer size,
+            @Parameter(description = "Sort by field (optional)", example = "createdAt")
+            @RequestParam(required = false, defaultValue = "createdAt") String sortBy,
+            @Parameter(description = "Sort direction (optional)", example = "desc")
+            @RequestParam(required = false, defaultValue = "desc") String sortDirection) {
         try {
-            log.info("Getting all chapters");
-            ChapterListResponseDto chapters = chapterService.getAllChapters();
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            log.info("Advanced search for chapters with GET parameters");
+            
+            // Parse date strings to LocalDateTime
+            LocalDateTime parsedCreatedAfter = null;
+            LocalDateTime parsedCreatedBefore = null;
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            
+            if (createdAfter != null && !createdAfter.trim().isEmpty()) {
+                try {
+                    parsedCreatedAfter = LocalDateTime.parse(createdAfter + " 00:00:00", formatter);
+                } catch (Exception e) {
+                    log.warn("Invalid createdAfter date format: {}", createdAfter);
+                }
+            }
+            
+            if (createdBefore != null && !createdBefore.trim().isEmpty()) {
+                try {
+                    parsedCreatedBefore = LocalDateTime.parse(createdBefore + " 23:59:59", formatter);
+                } catch (Exception e) {
+                    log.warn("Invalid createdBefore date format: {}", createdBefore);
+                }
+            }
+            
+            ChapterCriteriaDto criteria = ChapterCriteriaDto.builder()
+                    .instituteId(instituteId)
+                    .subjectId(subjectId)
+                    .searchText(searchText)
+                    .name(name)
+                    .code(code)
+                    .description(description)
+                    .minOrderIndex(minOrderIndex)
+                    .maxOrderIndex(maxOrderIndex)
+                    .minDuration(minDuration)
+                    .maxDuration(maxDuration)
+                    .objectives(objectives)
+                    .active(active)
+                    .hasTopics(hasTopics)
+                    .minTopics(minTopics)
+                    .maxTopics(maxTopics)
+                    .createdAfter(parsedCreatedAfter)
+                    .createdBefore(parsedCreatedBefore)
+                    .createdBy(createdBy)
+                    .build();
+                    
+            PaginationRequestDto pagination = PaginationRequestDto.builder()
+                    .page(page)
+                    .size(size)
+                    .build();
+                    
+            SortingRequestDto sorting = SortingRequestDto.builder()
+                    .field(sortBy)
+                    .direction(sortDirection)
+                    .build();
+                    
+            ChapterSearchRequestDto request = ChapterSearchRequestDto.builder()
+                    .criteria(criteria)
+                    .pagination(pagination)
+                    .sorting(sorting)
+                    .build();
+            
+            ChapterListResponseDto chapters = chapterService.searchChaptersWithSpecification(request);
             return ResponseEntity.ok(ApiResponseDto.success("Chapters retrieved successfully", chapters));
         } catch (Exception e) {
-            log.error("Error getting all chapters", e);
-            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to get chapters: " + e.getMessage()));
+            log.error("Error in advanced search", e);
+            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to search chapters: " + e.getMessage()));
         }
     }
+
 }
+
 

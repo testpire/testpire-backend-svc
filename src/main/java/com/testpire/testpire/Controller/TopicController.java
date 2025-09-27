@@ -2,8 +2,13 @@ package com.testpire.testpire.Controller;
 
 import com.testpire.testpire.annotation.RequireRole;
 import com.testpire.testpire.dto.request.CreateTopicRequestDto;
+import com.testpire.testpire.dto.request.TopicCriteriaDto;
 import com.testpire.testpire.dto.request.TopicSearchRequestDto;
+import com.testpire.testpire.dto.request.PaginationRequestDto;
+import com.testpire.testpire.dto.request.SortingRequestDto;
 import com.testpire.testpire.dto.request.UpdateTopicRequestDto;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import com.testpire.testpire.dto.response.ApiResponseDto;
 import com.testpire.testpire.dto.response.TopicListResponseDto;
 import com.testpire.testpire.dto.response.TopicResponseDto;
@@ -27,7 +32,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/topic")
+@RequestMapping("/api/topics")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Topic Management", description = "APIs for managing topics within chapters")
@@ -77,9 +82,24 @@ public class TopicController {
     })
     public ResponseEntity<ApiResponseDto> createTopic(@Valid @RequestBody CreateTopicRequestDto request) {
         try {
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
             log.info("Creating topic: {} for chapter: {} in institute: {}", 
-                    request.name(), request.chapterId(), request.instituteId());
-            TopicResponseDto topic = topicService.createTopic(request);
+                    request.name(), request.chapterId(), instituteId);
+            
+            // Create a new request with instituteId from JWT
+            CreateTopicRequestDto requestWithInstituteId = new CreateTopicRequestDto(
+                    request.name(),
+                    request.description(),
+                    request.code(),
+                    request.chapterId(),
+                    instituteId,
+                    request.orderIndex(),
+                    request.duration(),
+                    request.content(),
+                    request.learningOutcomes()
+            );
+            
+            TopicResponseDto topic = topicService.createTopic(requestWithInstituteId);
             return ResponseEntity.ok(ApiResponseDto.success("Topic created successfully", topic));
         } catch (Exception e) {
             log.error("Error creating topic", e);
@@ -257,10 +277,9 @@ public class TopicController {
     })
     public ResponseEntity<ApiResponseDto> getTopicByCode(
             @Parameter(description = "Topic code", required = true, example = "T01")
-            @PathVariable String code, 
-            @Parameter(description = "Institute ID", required = true, example = "1")
-            @RequestParam Long instituteId) {
+            @PathVariable String code) {
         try {
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
             log.info("Getting topic with code: {} for institute: {}", code, instituteId);
             TopicResponseDto topic = topicService.getTopicByCode(code, instituteId);
             return ResponseEntity.ok(ApiResponseDto.success("Topic retrieved successfully", topic));
@@ -270,11 +289,11 @@ public class TopicController {
         }
     }
 
-    @GetMapping("/institute/{instituteId}")
+    @PostMapping("/search/advanced")
     @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
     @Operation(
-        summary = "Get topics by institute",
-        description = "Retrieves all active topics for a specific institute. All authenticated users can view topics."
+        summary = "Advanced search for topics",
+        description = "Performs advanced search for topics using multiple criteria including name, code, description, order index, duration, content, and more. Supports pagination and sorting. All authenticated users can search topics."
     )
     @ApiResponses(value = {
         @ApiResponse(
@@ -283,85 +302,6 @@ public class TopicController {
             content = @Content(
                 mediaType = "application/json",
                 schema = @Schema(implementation = ApiResponseDto.class)
-            )
-        ),
-        @ApiResponse(
-            responseCode = "403",
-            description = "Forbidden - insufficient permissions",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class)
-            )
-        )
-    })
-    public ResponseEntity<ApiResponseDto> getTopicsByInstitute(
-            @Parameter(description = "Institute ID", required = true, example = "1")
-            @PathVariable Long instituteId) {
-        try {
-            log.info("Getting topics for institute: {}", instituteId);
-            TopicListResponseDto topics = topicService.getTopicsByInstitute(instituteId);
-            return ResponseEntity.ok(ApiResponseDto.success("Topics retrieved successfully", topics));
-        } catch (Exception e) {
-            log.error("Error getting topics by institute", e);
-            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to get topics: " + e.getMessage()));
-        }
-    }
-
-    @GetMapping("/chapter/{chapterId}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
-    @Operation(
-        summary = "Get topics by chapter",
-        description = "Retrieves all active topics for a specific chapter within an institute. All authenticated users can view topics."
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Topics retrieved successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class)
-            )
-        ),
-        @ApiResponse(
-            responseCode = "403",
-            description = "Forbidden - insufficient permissions",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class)
-            )
-        )
-    })
-    public ResponseEntity<ApiResponseDto> getTopicsByChapter(
-            @Parameter(description = "Chapter ID", required = true, example = "1")
-            @PathVariable Long chapterId, 
-            @Parameter(description = "Institute ID", required = true, example = "1")
-            @RequestParam Long instituteId) {
-        try {
-            log.info("Getting topics for chapter: {} in institute: {}", chapterId, instituteId);
-            TopicListResponseDto topics = topicService.getTopicsByChapter(chapterId, instituteId);
-            return ResponseEntity.ok(ApiResponseDto.success("Topics retrieved successfully", topics));
-        } catch (Exception e) {
-            log.error("Error getting topics by chapter", e);
-            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to get topics: " + e.getMessage()));
-        }
-    }
-
-    @GetMapping("/search")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
-    @Operation(
-        summary = "Search topics with advanced filters",
-        description = "Searches for topics with flexible filtering options including institute, course, subject, chapter, and text search. All authenticated users can search topics."
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Topics retrieved successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class),
-                examples = @ExampleObject(
-                    value = "{\"message\": \"Topics retrieved successfully\", \"success\": true, \"data\": {\"topics\": [...], \"totalCount\": 10}}"
-                )
             )
         ),
         @ApiResponse(
@@ -381,118 +321,202 @@ public class TopicController {
             )
         )
     })
-    public ResponseEntity<ApiResponseDto> searchTopicsWithFilters(
-            @Parameter(description = "Institute ID", required = true, example = "1")
-            @RequestParam Long instituteId,
+    public ResponseEntity<ApiResponseDto> searchTopicsAdvanced(@Valid @RequestBody TopicSearchRequestDto request) {
+        try {
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            log.info("Advanced search for topics with criteria: {}", request);
+            
+            // Set instituteId from JWT token
+            TopicCriteriaDto criteria = TopicCriteriaDto.builder()
+                    .instituteId(instituteId)
+                    .courseId(request.getCourseId())
+                    .subjectId(request.getSubjectId())
+                    .chapterId(request.getChapterId())
+                    .searchText(request.getSearchText())
+                    .name(request.getName())
+                    .code(request.getCode())
+                    .description(request.getDescription())
+                    .content(request.getContent())
+                    .learningOutcomes(request.getLearningOutcomes())
+                    .minOrderIndex(request.getMinOrderIndex())
+                    .maxOrderIndex(request.getMaxOrderIndex())
+                    .minDuration(request.getMinDuration())
+                    .maxDuration(request.getMaxDuration())
+                    .active(request.getActive())
+                    .hasQuestions(request.getHasQuestions())
+                    .minQuestions(request.getMinQuestions())
+                    .maxQuestions(request.getMaxQuestions())
+                    .createdAfter(request.getCreatedAfter())
+                    .createdBefore(request.getCreatedBefore())
+                    .createdBy(request.getCreatedBy())
+                    .build();
+                    
+            TopicSearchRequestDto requestWithInstituteId = TopicSearchRequestDto.builder()
+                    .criteria(criteria)
+                    .pagination(request.getPagination())
+                    .sorting(request.getSorting())
+                    .build();
+                    
+            TopicListResponseDto topics = topicService.searchTopicsWithSpecification(requestWithInstituteId);
+            return ResponseEntity.ok(ApiResponseDto.success("Topics retrieved successfully", topics));
+        } catch (Exception e) {
+            log.error("Error in advanced search", e);
+            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to search topics: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/search/advanced")
+    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @Operation(
+        summary = "Advanced search for topics (GET)",
+        description = "Performs advanced search for topics using query parameters. Supports filtering by name, code, description, order index, duration, content, and more. Supports pagination and sorting. All authenticated users can search topics."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Topics retrieved successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiResponseDto.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Bad request - validation failed",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiResponseDto.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "403",
+            description = "Forbidden - insufficient permissions",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiResponseDto.class)
+            )
+        )
+    })
+    public ResponseEntity<ApiResponseDto> searchTopicsAdvancedGet(
             @Parameter(description = "Course ID (optional)", example = "1")
             @RequestParam(required = false) Long courseId,
             @Parameter(description = "Subject ID (optional)", example = "1")
             @RequestParam(required = false) Long subjectId,
             @Parameter(description = "Chapter ID (optional)", example = "1")
             @RequestParam(required = false) Long chapterId,
-            @Parameter(description = "Search query for name, code, or description (optional)", example = "Arrays")
-            @RequestParam(required = false) String searchQuery,
-            @Parameter(description = "Filter by active status (optional)", example = "true")
-            @RequestParam(required = false) Boolean active) {
+            @Parameter(description = "Search text (optional)", example = "Arrays")
+            @RequestParam(required = false) String searchText,
+            @Parameter(description = "Name (optional)", example = "Introduction to Arrays")
+            @RequestParam(required = false) String name,
+            @Parameter(description = "Code (optional)", example = "T01")
+            @RequestParam(required = false) String code,
+            @Parameter(description = "Description (optional)", example = "Learn about arrays")
+            @RequestParam(required = false) String description,
+            @Parameter(description = "Content (optional)", example = "Array basics")
+            @RequestParam(required = false) String content,
+            @Parameter(description = "Learning outcomes (optional)", example = "Understand arrays")
+            @RequestParam(required = false) String learningOutcomes,
+            @Parameter(description = "Minimum order index (optional)", example = "1")
+            @RequestParam(required = false) Integer minOrderIndex,
+            @Parameter(description = "Maximum order index (optional)", example = "10")
+            @RequestParam(required = false) Integer maxOrderIndex,
+            @Parameter(description = "Minimum duration (optional)", example = "30")
+            @RequestParam(required = false) Integer minDuration,
+            @Parameter(description = "Maximum duration (optional)", example = "120")
+            @RequestParam(required = false) Integer maxDuration,
+            @Parameter(description = "Active status (optional)", example = "true")
+            @RequestParam(required = false) Boolean active,
+            @Parameter(description = "Has questions (optional)", example = "true")
+            @RequestParam(required = false) Boolean hasQuestions,
+            @Parameter(description = "Minimum questions (optional)", example = "1")
+            @RequestParam(required = false) Integer minQuestions,
+            @Parameter(description = "Maximum questions (optional)", example = "10")
+            @RequestParam(required = false) Integer maxQuestions,
+            @Parameter(description = "Created after (optional)", example = "2024-01-01")
+            @RequestParam(required = false) String createdAfter,
+            @Parameter(description = "Created before (optional)", example = "2024-12-31")
+            @RequestParam(required = false) String createdBefore,
+            @Parameter(description = "Created by (optional)", example = "admin")
+            @RequestParam(required = false) String createdBy,
+            @Parameter(description = "Page number (optional)", example = "0")
+            @RequestParam(required = false, defaultValue = "0") Integer page,
+            @Parameter(description = "Page size (optional)", example = "20")
+            @RequestParam(required = false, defaultValue = "20") Integer size,
+            @Parameter(description = "Sort by field (optional)", example = "createdAt")
+            @RequestParam(required = false, defaultValue = "createdAt") String sortBy,
+            @Parameter(description = "Sort direction (optional)", example = "desc")
+            @RequestParam(required = false, defaultValue = "desc") String sortDirection) {
         try {
-            log.info("Searching topics with filters: instituteId={}, courseId={}, subjectId={}, chapterId={}, searchQuery={}, active={}", 
-                    instituteId, courseId, subjectId, chapterId, searchQuery, active);
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            log.info("Advanced search for topics with GET parameters");
             
-            TopicSearchRequestDto request = TopicSearchRequestDto.builder()
+            // Parse date strings to LocalDateTime
+            LocalDateTime parsedCreatedAfter = null;
+            LocalDateTime parsedCreatedBefore = null;
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            
+            if (createdAfter != null && !createdAfter.trim().isEmpty()) {
+                try {
+                    parsedCreatedAfter = LocalDateTime.parse(createdAfter + " 00:00:00", formatter);
+                } catch (Exception e) {
+                    log.warn("Invalid createdAfter date format: {}", createdAfter);
+                }
+            }
+            
+            if (createdBefore != null && !createdBefore.trim().isEmpty()) {
+                try {
+                    parsedCreatedBefore = LocalDateTime.parse(createdBefore + " 23:59:59", formatter);
+                } catch (Exception e) {
+                    log.warn("Invalid createdBefore date format: {}", createdBefore);
+                }
+            }
+            
+            TopicCriteriaDto criteria = TopicCriteriaDto.builder()
                     .instituteId(instituteId)
                     .courseId(courseId)
                     .subjectId(subjectId)
                     .chapterId(chapterId)
-                    .searchQuery(searchQuery)
+                    .searchText(searchText)
+                    .name(name)
+                    .code(code)
+                    .description(description)
+                    .content(content)
+                    .learningOutcomes(learningOutcomes)
+                    .minOrderIndex(minOrderIndex)
+                    .maxOrderIndex(maxOrderIndex)
+                    .minDuration(minDuration)
+                    .maxDuration(maxDuration)
                     .active(active)
+                    .hasQuestions(hasQuestions)
+                    .minQuestions(minQuestions)
+                    .maxQuestions(maxQuestions)
+                    .createdAfter(parsedCreatedAfter)
+                    .createdBefore(parsedCreatedBefore)
+                    .createdBy(createdBy)
+                    .build();
+                    
+            PaginationRequestDto pagination = PaginationRequestDto.builder()
+                    .page(page)
+                    .size(size)
+                    .build();
+                    
+            SortingRequestDto sorting = SortingRequestDto.builder()
+                    .field(sortBy)
+                    .direction(sortDirection)
+                    .build();
+                    
+            TopicSearchRequestDto request = TopicSearchRequestDto.builder()
+                    .criteria(criteria)
+                    .pagination(pagination)
+                    .sorting(sorting)
                     .build();
             
-            TopicListResponseDto topics = topicService.searchTopicsWithFilters(request);
+            TopicListResponseDto topics = topicService.searchTopicsWithSpecification(request);
             return ResponseEntity.ok(ApiResponseDto.success("Topics retrieved successfully", topics));
         } catch (Exception e) {
-            log.error("Error searching topics with filters", e);
+            log.error("Error in advanced search", e);
             return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to search topics: " + e.getMessage()));
         }
     }
 
-    @PostMapping("/search")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
-    @Operation(
-        summary = "Search topics with advanced filters (POST)",
-        description = "Searches for topics with flexible filtering options using POST request body. Useful for complex filter combinations. All authenticated users can search topics."
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Topics retrieved successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class),
-                examples = @ExampleObject(
-                    value = "{\"message\": \"Topics retrieved successfully\", \"success\": true, \"data\": {\"topics\": [...], \"totalCount\": 10}}"
-                )
-            )
-        ),
-        @ApiResponse(
-            responseCode = "400",
-            description = "Bad request - validation failed",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class)
-            )
-        ),
-        @ApiResponse(
-            responseCode = "403",
-            description = "Forbidden - insufficient permissions",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class)
-            )
-        )
-    })
-    public ResponseEntity<ApiResponseDto> searchTopicsWithFiltersPost(@Valid @RequestBody TopicSearchRequestDto request) {
-        try {
-            log.info("Searching topics with filters (POST): {}", request);
-            TopicListResponseDto topics = topicService.searchTopicsWithFilters(request);
-            return ResponseEntity.ok(ApiResponseDto.success("Topics retrieved successfully", topics));
-        } catch (Exception e) {
-            log.error("Error searching topics with filters (POST)", e);
-            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to search topics: " + e.getMessage()));
-        }
-    }
-
-    @GetMapping
-    @RequireRole({UserRole.SUPER_ADMIN})
-    @Operation(
-        summary = "Get all topics",
-        description = "Retrieves all topics across all institutes. Only SUPER_ADMIN users can access this endpoint."
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Topics retrieved successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class)
-            )
-        ),
-        @ApiResponse(
-            responseCode = "403",
-            description = "Forbidden - insufficient permissions",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ApiResponseDto.class)
-            )
-        )
-    })
-    public ResponseEntity<ApiResponseDto> getAllTopics() {
-        try {
-            log.info("Getting all topics");
-            TopicListResponseDto topics = topicService.getAllTopics();
-            return ResponseEntity.ok(ApiResponseDto.success("Topics retrieved successfully", topics));
-        } catch (Exception e) {
-            log.error("Error getting all topics", e);
-            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to get topics: " + e.getMessage()));
-        }
-    }
 }

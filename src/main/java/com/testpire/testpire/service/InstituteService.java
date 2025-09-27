@@ -2,10 +2,19 @@ package com.testpire.testpire.service;
 
 import com.testpire.testpire.constants.ApplicationConstants;
 import com.testpire.testpire.dto.InstituteDto;
+import com.testpire.testpire.dto.request.InstituteSearchRequestDto;
+import com.testpire.testpire.dto.response.InstituteListResponseDto;
+import com.testpire.testpire.dto.response.InstituteResponseDto;
 import com.testpire.testpire.entity.Institute;
 import com.testpire.testpire.repository.InstituteRepository;
+import com.testpire.testpire.repository.specification.InstituteSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -124,5 +133,52 @@ public class InstituteService {
 
     public boolean instituteExistsById(Long id) {
         return instituteRepository.existsById(id);
+    }
+
+    public InstituteListResponseDto searchInstitutesWithSpecification(InstituteSearchRequestDto request) {
+        log.info("Searching institutes with specification: {}", request);
+        
+        // Build specification
+        Specification<Institute> spec = Specification.where(InstituteSpecification.hasSearchText(request.getCriteria().getSearchText()))
+            .and(InstituteSpecification.hasInstituteId(request.getCriteria().getInstituteId()))
+                .and(InstituteSpecification.hasNameContaining(request.getCriteria().getName()))
+                .and(InstituteSpecification.hasCodeContaining(request.getCriteria().getCode()))
+                .and(InstituteSpecification.hasAddressContaining(request.getCriteria().getAddress()))
+                .and(InstituteSpecification.hasCity(request.getCriteria().getCity()))
+                .and(InstituteSpecification.hasState(request.getCriteria().getState()))
+                .and(InstituteSpecification.hasCountry(request.getCriteria().getCountry()))
+                .and(InstituteSpecification.hasPostalCodeContaining(request.getCriteria().getPostalCode()))
+                .and(InstituteSpecification.hasPhoneContaining(request.getCriteria().getPhone()))
+                .and(InstituteSpecification.hasEmailContaining(request.getCriteria().getEmail()))
+                .and(InstituteSpecification.hasWebsiteContaining(request.getCriteria().getWebsite()))
+                .and(InstituteSpecification.hasDescriptionContaining(request.getCriteria().getDescription()))
+                .and(InstituteSpecification.isActive(request.getCriteria().getActive()))
+                .and(InstituteSpecification.createdAfter(request.getCriteria().getCreatedAfter()))
+                .and(InstituteSpecification.createdBefore(request.getCriteria().getCreatedBefore()))
+                .and(InstituteSpecification.createdBy(request.getCriteria().getCreatedBy()))
+                .and(InstituteSpecification.updatedBy(request.getCriteria().getUpdatedBy()));
+        
+        // Create pageable
+        Sort sort = Sort.by(
+            Sort.Direction.fromString(request.getSorting().getDirection()),
+            request.getSorting().getField()
+        );
+        Pageable pageable = PageRequest.of(request.getPagination().getPage(), request.getPagination().getSize(), sort);
+        
+        // Execute query
+        Page<Institute> page = instituteRepository.findAll(spec, pageable);
+        log.info("Found {} institutes out of {} total", page.getContent().size(), page.getTotalElements());
+        
+        // Convert to DTOs
+        List<InstituteResponseDto> instituteDtos = page.getContent().stream()
+                .map(InstituteResponseDto::fromEntity)
+                .toList();
+        
+        return InstituteListResponseDto.success(
+            instituteDtos,
+            instituteDtos.size(),
+            page.getNumber(),
+            (int) page.getTotalElements()
+        );
     }
 } 

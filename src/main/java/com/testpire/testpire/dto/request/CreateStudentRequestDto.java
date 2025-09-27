@@ -27,10 +27,8 @@ public record CreateStudentRequestDto(
     
     String phone,
     
-    @NotBlank(message = "Course is required")
     String course,
     
-    @NotNull(message = "Year of study is required")
     @Min(value = 1, message = "Year of study must be at least 1")
     @Max(value = 10, message = "Year of study must be at most 10")
     Integer yearOfStudy,

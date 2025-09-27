@@ -42,3 +42,4 @@ COMMENT ON COLUMN topics.content IS 'Topic content or material';
 COMMENT ON COLUMN topics.learning_outcomes IS 'Expected learning outcomes for this topic';
 COMMENT ON COLUMN topics.active IS 'Whether the topic is active';
 
+

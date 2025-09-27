@@ -3,6 +3,7 @@ package com.testpire.testpire.repository;
 import com.testpire.testpire.entity.Question;
 import com.testpire.testpire.enums.DifficultyLevel;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface QuestionRepository extends JpaRepository<Question, Long> {
+public interface QuestionRepository extends JpaRepository<Question, Long>, JpaSpecificationExecutor<Question> {
     
     @Query("SELECT q FROM Question q WHERE q.topic.id = :topicId AND q.instituteId = :instituteId AND q.active = true AND q.deleted = false")
     List<Question> findByTopicIdAndInstituteIdAndActiveTrueAndDeletedFalse(@Param("topicId") Long topicId, @Param("instituteId") Long instituteId);
@@ -22,17 +23,6 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     List<Question> findByTopicIdAndInstituteIdAndDifficultyLevelAndActiveTrueAndDeletedFalse(
             @Param("topicId") Long topicId, @Param("instituteId") Long instituteId, @Param("difficultyLevel") DifficultyLevel difficultyLevel);
     
-    @Query("SELECT q FROM Question q WHERE q.instituteId = :instituteId AND " +
-           "(LOWER(q.text) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-           "LOWER(q.questionType) LIKE LOWER(CONCAT('%', :query, '%'))) AND " +
-           "q.active = true AND q.deleted = false")
-    List<Question> searchQuestions(@Param("instituteId") Long instituteId, @Param("query") String query);
-    
-    @Query("SELECT q FROM Question q WHERE q.topic.id = :topicId AND q.instituteId = :instituteId AND " +
-           "(LOWER(q.text) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-           "LOWER(q.questionType) LIKE LOWER(CONCAT('%', :query, '%'))) AND " +
-           "q.active = true AND q.deleted = false")
-    List<Question> searchQuestionsByTopic(@Param("topicId") Long topicId, @Param("instituteId") Long instituteId, @Param("query") String query);
     
     Optional<Question> findByIdAndInstituteIdAndActiveTrueAndDeletedFalse(Long id, Long instituteId);
     

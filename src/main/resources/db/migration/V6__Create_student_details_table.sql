@@ -3,7 +3,7 @@ CREATE TABLE student_details (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL UNIQUE,
     phone VARCHAR(20),
-    course VARCHAR(100) NOT NULL,
+    course VARCHAR(100),
     year_of_study INTEGER NOT NULL CHECK (year_of_study >= 1 AND year_of_study <= 10),
     roll_number VARCHAR(50),
     parent_name VARCHAR(100),

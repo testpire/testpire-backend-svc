@@ -9,5 +9,10 @@ public record SubjectListResponseDto(
     public static SubjectListResponseDto of(List<SubjectResponseDto> subjects) {
         return new SubjectListResponseDto(subjects, subjects.size());
     }
+
+    public static SubjectListResponseDto of(List<SubjectResponseDto> subjects, long totalCount) {
+        return new SubjectListResponseDto(subjects, (int) totalCount);
+    }
 }
+
 

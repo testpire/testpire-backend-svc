@@ -3,6 +3,10 @@ package com.testpire.testpire.Controller;
 import com.testpire.testpire.annotation.RequireRole;
 import com.testpire.testpire.dto.RegisterRequest;
 import com.testpire.testpire.dto.request.CreateStudentRequestDto;
+import com.testpire.testpire.dto.request.StudentCriteriaDto;
+import com.testpire.testpire.dto.request.StudentSearchRequestDto;
+import com.testpire.testpire.dto.request.PaginationRequestDto;
+import com.testpire.testpire.dto.request.SortingRequestDto;
 import com.testpire.testpire.dto.request.UpdateStudentRequestDto;
 import com.testpire.testpire.dto.response.StudentResponseDto;
 import com.testpire.testpire.dto.response.StudentListResponseDto;
@@ -15,6 +19,7 @@ import com.testpire.testpire.service.UserService;
 import com.testpire.testpire.service.StudentDetailsService;
 import com.testpire.testpire.util.RequestUtils;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +27,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import java.util.List;
 
@@ -322,43 +330,175 @@ public class StudentController {
         }
     }
 
-    @GetMapping("/search")
+    // ==================== ADVANCED SEARCH OPERATIONS ====================
+
+    @PostMapping("/search/advanced")
     @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
-    @Operation(summary = "Search students", description = "Search students by name, course, or roll number")
-    public ResponseEntity<StudentListResponseDto> searchStudents(
-            @RequestParam String query,
-            @RequestParam(required = false) Long instituteId,
-            @RequestParam(required = false) String course) {
+    @Operation(summary = "Advanced search students", description = "Search students with advanced criteria, pagination, and sorting")
+    public ResponseEntity<ApiResponseDto> searchStudentsAdvanced(@Valid @RequestBody StudentSearchRequestDto request) {
         try {
-            List<com.testpire.testpire.entity.StudentDetails> studentDetailsList;
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            log.info("Advanced search for students with criteria: {}", request);
             
-            if (instituteId != null && course != null) {
-                // Search within specific institute and course
-                studentDetailsList = studentDetailsService.searchStudentsByInstituteAndCourse(instituteId, course, query);
-            } else if (instituteId != null) {
-                // Search within specific institute
-                studentDetailsList = studentDetailsService.searchStudentsByInstitute(instituteId, query);
-            } else {
-                // Search all students
-                studentDetailsList = studentDetailsService.searchStudents(query);
-            }
-
-            List<StudentResponseDto> studentDtos = studentDetailsList.stream()
-                .map(details -> StudentResponseDto.fromEntity(details.getUser(), details))
-                .toList();
-
-            StudentListResponseDto response = StudentListResponseDto.success(
-                studentDtos, 
-                studentDtos.size(), 
-                0, 
-                studentDtos.size()
-            );
-
-            return ResponseEntity.ok(response);
+            // Set instituteId from JWT token
+            StudentCriteriaDto criteria = StudentCriteriaDto.builder()
+                    .instituteId(instituteId)
+                    .searchText(request.getSearchText())
+                    .firstName(request.getFirstName())
+                    .lastName(request.getLastName())
+                    .username(request.getUsername())
+                    .email(request.getEmail())
+                    .phone(request.getPhone())
+                    .course(request.getCourse())
+                    .minYearOfStudy(request.getMinYearOfStudy())
+                    .maxYearOfStudy(request.getMaxYearOfStudy())
+                    .rollNumber(request.getRollNumber())
+                    .parentName(request.getParentName())
+                    .parentPhone(request.getParentPhone())
+                    .parentEmail(request.getParentEmail())
+                    .address(request.getAddress())
+                    .bloodGroup(request.getBloodGroup())
+                    .emergencyContact(request.getEmergencyContact())
+                    .enabled(request.getEnabled())
+                    .createdAfter(request.getCreatedAfter())
+                    .createdBefore(request.getCreatedBefore())
+                    .createdBy(request.getCreatedBy())
+                    .build();
+                    
+            StudentSearchRequestDto requestWithInstituteId = StudentSearchRequestDto.builder()
+                    .criteria(criteria)
+                    .pagination(request.getPagination())
+                    .sorting(request.getSorting())
+                    .build();
+                    
+            StudentListResponseDto students = studentDetailsService.searchStudentsWithSpecification(requestWithInstituteId);
+            return ResponseEntity.ok(ApiResponseDto.success("Students retrieved successfully", students));
         } catch (Exception e) {
-            log.error("Error searching students", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(StudentListResponseDto.error("Failed to search students: " + e.getMessage()));
+            log.error("Error in advanced search", e);
+            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to search students: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/search/advanced")
+    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @Operation(summary = "Advanced search students (GET)", description = "Search students with advanced criteria via GET parameters")
+    public ResponseEntity<ApiResponseDto> searchStudentsAdvancedGet(
+            @Parameter(description = "Search text (optional)", example = "john")
+            @RequestParam(required = false) String searchText,
+            @Parameter(description = "First name (optional)", example = "John")
+            @RequestParam(required = false) String firstName,
+            @Parameter(description = "Last name (optional)", example = "Doe")
+            @RequestParam(required = false) String lastName,
+            @Parameter(description = "Username (optional)", example = "johndoe")
+            @RequestParam(required = false) String username,
+            @Parameter(description = "Email (optional)", example = "john@example.com")
+            @RequestParam(required = false) String email,
+            @Parameter(description = "Phone (optional)", example = "1234567890")
+            @RequestParam(required = false) String phone,
+            @Parameter(description = "Course (optional)", example = "Computer Science")
+            @RequestParam(required = false) String course,
+            @Parameter(description = "Minimum year of study (optional)", example = "1")
+            @RequestParam(required = false) Integer minYearOfStudy,
+            @Parameter(description = "Maximum year of study (optional)", example = "4")
+            @RequestParam(required = false) Integer maxYearOfStudy,
+            @Parameter(description = "Roll number (optional)", example = "CS2024001")
+            @RequestParam(required = false) String rollNumber,
+            @Parameter(description = "Parent name (optional)", example = "Jane Doe")
+            @RequestParam(required = false) String parentName,
+            @Parameter(description = "Parent phone (optional)", example = "9876543210")
+            @RequestParam(required = false) String parentPhone,
+            @Parameter(description = "Parent email (optional)", example = "jane@example.com")
+            @RequestParam(required = false) String parentEmail,
+            @Parameter(description = "Address (optional)", example = "123 Main St")
+            @RequestParam(required = false) String address,
+            @Parameter(description = "Blood group (optional)", example = "O+")
+            @RequestParam(required = false) String bloodGroup,
+            @Parameter(description = "Emergency contact (optional)", example = "9876543210")
+            @RequestParam(required = false) String emergencyContact,
+            @Parameter(description = "Enabled status (optional)", example = "true")
+            @RequestParam(required = false) Boolean enabled,
+            @Parameter(description = "Created after (optional)", example = "2024-01-01T00:00:00")
+            @RequestParam(required = false) String createdAfter,
+            @Parameter(description = "Created before (optional)", example = "2024-12-31T23:59:59")
+            @RequestParam(required = false) String createdBefore,
+            @Parameter(description = "Created by (optional)", example = "admin")
+            @RequestParam(required = false) String createdBy,
+            @Parameter(description = "Page number (optional)", example = "0")
+            @RequestParam(required = false, defaultValue = "0") Integer page,
+            @Parameter(description = "Page size (optional)", example = "20")
+            @RequestParam(required = false, defaultValue = "20") Integer size,
+            @Parameter(description = "Sort by field (optional)", example = "createdAt")
+            @RequestParam(required = false, defaultValue = "createdAt") String sortBy,
+            @Parameter(description = "Sort direction (optional)", example = "desc")
+            @RequestParam(required = false, defaultValue = "desc") String sortDirection) {
+        try {
+            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            log.info("Advanced search for students with GET parameters");
+            
+            // Parse date parameters
+            LocalDateTime parsedCreatedAfter = null;
+            if (createdAfter != null && !createdAfter.isEmpty()) {
+                try {
+                    parsedCreatedAfter = LocalDateTime.parse(createdAfter, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                } catch (Exception e) {
+                    log.warn("Invalid createdAfter date format: {}", createdAfter);
+                }
+            }
+            
+            LocalDateTime parsedCreatedBefore = null;
+            if (createdBefore != null && !createdBefore.isEmpty()) {
+                try {
+                    parsedCreatedBefore = LocalDateTime.parse(createdBefore, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                } catch (Exception e) {
+                    log.warn("Invalid createdBefore date format: {}", createdBefore);
+                }
+            }
+            
+            StudentCriteriaDto criteria = StudentCriteriaDto.builder()
+                    .instituteId(instituteId)
+                    .searchText(searchText)
+                    .firstName(firstName)
+                    .lastName(lastName)
+                    .username(username)
+                    .email(email)
+                    .phone(phone)
+                    .course(course)
+                    .minYearOfStudy(minYearOfStudy)
+                    .maxYearOfStudy(maxYearOfStudy)
+                    .rollNumber(rollNumber)
+                    .parentName(parentName)
+                    .parentPhone(parentPhone)
+                    .parentEmail(parentEmail)
+                    .address(address)
+                    .bloodGroup(bloodGroup)
+                    .emergencyContact(emergencyContact)
+                    .enabled(enabled)
+                    .createdAfter(parsedCreatedAfter)
+                    .createdBefore(parsedCreatedBefore)
+                    .createdBy(createdBy)
+                    .build();
+                    
+            PaginationRequestDto pagination = PaginationRequestDto.builder()
+                    .page(page)
+                    .size(size)
+                    .build();
+                    
+            SortingRequestDto sorting = SortingRequestDto.builder()
+                    .field(sortBy)
+                    .direction(sortDirection)
+                    .build();
+                    
+            StudentSearchRequestDto request = StudentSearchRequestDto.builder()
+                    .criteria(criteria)
+                    .pagination(pagination)
+                    .sorting(sorting)
+                    .build();
+            
+            StudentListResponseDto students = studentDetailsService.searchStudentsWithSpecification(request);
+            return ResponseEntity.ok(ApiResponseDto.success("Students retrieved successfully", students));
+        } catch (Exception e) {
+            log.error("Error in advanced search", e);
+            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to search students: " + e.getMessage()));
         }
     }
 
@@ -484,4 +624,19 @@ public class StudentController {
                 .body(StudentListResponseDto.error("Failed to fetch peers: " + e.getMessage()));
         }
     }
-}
+
+    // ==================== DEBUG ENDPOINTS ====================
+
+    @GetMapping("/debug")
+    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN})
+    @Operation(summary = "Debug students", description = "Debug endpoint to check student data")
+    public ResponseEntity<ApiResponseDto> debugStudents() {
+        try {
+            studentDetailsService.debugStudentCount();
+            return ResponseEntity.ok(ApiResponseDto.success("Debug information logged"));
+        } catch (Exception e) {
+            log.error("Error in debug", e);
+            return ResponseEntity.badRequest().body(ApiResponseDto.error("Debug failed: " + e.getMessage()));
+        }
+    }
+} 

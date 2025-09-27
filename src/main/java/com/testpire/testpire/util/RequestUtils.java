@@ -24,4 +24,13 @@ public class RequestUtils {
         }
         return null;
     }
+    
+    public static Long getCurrentUserInstituteId() {
+        UserDto currentUser = getCurrentUser();
+        if (currentUser == null || currentUser.instituteId() < 1){
+            //for super admin
+            return null;
+        }
+        return currentUser.instituteId();
+    }
 }

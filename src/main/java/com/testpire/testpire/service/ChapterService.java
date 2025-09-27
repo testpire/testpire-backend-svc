@@ -1,7 +1,14 @@
 package com.testpire.testpire.service;
 
+import com.testpire.testpire.dto.request.ChapterSearchRequestDto;
 import com.testpire.testpire.dto.request.CreateChapterRequestDto;
 import com.testpire.testpire.dto.request.UpdateChapterRequestDto;
+import com.testpire.testpire.repository.specification.ChapterSpecification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import com.testpire.testpire.dto.response.ChapterListResponseDto;
 import com.testpire.testpire.dto.response.ChapterResponseDto;
 import com.testpire.testpire.entity.Chapter;
@@ -115,40 +122,59 @@ public class ChapterService {
     }
 
     @Transactional(readOnly = true)
-    public ChapterListResponseDto getChaptersByInstitute(Long instituteId) {
-        List<Chapter> chapters = chapterRepository.findByInstituteIdAndActiveTrue(instituteId);
-        List<ChapterResponseDto> chapterDtos = chapters.stream()
+    public ChapterListResponseDto searchChaptersWithSpecification(ChapterSearchRequestDto request) {
+        log.info("Searching chapters with specification: {}", request);
+
+        // Build specification
+        Specification<Chapter> spec = buildSpecification(request);
+
+        // Create pageable
+        Pageable pageable = createPageable(request);
+
+        // Execute search
+        Page<Chapter> chapterPage = chapterRepository.findAll(spec, pageable);
+
+        // Convert to DTOs
+        List<ChapterResponseDto> chapterDtos = chapterPage.getContent().stream()
                 .map(ChapterResponseDto::fromEntity)
                 .toList();
-        return ChapterListResponseDto.of(chapterDtos);
+
+        return ChapterListResponseDto.of(chapterDtos, chapterPage.getTotalElements());
     }
 
-    @Transactional(readOnly = true)
-    public ChapterListResponseDto getChaptersBySubject(Long subjectId, Long instituteId) {
-        List<Chapter> chapters = chapterRepository.findBySubjectIdAndInstituteIdAndActiveTrue(subjectId, instituteId);
-        List<ChapterResponseDto> chapterDtos = chapters.stream()
-                .map(ChapterResponseDto::fromEntity)
-                .toList();
-        return ChapterListResponseDto.of(chapterDtos);
+    private Specification<Chapter> buildSpecification(ChapterSearchRequestDto request) {
+        return Specification.where(ChapterSpecification.hasInstituteId(request.getInstituteId()))
+                .and(ChapterSpecification.hasSubjectId(request.getSubjectId()))
+                .and(ChapterSpecification.hasTextContaining(request.getSearchText()))
+                .and(ChapterSpecification.hasNameContaining(request.getName()))
+                .and(ChapterSpecification.hasCodeContaining(request.getCode()))
+                .and(ChapterSpecification.hasDescriptionContaining(request.getDescription()))
+                .and(ChapterSpecification.hasOrderIndexRange(request.getMinOrderIndex(), request.getMaxOrderIndex()))
+                .and(ChapterSpecification.hasDurationRange(request.getMinDuration(), request.getMaxDuration()))
+                .and(ChapterSpecification.hasObjectivesContaining(request.getObjectives()))
+                .and(ChapterSpecification.isActive(request.getActive()))
+                .and(ChapterSpecification.isNotDeleted())
+                .and(request.getHasTopics() != null && request.getHasTopics() ? 
+                     ChapterSpecification.hasTopics() : null)
+                .and(ChapterSpecification.hasMinimumTopics(request.getMinTopics()))
+                .and(ChapterSpecification.hasMaximumTopics(request.getMaxTopics()))
+                .and(ChapterSpecification.createdAfter(request.getCreatedAfter()))
+                .and(ChapterSpecification.createdBefore(request.getCreatedBefore()))
+                .and(ChapterSpecification.createdBy(request.getCreatedBy()));
     }
 
-    @Transactional(readOnly = true)
-    public ChapterListResponseDto searchChapters(Long instituteId, String query) {
-        List<Chapter> chapters = chapterRepository.findByInstituteIdAndNameContainingIgnoreCaseOrInstituteIdAndCodeContainingIgnoreCase(
-                instituteId, query, instituteId, query);
-        List<ChapterResponseDto> chapterDtos = chapters.stream()
-                .map(ChapterResponseDto::fromEntity)
-                .toList();
-        return ChapterListResponseDto.of(chapterDtos);
+    private Pageable createPageable(ChapterSearchRequestDto request) {
+        int page = request.getPage() != null ? request.getPage() : 0;
+        int size = request.getSize() != null ? request.getSize() : 20;
+        
+        String sortBy = request.getSortBy() != null ? request.getSortBy() : "createdAt";
+        String sortDirection = request.getSortDirection() != null ? request.getSortDirection() : "desc";
+        
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
+        
+        return PageRequest.of(page, size, sort);
     }
 
-    @Transactional(readOnly = true)
-    public ChapterListResponseDto getAllChapters() {
-        List<Chapter> chapters = chapterRepository.findAll();
-        List<ChapterResponseDto> chapterDtos = chapters.stream()
-                .map(ChapterResponseDto::fromEntity)
-                .toList();
-        return ChapterListResponseDto.of(chapterDtos);
-    }
 }
+
 
