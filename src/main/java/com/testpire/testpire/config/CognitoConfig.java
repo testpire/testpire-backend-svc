@@ -23,10 +23,10 @@ public class CognitoConfig {
   @Value("${aws.cognito.clientId}")
   private String clientId;
 
-  @Value("${aws.accessKeyId:}")
+  @Value("${aws.accessKeyId}")
   private String accessKeyId;
 
-  @Value("${aws.secretKey:}")
+  @Value("${aws.secretKey}")
   private String secretKey;
 
   @Bean
