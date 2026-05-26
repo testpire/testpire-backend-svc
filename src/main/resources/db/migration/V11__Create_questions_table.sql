@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS questions CASCADE;
+
 -- Create questions table
 CREATE TABLE questions (
     id BIGSERIAL PRIMARY KEY,

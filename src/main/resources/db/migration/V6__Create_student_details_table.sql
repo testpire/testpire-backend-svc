@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS student_details CASCADE;
+
 -- Create student_details table for student-specific information
 CREATE TABLE student_details (
     id BIGSERIAL PRIMARY KEY,

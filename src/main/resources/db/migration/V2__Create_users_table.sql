@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS users CASCADE;
+
 -- Create users table
 CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,

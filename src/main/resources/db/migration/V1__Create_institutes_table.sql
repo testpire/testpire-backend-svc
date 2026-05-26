@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS institutes CASCADE;
+
 -- Create institutes table
 CREATE TABLE institutes (
     id BIGSERIAL PRIMARY KEY,

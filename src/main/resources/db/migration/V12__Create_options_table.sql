@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS options CASCADE;
+
 -- Create options table
 CREATE TABLE options (
     id BIGSERIAL PRIMARY KEY,

@@ -1,28 +1,65 @@
-/*
-package com.testpire.testpire.mongoDomain;
+package com.testpire.testpire.entity;
 
-import java.io.Serializable;
-import java.util.Set;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
-@Document(collection = "test")
-public class Test implements Serializable {
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@Entity
+@Table(name = "tests")
+public class Test {
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-	private static final long serialVersionUID = 1L;
+  @Column(nullable = false)
+  private String title;
 
-	@Id
-	public String id;
+  @Column(columnDefinition = "TEXT")
+  private String description;
 
-	private String name;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "created_by", nullable = false)
+  private User createdBy;
 
-	private String duration;
+  @Column(name = "is_published")
+  private Boolean isPublished = false;
 
-	private Set<String> questionIds;
+  @Column(name = "time_limit")
+  private Integer timeLimit;
 
-	private String createdBy;
+  @Column(name = "max_attempts")
+  private Integer maxAttempts = 1;
 
+  @Column(name = "show_answers")
+  private Boolean showAnswers = false;
+
+  @Column(name = "shuffle_questions")
+  private Boolean shuffleQuestions = false;
+
+  @Column(name = "passing_score")
+  private Double passingScore;
+
+  @CreationTimestamp
+  @Column(name = "created_at", updatable = false)
+  private LocalDateTime createdAt;
+
+  @UpdateTimestamp
+  @Column(name = "updated_at")
+  private LocalDateTime updatedAt;
+
+  @OneToMany(mappedBy = "test", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OrderBy("sortOrder ASC")
+  private List<TestQuestion> testQuestions = new ArrayList<>();
 }
-*/
