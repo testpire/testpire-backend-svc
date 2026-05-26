@@ -1,11 +1,15 @@
 package com.testpire.testpire.dto.request;
 
 import jakarta.validation.constraints.Pattern;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.NoArgsConstructor;
 import lombok.Data;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class SortingRequestDto {
     
     @Pattern(regexp = "^(createdAt|updatedAt|name|code|id)$", message = "Sort field must be one of: createdAt, updatedAt, name, code, id")

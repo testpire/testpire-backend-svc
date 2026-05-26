@@ -1,13 +1,17 @@
 package com.testpire.testpire.dto.request;
 
 import com.testpire.testpire.enums.DifficultyLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.NoArgsConstructor;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class QuestionCriteriaDto {
     
     private Long instituteId;

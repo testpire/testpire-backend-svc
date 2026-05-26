@@ -14,6 +14,7 @@ import com.testpire.testpire.repository.QuestionRepository;
 import com.testpire.testpire.repository.TopicRepository;
 import com.testpire.testpire.repository.specification.QuestionSpecification;
 import com.testpire.testpire.util.JwksJwtUtil;
+import com.testpire.testpire.util.RequestUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -93,11 +94,12 @@ public class QuestionService {
     }
 
     private String getCurrentUsername() {
-        return "system"; // Placeholder
+        String username = RequestUtils.getCurrentUsername();
+        return username != null ? username : "system";
     }
 
     private Long getCurrentUserInstituteId() {
-        return 1L; // Placeholder
+        return RequestUtils.getCurrentUserInstituteId();
     }
 
     private QuestionResponseDto convertToResponseDto(Question question) {
@@ -147,7 +149,10 @@ public class QuestionService {
     public QuestionResponseDto updateQuestion(Long id, UpdateQuestionRequestDto request) {
         log.info("Updating question with ID: {}", id);
 
-        Question question = questionRepository.findByIdAndInstituteIdAndActiveTrueAndDeletedFalse(id, getCurrentUserInstituteId())
+        Long instituteId = getCurrentUserInstituteId();
+        Question question = (instituteId != null
+                ? questionRepository.findByIdAndInstituteIdAndActiveTrueAndDeletedFalse(id, instituteId)
+                : questionRepository.findByIdAndActiveTrueAndDeletedFalse(id))
                 .orElseThrow(() -> new IllegalArgumentException("Question not found with ID: " + id));
 
         // Update question fields
@@ -206,7 +211,10 @@ public class QuestionService {
     public void deleteQuestion(Long id) {
         log.info("Deleting question with ID: {}", id);
 
-        Question question = questionRepository.findByIdAndInstituteIdAndActiveTrueAndDeletedFalse(id, getCurrentUserInstituteId())
+        Long instituteId = getCurrentUserInstituteId();
+        Question question = (instituteId != null
+                ? questionRepository.findByIdAndInstituteIdAndActiveTrueAndDeletedFalse(id, instituteId)
+                : questionRepository.findByIdAndActiveTrueAndDeletedFalse(id))
                 .orElseThrow(() -> new IllegalArgumentException("Question not found with ID: " + id));
 
         // Soft delete question (options will be cascade deleted)
@@ -221,7 +229,10 @@ public class QuestionService {
     public QuestionResponseDto getQuestionById(Long id) {
         log.info("Getting question with ID: {}", id);
 
-        Question question = questionRepository.findByIdAndInstituteIdAndActiveTrueAndDeletedFalse(id, getCurrentUserInstituteId())
+        Long instituteId = getCurrentUserInstituteId();
+        Question question = (instituteId != null
+                ? questionRepository.findByIdAndInstituteIdAndActiveTrueAndDeletedFalse(id, instituteId)
+                : questionRepository.findByIdAndActiveTrueAndDeletedFalse(id))
                 .orElseThrow(() -> new IllegalArgumentException("Question not found with ID: " + id));
 
         return convertToResponseDto(question);
@@ -230,7 +241,9 @@ public class QuestionService {
     public QuestionListResponseDto getQuestionsByTopic(Long topicId, Long instituteId) {
         log.info("Getting questions for topic: {} in institute: {}", topicId, instituteId);
 
-        List<Question> questions = questionRepository.findByTopicIdAndInstituteIdAndActiveTrueAndDeletedFalse(topicId, instituteId);
+        List<Question> questions = (instituteId != null)
+                ? questionRepository.findByTopicIdAndInstituteIdAndActiveTrueAndDeletedFalse(topicId, instituteId)
+                : questionRepository.findByTopicIdAndActiveTrueAndDeletedFalse(topicId);
         
         List<QuestionResponseDto> questionDtos = questions.stream()
                 .map(this::convertToResponseDto)
@@ -296,13 +309,13 @@ public class QuestionService {
                 .and(QuestionSpecification.isActive(request.getActive()))
                 .and(QuestionSpecification.isNotDeleted())
                 .and(request.getHasQuestionImage() != null && request.getHasQuestionImage() ? 
-                     QuestionSpecification.hasQuestionImage() : null)
+                     QuestionSpecification.hasQuestionImage() : (root, query, cb) -> cb.conjunction())
                 .and(request.getHasExplanation() != null && request.getHasExplanation() ? 
-                     QuestionSpecification.hasExplanation() : null)
+                     QuestionSpecification.hasExplanation() : (root, query, cb) -> cb.conjunction())
                 .and(request.getHasCorrectOption() != null && request.getHasCorrectOption() ? 
-                     QuestionSpecification.hasCorrectOption() : null)
+                     QuestionSpecification.hasCorrectOption() : (root, query, cb) -> cb.conjunction())
                 .and(request.getHasOptions() != null && request.getHasOptions() ? 
-                     QuestionSpecification.hasOptions() : null)
+                     QuestionSpecification.hasOptions() : (root, query, cb) -> cb.conjunction())
                 .and(QuestionSpecification.hasMinimumOptions(request.getMinOptions()))
                 .and(QuestionSpecification.hasMaximumOptions(request.getMaxOptions()))
                 .and(QuestionSpecification.createdAfter(request.getCreatedAfter()))

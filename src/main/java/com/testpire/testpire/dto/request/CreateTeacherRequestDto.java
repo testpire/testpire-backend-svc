@@ -8,9 +8,6 @@ public record CreateTeacherRequestDto(
     @Email(message = "Username must be a valid email")
     String username,
     
-    @NotBlank(message = "Password is required")
-    String password,
-    
     @NotBlank(message = "First name is required")
     String firstName,
     

@@ -5,7 +5,6 @@ import lombok.Builder;
 
 @Builder
 public record UpdateOptionRequestDto(
-    @NotNull(message = "Option ID is required")
     Long id,
     
     @NotBlank(message = "Option text is required")

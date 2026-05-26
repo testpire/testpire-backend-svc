@@ -82,11 +82,10 @@ public class TopicController {
     })
     public ResponseEntity<ApiResponseDto> createTopic(@Valid @RequestBody CreateTopicRequestDto request) {
         try {
-            Long instituteId = RequestUtils.getCurrentUserInstituteId();
-            log.info("Creating topic: {} for chapter: {} in institute: {}", 
+            Long instituteId = RequestUtils.resolveInstituteId(request.instituteId());
+            log.info("Creating topic: {} for chapter: {} in institute: {}",
                     request.name(), request.chapterId(), instituteId);
-            
-            // Create a new request with instituteId from JWT
+
             CreateTopicRequestDto requestWithInstituteId = new CreateTopicRequestDto(
                     request.name(),
                     request.description(),
@@ -323,7 +322,7 @@ public class TopicController {
     })
     public ResponseEntity<ApiResponseDto> searchTopicsAdvanced(@Valid @RequestBody TopicSearchRequestDto request) {
         try {
-            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            Long instituteId = RequestUtils.resolveInstituteId(request.getInstituteId());
             log.info("Advanced search for topics with criteria: {}", request);
             
             // Set instituteId from JWT token

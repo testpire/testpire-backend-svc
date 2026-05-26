@@ -58,22 +58,15 @@ public class StudentController {
                     .body(ApiResponseDto.error("Institute not found with ID: " + request.instituteId()));
             }
 
-            // Convert to RegisterRequest for Cognito
-            RegisterRequest registerRequest = new RegisterRequest(
-                request.username(),
-                request.username(), // email same as username
-                request.password(),
-                request.firstName(),
-                request.lastName(),
-                UserRole.STUDENT,
-                request.instituteId()
-            );
+            // Create user in Cognito (Cognito emails a temporary password to the user)
+            String cognitoUserId = cognitoService.adminCreateUser(
+                    request.username(), request.firstName(), request.lastName(),
+                    UserRole.STUDENT, request.instituteId());
 
-            // Create user in Cognito
-            String cognitoUserId = cognitoService.signUp(registerRequest, UserRole.STUDENT);
-            
             // Create user in local database
-            User createdUser = userService.createUser(registerRequest, UserRole.STUDENT, cognitoUserId, RequestUtils.getCurrentUsername());
+            User createdUser = userService.createUser(
+                    request.username(), request.firstName(), request.lastName(),
+                    UserRole.STUDENT, request.instituteId(), cognitoUserId, RequestUtils.getCurrentUsername());
             
             // Create student details
             com.testpire.testpire.entity.StudentDetails studentDetails = studentDetailsService.createStudentDetails(

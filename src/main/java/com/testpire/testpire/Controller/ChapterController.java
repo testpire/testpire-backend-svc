@@ -82,11 +82,10 @@ public class ChapterController {
     })
     public ResponseEntity<ApiResponseDto> createChapter(@Valid @RequestBody CreateChapterRequestDto request) {
         try {
-            Long instituteId = RequestUtils.getCurrentUserInstituteId();
-            log.info("Creating chapter: {} for subject: {} in institute: {}", 
+            Long instituteId = RequestUtils.resolveInstituteId(request.instituteId());
+            log.info("Creating chapter: {} for subject: {} in institute: {}",
                     request.name(), request.subjectId(), instituteId);
-            
-            // Create a new request with instituteId from JWT
+
             CreateChapterRequestDto requestWithInstituteId = new CreateChapterRequestDto(
                     request.name(),
                     request.description(),
@@ -322,7 +321,7 @@ public class ChapterController {
     })
     public ResponseEntity<ApiResponseDto> searchChaptersAdvanced(@Valid @RequestBody ChapterSearchRequestDto request) {
         try {
-            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            Long instituteId = RequestUtils.resolveInstituteId(request.getInstituteId());
             log.info("Advanced search for chapters with criteria: {}", request);
             
             // Set instituteId from JWT token

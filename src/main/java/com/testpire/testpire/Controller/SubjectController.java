@@ -82,11 +82,10 @@ public class SubjectController {
     })
     public ResponseEntity<ApiResponseDto> createSubject(@Valid @RequestBody CreateSubjectRequestDto request) {
         try {
-            Long instituteId = RequestUtils.getCurrentUserInstituteId();
-            log.info("Creating subject: {} for course: {} in institute: {}", 
+            Long instituteId = RequestUtils.resolveInstituteId(request.instituteId());
+            log.info("Creating subject: {} for course: {} in institute: {}",
                     request.name(), request.courseId(), instituteId);
-            
-            // Create a new request with instituteId from JWT
+
             CreateSubjectRequestDto requestWithInstituteId = new CreateSubjectRequestDto(
                     request.name(),
                     request.description(),
@@ -322,7 +321,7 @@ public class SubjectController {
     })
     public ResponseEntity<ApiResponseDto> searchSubjectsAdvanced(@Valid @RequestBody SubjectSearchRequestDto request) {
         try {
-            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            Long instituteId = RequestUtils.resolveInstituteId(request.getInstituteId());
             log.info("Advanced search for subjects with criteria: {}", request);
             
             // Set instituteId from JWT token

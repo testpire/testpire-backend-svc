@@ -192,7 +192,7 @@ public class TopicService {
                 .and(TopicSpecification.isActive(request.getActive()))
                 .and(TopicSpecification.isNotDeleted())
                 .and(request.getHasQuestions() != null && request.getHasQuestions() ? 
-                     TopicSpecification.hasQuestions() : null)
+                     TopicSpecification.hasQuestions() : (root, query, cb) -> cb.conjunction())
                 .and(TopicSpecification.hasMinimumQuestions(request.getMinQuestions()))
                 .and(TopicSpecification.hasMaximumQuestions(request.getMaxQuestions()))
                 .and(TopicSpecification.createdAfter(request.getCreatedAfter()))

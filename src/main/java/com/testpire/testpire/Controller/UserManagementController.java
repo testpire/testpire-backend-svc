@@ -63,22 +63,15 @@ public class UserManagementController {
                     .body(ApiResponseDto.error("Insufficient permissions to create this user type"));
             }
 
-            // Convert to RegisterRequest for Cognito
-            RegisterRequest registerRequest = new RegisterRequest(
-                request.username(),
-                request.username(), // email same as username
-                request.password(),
-                request.firstName(),
-                request.lastName(),
-                request.role(),
-                request.instituteId()
-            );
+            // Create user in Cognito (no password needed — Cognito emails a temporary password)
+            String cognitoUserId = cognitoService.adminCreateUser(
+                    request.username(), request.firstName(), request.lastName(),
+                    request.role(), request.instituteId());
 
-            // Create user in Cognito
-            String cognitoUserId = cognitoService.signUp(registerRequest, request.role());
-            
             // Create user in local database
-            User createdUser = userService.createUser(registerRequest, request.role(), cognitoUserId, currentUser.username());
+            User createdUser = userService.createUser(
+                    request.username(), request.firstName(), request.lastName(),
+                    request.role(), request.instituteId(), cognitoUserId, currentUser.username());
 
             return ResponseEntity.ok(ApiResponseDto.success(
                 request.role() + " registered successfully",
@@ -282,6 +275,37 @@ public class UserManagementController {
             log.error("Error deleting user", e);
             return ResponseEntity.badRequest()
                 .body(Map.of("error", "Failed to delete user", "message", e.getMessage()));
+        }
+    }
+
+    // ========== RESEND INVITATION ==========
+
+    @PostMapping("/{id}/resend-invitation")
+    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN})
+    @Operation(summary = "Resend invitation", description = "Resends the Cognito invitation email with a new temporary password to a user who hasn't logged in yet.")
+    public ResponseEntity<ApiResponseDto> resendInvitation(@PathVariable Long id) {
+        try {
+            UserDto currentUser = RequestUtils.getCurrentUser();
+            if (currentUser == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(ApiResponseDto.error("User not found"));
+            }
+
+            User targetUser = userService.getUserById(id);
+
+            if (currentUser.role() != UserRole.SUPER_ADMIN &&
+                    !targetUser.getInstituteId().equals(currentUser.instituteId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(ApiResponseDto.error("Access denied - user not in your institute"));
+            }
+
+            cognitoService.resendInvitation(targetUser.getUsername());
+            return ResponseEntity.ok(ApiResponseDto.success(
+                    "Invitation resent to " + targetUser.getUsername(), null));
+        } catch (Exception e) {
+            log.error("Error resending invitation", e);
+            return ResponseEntity.badRequest()
+                    .body(ApiResponseDto.error("Failed to resend invitation: " + e.getMessage()));
         }
     }
 

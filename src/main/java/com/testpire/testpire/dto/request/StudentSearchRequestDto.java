@@ -1,13 +1,17 @@
 package com.testpire.testpire.dto.request;
 
 import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.NoArgsConstructor;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class StudentSearchRequestDto {
     
     @Valid

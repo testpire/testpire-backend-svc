@@ -233,7 +233,16 @@ public class InstituteController {
     @Operation(summary = "Advanced search institutes", description = "Search institutes with advanced criteria, pagination, and sorting (SUPER_ADMIN only)")
     public ResponseEntity<ApiResponseDto> searchInstitutesAdvanced(@Valid @RequestBody InstituteSearchRequestDto request) {
         try {
-            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            if (request.getCriteria() == null) {
+                request.setCriteria(InstituteCriteriaDto.builder().build());
+            }
+            if (request.getSorting() == null) {
+                request.setSorting(SortingRequestDto.builder().field("createdAt").direction("desc").build());
+            }
+            if (request.getPagination() == null) {
+                request.setPagination(PaginationRequestDto.builder().page(0).size(20).build());
+            }
+            Long instituteId = RequestUtils.resolveInstituteId(request.getCriteria().getInstituteId());
             log.info("Advanced search for institutes with instId: {}, criteria: {}", instituteId, request);
             request.getCriteria().setInstituteId(instituteId);
             InstituteListResponseDto institutes = instituteService.searchInstitutesWithSpecification(request);
@@ -369,29 +378,14 @@ public class InstituteController {
                     .body(ApiResponseDto.error("Institute not found with ID: " + instituteId));
             }
 
-            // Ensure the user is being created for the correct institute
-            CreateUserRequestDto teacherRequest = new CreateUserRequestDto(
-                request.username(),
-                request.password(),
-                request.firstName(),
-                request.lastName(),
-                UserRole.TEACHER,
-                instituteId
-            );
+            // Create user in Cognito (Cognito emails a temporary password to the user)
+            String cognitoUserId = cognitoService.adminCreateUser(
+                    request.username(), request.firstName(), request.lastName(),
+                    UserRole.TEACHER, instituteId);
 
-            // Convert to RegisterRequest for Cognito
-            RegisterRequest registerRequest = new RegisterRequest(
-                teacherRequest.username(),
-                teacherRequest.username(), // email same as username
-                teacherRequest.password(),
-                teacherRequest.firstName(),
-                teacherRequest.lastName(),
-                UserRole.TEACHER,
-                instituteId
-            );
-
-            String cognitoUserId = cognitoService.signUp(registerRequest, UserRole.TEACHER);
-            User createdUser = userService.createUser(registerRequest, UserRole.TEACHER, cognitoUserId, RequestUtils.getCurrentUsername());
+            User createdUser = userService.createUser(
+                    request.username(), request.firstName(), request.lastName(),
+                    UserRole.TEACHER, instituteId, cognitoUserId, RequestUtils.getCurrentUsername());
 
             return ResponseEntity.ok(ApiResponseDto.success(
                 "Teacher registered successfully",
@@ -419,29 +413,14 @@ public class InstituteController {
                     .body(ApiResponseDto.error("Institute not found with ID: " + instituteId));
             }
 
-            // Ensure the user is being created for the correct institute
-            CreateUserRequestDto studentRequest = new CreateUserRequestDto(
-                request.username(),
-                request.password(),
-                request.firstName(),
-                request.lastName(),
-                UserRole.STUDENT,
-                instituteId
-            );
+            // Create user in Cognito (Cognito emails a temporary password to the user)
+            String cognitoUserId = cognitoService.adminCreateUser(
+                    request.username(), request.firstName(), request.lastName(),
+                    UserRole.STUDENT, instituteId);
 
-            // Convert to RegisterRequest for Cognito
-            RegisterRequest registerRequest = new RegisterRequest(
-                studentRequest.username(),
-                studentRequest.username(), // email same as username
-                studentRequest.password(),
-                studentRequest.firstName(),
-                studentRequest.lastName(),
-                UserRole.STUDENT,
-                instituteId
-            );
-
-            String cognitoUserId = cognitoService.signUp(registerRequest, UserRole.STUDENT);
-            User createdUser = userService.createUser(registerRequest, UserRole.STUDENT, cognitoUserId, RequestUtils.getCurrentUsername());
+            User createdUser = userService.createUser(
+                    request.username(), request.firstName(), request.lastName(),
+                    UserRole.STUDENT, instituteId, cognitoUserId, RequestUtils.getCurrentUsername());
 
             return ResponseEntity.ok(ApiResponseDto.success(
                 "Student registered successfully",

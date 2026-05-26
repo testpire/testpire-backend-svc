@@ -22,6 +22,37 @@ public class UserService {
     private final UserRepository userRepository;
     private final InstituteService instituteService;
 
+    public User createUser(String username, String firstName, String lastName,
+                           UserRole role, Long instituteId, String cognitoUserId, String createdBy) {
+        log.info("Creating user: {} with role: {}", username, role);
+
+        if (userRepository.existsByUsername(username)) {
+            throw new IllegalArgumentException(String.format(ApplicationConstants.Messages.USER_ALREADY_EXISTS, username));
+        }
+        if (userRepository.existsByEmail(username)) {
+            throw new IllegalArgumentException(String.format(ApplicationConstants.Messages.USER_EMAIL_EXISTS, username));
+        }
+        if (!instituteService.instituteExistsById(instituteId)) {
+            throw new IllegalArgumentException(ApplicationConstants.Messages.INSTITUTE_NOT_FOUND + instituteId);
+        }
+
+        User user = User.builder()
+                .username(username)
+                .email(username)
+                .firstName(firstName)
+                .lastName(lastName)
+                .role(role)
+                .instituteId(instituteId)
+                .cognitoUserId(cognitoUserId)
+                .enabled(true)
+                .createdBy(createdBy)
+                .build();
+
+        User savedUser = userRepository.save(user);
+        log.info("User created successfully with ID: {}", savedUser.getId());
+        return savedUser;
+    }
+
     public User createUser(RegisterRequest request, UserRole role, String cognitoUserId, String createdBy) {
         log.info("Creating user: {} with role: {}", request.username(), role);
         

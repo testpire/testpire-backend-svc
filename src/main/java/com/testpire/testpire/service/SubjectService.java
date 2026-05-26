@@ -155,7 +155,7 @@ public class SubjectService {
                 .and(SubjectSpecification.isActive(request.getActive()))
                 .and(SubjectSpecification.isNotDeleted())
                 .and(request.getHasChapters() != null && request.getHasChapters() ? 
-                     SubjectSpecification.hasChapters() : null)
+                     SubjectSpecification.hasChapters() : (root, query, cb) -> cb.conjunction())
                 .and(SubjectSpecification.hasMinimumChapters(request.getMinChapters()))
                 .and(SubjectSpecification.hasMaximumChapters(request.getMaxChapters()))
                 .and(SubjectSpecification.createdAfter(request.getCreatedAfter()))

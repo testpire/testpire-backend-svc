@@ -25,6 +25,11 @@ public interface QuestionRepository extends JpaRepository<Question, Long>, JpaSp
     
     
     Optional<Question> findByIdAndInstituteIdAndActiveTrueAndDeletedFalse(Long id, Long instituteId);
+
+    Optional<Question> findByIdAndActiveTrueAndDeletedFalse(Long id);
+
+    @Query("SELECT q FROM Question q WHERE q.topic.id = :topicId AND q.active = true AND q.deleted = false")
+    List<Question> findByTopicIdAndActiveTrueAndDeletedFalse(@Param("topicId") Long topicId);
     
     @Query("SELECT COUNT(q) FROM Question q WHERE q.instituteId = :instituteId AND q.active = true AND q.deleted = false")
     Long countByInstituteId(@Param("instituteId") Long instituteId);

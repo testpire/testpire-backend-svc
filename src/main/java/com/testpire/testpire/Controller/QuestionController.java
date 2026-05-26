@@ -86,10 +86,9 @@ public class QuestionController {
     })
     public ResponseEntity<ApiResponseDto> createQuestion(@Valid @RequestBody CreateQuestionRequestDto request) {
         try {
-            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            Long instituteId = RequestUtils.resolveInstituteId(request.instituteId());
             log.info("Creating question for topic: {} in institute: {}", request.topicId(), instituteId);
-            
-            // Create a new request with instituteId from JWT
+
             CreateQuestionRequestDto requestWithInstituteId = CreateQuestionRequestDto.builder()
                     .text(request.text())
                     .difficultyLevel(request.difficultyLevel())
@@ -408,7 +407,7 @@ public class QuestionController {
     })
     public ResponseEntity<ApiResponseDto> searchQuestionsAdvanced(@Valid @RequestBody QuestionSearchRequestDto request) {
         try {
-            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            Long instituteId = RequestUtils.resolveInstituteId(request.getInstituteId());
             log.info("Advanced search for questions with criteria: {}", request);
             
             // Set instituteId from JWT token

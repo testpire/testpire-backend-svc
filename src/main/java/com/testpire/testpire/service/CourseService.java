@@ -141,8 +141,8 @@ public class CourseService {
                 .and(CourseSpecification.hasPrerequisitesContaining(request.getPrerequisites()))
                 .and(CourseSpecification.isActive(request.getActive()))
                 .and(CourseSpecification.isNotDeleted())
-                .and(request.getHasSubjects() != null && request.getHasSubjects() ? 
-                     CourseSpecification.hasSubjects() : null)
+                .and(request.getHasSubjects() != null && request.getHasSubjects() ?
+                     CourseSpecification.hasSubjects() : (root, query, cb) -> cb.conjunction())
                 .and(CourseSpecification.hasMinimumSubjects(request.getMinSubjects()))
                 .and(CourseSpecification.hasMaximumSubjects(request.getMaxSubjects()))
                 .and(CourseSpecification.createdAfter(request.getCreatedAfter()))

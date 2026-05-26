@@ -3,8 +3,7 @@ package com.testpire.testpire.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -27,15 +26,12 @@ public class S3Service {
     private final String bucketName;
 
     public S3Service(@Value("${aws.s3.bucket-name}") String bucketName,
-                     @Value("${aws.accessKeyId}") String accessKeyId,
-                     @Value("${aws.secretKey}") String secretAccessKey,
                      @Value("${aws.region}") String region) {
         this.bucketName = bucketName;
-        
-        AwsBasicCredentials awsCredentials = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
+
         this.s3Client = S3Client.builder()
                 .region(Region.of(region))
-                .credentialsProvider(StaticCredentialsProvider.create(awsCredentials))
+                .credentialsProvider(DefaultCredentialsProvider.create())
                 .build();
     }
 

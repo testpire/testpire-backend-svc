@@ -2,11 +2,15 @@ package com.testpire.testpire.dto.request;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Max;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.NoArgsConstructor;
 import lombok.Data;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class PaginationRequestDto {
     
     @Min(value = 0, message = "Page number must be 0 or greater")

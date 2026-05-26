@@ -155,7 +155,7 @@ public class ChapterService {
                 .and(ChapterSpecification.isActive(request.getActive()))
                 .and(ChapterSpecification.isNotDeleted())
                 .and(request.getHasTopics() != null && request.getHasTopics() ? 
-                     ChapterSpecification.hasTopics() : null)
+                     ChapterSpecification.hasTopics() : (root, query, cb) -> cb.conjunction())
                 .and(ChapterSpecification.hasMinimumTopics(request.getMinTopics()))
                 .and(ChapterSpecification.hasMaximumTopics(request.getMaxTopics()))
                 .and(ChapterSpecification.createdAfter(request.getCreatedAfter()))

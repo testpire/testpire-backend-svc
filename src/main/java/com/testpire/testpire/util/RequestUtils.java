@@ -27,10 +27,18 @@ public class RequestUtils {
     
     public static Long getCurrentUserInstituteId() {
         UserDto currentUser = getCurrentUser();
-        if (currentUser == null || currentUser.instituteId() < 1){
-            //for super admin
+        if (currentUser == null || currentUser.instituteId() == null || currentUser.instituteId() < 1) {
             return null;
         }
         return currentUser.instituteId();
+    }
+
+    /**
+     * Returns the JWT-scoped instituteId for non-SUPER_ADMIN users (enforcing multi-tenancy),
+     * and falls back to the request-provided value for SUPER_ADMIN (who operates across institutes).
+     */
+    public static Long resolveInstituteId(Long requestInstituteId) {
+        Long jwtInstituteId = getCurrentUserInstituteId();
+        return jwtInstituteId != null ? jwtInstituteId : requestInstituteId;
     }
 }

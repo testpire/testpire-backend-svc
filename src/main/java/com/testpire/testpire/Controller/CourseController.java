@@ -83,10 +83,9 @@ public class CourseController {
     public ResponseEntity<ApiResponseDto> createCourse(
             @Valid @RequestBody CreateCourseRequestDto request) {
         try {
-            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            Long instituteId = RequestUtils.resolveInstituteId(request.instituteId());
             log.info("Creating course: {} for institute: {}", request.name(), instituteId);
-            
-            // Create a new request with instituteId from JWT
+
             CreateCourseRequestDto requestWithInstituteId = new CreateCourseRequestDto(
                     request.name(),
                     request.description(),
@@ -275,11 +274,13 @@ public class CourseController {
     })
     public ResponseEntity<ApiResponseDto> getCourseByCode(
             @Parameter(description = "Course code", required = true, example = "CS101")
-            @PathVariable String code) {
+            @PathVariable String code,
+            @Parameter(description = "Institute ID (required for SUPER_ADMIN)")
+            @RequestParam(required = false) Long instituteId) {
         try {
-            Long instituteId = RequestUtils.getCurrentUserInstituteId();
-            log.info("Getting course with code: {} for institute: {}", code, instituteId);
-            CourseResponseDto course = courseService.getCourseByCode(code, instituteId);
+            Long resolvedInstituteId = RequestUtils.resolveInstituteId(instituteId);
+            log.info("Getting course with code: {} for institute: {}", code, resolvedInstituteId);
+            CourseResponseDto course = courseService.getCourseByCode(code, resolvedInstituteId);
             return ResponseEntity.ok(ApiResponseDto.success("Course retrieved successfully", course));
         } catch (Exception e) {
             log.error("Error getting course by code", e);
@@ -321,8 +322,11 @@ public class CourseController {
     })
     public ResponseEntity<ApiResponseDto> searchCoursesAdvanced(@Valid @RequestBody CourseSearchRequestDto request) {
         try {
-            Long instituteId = RequestUtils.getCurrentUserInstituteId();
             log.info("Advanced search for courses with criteria: {}", request);
+            if (request.getCriteria() == null) {
+                request.setCriteria(CourseCriteriaDto.builder().build());
+            }
+            Long instituteId = RequestUtils.resolveInstituteId(request.getCriteria().getInstituteId());
             request.getCriteria().setInstituteId(instituteId);
             CourseListResponseDto courses = courseService.searchCoursesWithSpecification(request);
             return ResponseEntity.ok(ApiResponseDto.success("Courses retrieved successfully", courses));
