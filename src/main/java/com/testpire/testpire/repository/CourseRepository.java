@@ -11,6 +11,7 @@ import java.util.Optional;
 @Repository
 public interface CourseRepository extends JpaRepository<Course, Long>, JpaSpecificationExecutor<Course> {
     Optional<Course> findByCodeAndInstituteId(String code, Long instituteId);
+    Optional<Course> findByIdAndInstituteId(Long id, Long instituteId);
     boolean existsByCodeAndInstituteId(String code, Long instituteId);
 }
 

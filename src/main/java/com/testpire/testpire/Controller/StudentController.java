@@ -100,17 +100,30 @@ public class StudentController {
     @Operation(summary = "Get student by ID", description = "Get student details by ID")
     public ResponseEntity<ApiResponseDto> getStudentById(@PathVariable Long id) {
         try {
+            com.testpire.testpire.dto.UserDto currentUser = RequestUtils.getCurrentUser();
+            if (currentUser == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponseDto.error("User not found"));
+            }
+
             User student = userService.getUserById(id);
-            
+
             // Verify it's a student
             if (student.getRole() != UserRole.STUDENT) {
                 return ResponseEntity.badRequest()
                     .body(ApiResponseDto.error("User is not a student"));
             }
 
+            // Institute isolation: non-SUPER_ADMIN can only access students in their own institute
+            if (currentUser.role() != UserRole.SUPER_ADMIN &&
+                !student.getInstituteId().equals(currentUser.instituteId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponseDto.error("Access denied - student not in your institute"));
+            }
+
             // Get student details
             com.testpire.testpire.entity.StudentDetails studentDetails = studentDetailsService.getStudentDetailsByUser(student).orElse(null);
-            
+
             StudentResponseDto response = StudentResponseDto.fromEntity(student, studentDetails);
             return ResponseEntity.ok(ApiResponseDto.success("Student retrieved successfully", response));
         } catch (Exception e) {
@@ -125,12 +138,25 @@ public class StudentController {
     @Operation(summary = "Update student", description = "Update student details (SUPER_ADMIN or INST_ADMIN)")
     public ResponseEntity<ApiResponseDto> updateStudent(@PathVariable Long id, @Valid @RequestBody UpdateStudentRequestDto request) {
         try {
+            com.testpire.testpire.dto.UserDto currentUser = RequestUtils.getCurrentUser();
+            if (currentUser == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponseDto.error("User not found"));
+            }
+
             User student = userService.getUserById(id);
-            
+
             // Verify it's a student
             if (student.getRole() != UserRole.STUDENT) {
                 return ResponseEntity.badRequest()
                     .body(ApiResponseDto.error("User is not a student"));
+            }
+
+            // Institute isolation: non-SUPER_ADMIN can only update students in their own institute
+            if (currentUser.role() != UserRole.SUPER_ADMIN &&
+                !student.getInstituteId().equals(currentUser.instituteId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponseDto.error("Access denied - student not in your institute"));
             }
 
             // Update user fields if provided
@@ -140,7 +166,8 @@ public class StudentController {
             if (request.lastName() != null) {
                 student.setLastName(request.lastName());
             }
-            if (request.instituteId() != null) {
+            // Only SUPER_ADMIN may move a student to another institute; ignore body instituteId otherwise
+            if (currentUser.role() == UserRole.SUPER_ADMIN && request.instituteId() != null) {
                 // Validate institute exists
                 if (!instituteService.instituteExistsById(request.instituteId())) {
                     return ResponseEntity.badRequest()
@@ -185,12 +212,25 @@ public class StudentController {
     @Operation(summary = "Delete student", description = "Delete student (SUPER_ADMIN or INST_ADMIN)")
     public ResponseEntity<ApiResponseDto> deleteStudent(@PathVariable Long id) {
         try {
+            com.testpire.testpire.dto.UserDto currentUser = RequestUtils.getCurrentUser();
+            if (currentUser == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponseDto.error("User not found"));
+            }
+
             User student = userService.getUserById(id);
-            
+
             // Verify it's a student
             if (student.getRole() != UserRole.STUDENT) {
                 return ResponseEntity.badRequest()
                     .body(ApiResponseDto.error("User is not a student"));
+            }
+
+            // Institute isolation: non-SUPER_ADMIN can only delete students in their own institute
+            if (currentUser.role() != UserRole.SUPER_ADMIN &&
+                !student.getInstituteId().equals(currentUser.instituteId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponseDto.error("Access denied - student not in your institute"));
             }
 
             // Delete student details first
@@ -216,8 +256,15 @@ public class StudentController {
             @RequestParam(required = false) String course,
             @RequestParam(required = false) Integer yearOfStudy) {
         try {
+            // Institute isolation: non-SUPER_ADMIN may only list students in their own institute,
+            // regardless of any client-supplied instituteId.
+            Long callerInstituteId = RequestUtils.getCurrentUserInstituteId();
+            if (callerInstituteId != null) {
+                instituteId = callerInstituteId;
+            }
+
             List<com.testpire.testpire.entity.StudentDetails> studentDetailsList;
-            
+
             if (instituteId != null && course != null) {
                 // Get students by institute and course
                 studentDetailsList = studentDetailsService.getStudentsByInstituteAndCourse(instituteId, course);
@@ -262,6 +309,13 @@ public class StudentController {
     @Operation(summary = "Get students by institute", description = "Get all students in a specific institute")
     public ResponseEntity<StudentListResponseDto> getStudentsByInstitute(@PathVariable Long instituteId) {
         try {
+            // Institute isolation: non-SUPER_ADMIN may only list students in their own institute,
+            // ignoring any instituteId supplied in the path.
+            Long callerInstituteId = RequestUtils.getCurrentUserInstituteId();
+            if (callerInstituteId != null) {
+                instituteId = callerInstituteId;
+            }
+
             // Validate institute exists
             if (!instituteService.instituteExistsById(instituteId)) {
                 return ResponseEntity.badRequest()
@@ -293,9 +347,16 @@ public class StudentController {
     @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
     @Operation(summary = "Get students by institute and course", description = "Get all students in a specific institute and course")
     public ResponseEntity<StudentListResponseDto> getStudentsByInstituteAndCourse(
-            @PathVariable Long instituteId, 
+            @PathVariable Long instituteId,
             @PathVariable String course) {
         try {
+            // Institute isolation: non-SUPER_ADMIN may only list students in their own institute,
+            // ignoring any instituteId supplied in the path.
+            Long callerInstituteId = RequestUtils.getCurrentUserInstituteId();
+            if (callerInstituteId != null) {
+                instituteId = callerInstituteId;
+            }
+
             // Validate institute exists
             if (!instituteService.instituteExistsById(instituteId)) {
                 return ResponseEntity.badRequest()

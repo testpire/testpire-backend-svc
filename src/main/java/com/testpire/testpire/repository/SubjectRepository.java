@@ -11,6 +11,7 @@ import java.util.Optional;
 @Repository
 public interface SubjectRepository extends JpaRepository<Subject, Long>, JpaSpecificationExecutor<Subject> {
     Optional<Subject> findByCodeAndInstituteId(String code, Long instituteId);
+    Optional<Subject> findByIdAndInstituteId(Long id, Long instituteId);
     boolean existsByCodeAndInstituteId(String code, Long instituteId);
 }
 

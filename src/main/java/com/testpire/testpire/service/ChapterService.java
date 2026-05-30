@@ -71,8 +71,7 @@ public class ChapterService {
     public ChapterResponseDto updateChapter(Long id, UpdateChapterRequestDto request) {
         log.info("Updating chapter with ID: {}", id);
 
-        Chapter existingChapter = chapterRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Chapter not found with ID: " + id));
+        Chapter existingChapter = findChapterScoped(id);
 
         // Check if new code conflicts with existing chapters in the same institute
         if (request.code() != null && !request.code().equals(existingChapter.getCode()) &&
@@ -98,8 +97,7 @@ public class ChapterService {
     public void deleteChapter(Long id) {
         log.info("Deleting chapter with ID: {}", id);
 
-        Chapter chapter = chapterRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Chapter not found with ID: " + id));
+        Chapter chapter = findChapterScoped(id);
 
         chapter.setActive(false);
         chapter.setUpdatedBy(RequestUtils.getCurrentUsername());
@@ -109,9 +107,21 @@ public class ChapterService {
 
     @Transactional(readOnly = true)
     public ChapterResponseDto getChapterById(Long id) {
-        Chapter chapter = chapterRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Chapter not found with ID: " + id));
+        Chapter chapter = findChapterScoped(id);
         return ChapterResponseDto.fromEntity(chapter);
+    }
+
+    /**
+     * Loads a chapter scoped to the caller's institute. Non-SUPER_ADMIN callers are restricted to
+     * their JWT institute; a chapter in another institute is reported as not found. SUPER_ADMIN
+     * (null instituteId) uses the unscoped lookup.
+     */
+    private Chapter findChapterScoped(Long id) {
+        Long instituteId = RequestUtils.getCurrentUserInstituteId();
+        return (instituteId != null
+                ? chapterRepository.findByIdAndInstituteId(id, instituteId)
+                : chapterRepository.findById(id))
+                .orElseThrow(() -> new IllegalArgumentException("Chapter not found with ID: " + id));
     }
 
     @Transactional(readOnly = true)

@@ -340,7 +340,11 @@ public class InstituteController {
                     .createdBy(createdBy)
                     .updatedBy(updatedBy)
                     .build();
-            
+
+            // Institute isolation: scope to the caller's JWT institute (null for SUPER_ADMIN),
+            // mirroring the POST /search/advanced sibling.
+            criteria.setInstituteId(RequestUtils.resolveInstituteId(null));
+
             PaginationRequestDto pagination = PaginationRequestDto.builder()
                     .page(page)
                     .size(size)

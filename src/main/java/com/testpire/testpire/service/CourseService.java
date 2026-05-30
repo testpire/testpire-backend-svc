@@ -58,8 +58,7 @@ public class CourseService {
     public CourseResponseDto updateCourse(Long id, UpdateCourseRequestDto request) {
         log.info("Updating course with ID: {}", id);
 
-        Course existingCourse = courseRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Course not found with ID: " + id));
+        Course existingCourse = findCourseScoped(id);
 
         // Check if new code conflicts with existing courses in the same institute
         if (request.code() != null && !request.code().equals(existingCourse.getCode()) &&
@@ -85,8 +84,7 @@ public class CourseService {
     public void deleteCourse(Long id) {
         log.info("Deleting course with ID: {}", id);
 
-        Course course = courseRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Course not found with ID: " + id));
+        Course course = findCourseScoped(id);
 
         course.setActive(false);
         course.setUpdatedBy(RequestUtils.getCurrentUsername());
@@ -96,9 +94,22 @@ public class CourseService {
 
     @Transactional(readOnly = true)
     public CourseResponseDto getCourseById(Long id) {
-        Course course = courseRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Course not found with ID: " + id));
+        Course course = findCourseScoped(id);
         return CourseResponseDto.fromEntity(course);
+    }
+
+    /**
+     * Loads a course scoped to the caller's institute. For non-SUPER_ADMIN users the lookup is
+     * restricted to their JWT institute; if the course belongs to another institute it is reported
+     * as not found (do not leak cross-tenant existence). SUPER_ADMIN (null instituteId) uses the
+     * unscoped lookup.
+     */
+    private Course findCourseScoped(Long id) {
+        Long instituteId = RequestUtils.getCurrentUserInstituteId();
+        return (instituteId != null
+                ? courseRepository.findByIdAndInstituteId(id, instituteId)
+                : courseRepository.findById(id))
+                .orElseThrow(() -> new IllegalArgumentException("Course not found with ID: " + id));
     }
 
     @Transactional(readOnly = true)

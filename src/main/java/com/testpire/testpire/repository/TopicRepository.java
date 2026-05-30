@@ -13,6 +13,7 @@ import java.util.Optional;
 @Repository
 public interface TopicRepository extends JpaRepository<Topic, Long>, JpaSpecificationExecutor<Topic> {
     Optional<Topic> findByCodeAndInstituteId(String code, Long instituteId);
+    Optional<Topic> findByIdAndInstituteId(Long id, Long instituteId);
     boolean existsByCodeAndInstituteId(String code, Long instituteId);
     List<Topic> findByChapterIdOrderByOrderIndex(Long chapterId);
     

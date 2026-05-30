@@ -11,6 +11,7 @@ import java.util.Optional;
 @Repository
 public interface ChapterRepository extends JpaRepository<Chapter, Long>, JpaSpecificationExecutor<Chapter> {
     Optional<Chapter> findByCodeAndInstituteId(String code, Long instituteId);
+    Optional<Chapter> findByIdAndInstituteId(Long id, Long instituteId);
     boolean existsByCodeAndInstituteId(String code, Long instituteId);
     List<Chapter> findBySubjectIdOrderByOrderIndex(Long subjectId);
 }

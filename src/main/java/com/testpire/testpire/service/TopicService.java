@@ -72,8 +72,7 @@ public class TopicService {
     public TopicResponseDto updateTopic(Long id, UpdateTopicRequestDto request) {
         log.info("Updating topic with ID: {}", id);
 
-        Topic existingTopic = topicRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Topic not found with ID: " + id));
+        Topic existingTopic = findTopicScoped(id);
 
         // Check if new code conflicts with existing topics in the same institute
         if (request.code() != null && !request.code().equals(existingTopic.getCode()) &&
@@ -100,8 +99,7 @@ public class TopicService {
     public void deleteTopic(Long id) {
         log.info("Deleting topic with ID: {}", id);
 
-        Topic topic = topicRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Topic not found with ID: " + id));
+        Topic topic = findTopicScoped(id);
 
         topic.setActive(false);
         topic.setUpdatedBy(RequestUtils.getCurrentUsername());
@@ -111,9 +109,21 @@ public class TopicService {
 
     @Transactional(readOnly = true)
     public TopicResponseDto getTopicById(Long id) {
-        Topic topic = topicRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Topic not found with ID: " + id));
+        Topic topic = findTopicScoped(id);
         return TopicResponseDto.fromEntity(topic);
+    }
+
+    /**
+     * Loads a topic scoped to the caller's institute. Non-SUPER_ADMIN callers are restricted to
+     * their JWT institute; a topic in another institute is reported as not found. SUPER_ADMIN
+     * (null instituteId) uses the unscoped lookup.
+     */
+    private Topic findTopicScoped(Long id) {
+        Long instituteId = RequestUtils.getCurrentUserInstituteId();
+        return (instituteId != null
+                ? topicRepository.findByIdAndInstituteId(id, instituteId)
+                : topicRepository.findById(id))
+                .orElseThrow(() -> new IllegalArgumentException("Topic not found with ID: " + id));
     }
 
     @Transactional(readOnly = true)

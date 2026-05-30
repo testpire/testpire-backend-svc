@@ -71,8 +71,7 @@ public class SubjectService {
     public SubjectResponseDto updateSubject(Long id, UpdateSubjectRequestDto request) {
         log.info("Updating subject with ID: {}", id);
 
-        Subject existingSubject = subjectRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Subject not found with ID: " + id));
+        Subject existingSubject = findSubjectScoped(id);
 
         // Check if new code conflicts with existing subjects in the same institute
         if (request.code() != null && !request.code().equals(existingSubject.getCode()) &&
@@ -98,8 +97,7 @@ public class SubjectService {
     public void deleteSubject(Long id) {
         log.info("Deleting subject with ID: {}", id);
 
-        Subject subject = subjectRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Subject not found with ID: " + id));
+        Subject subject = findSubjectScoped(id);
 
         subject.setActive(false);
         subject.setUpdatedBy(RequestUtils.getCurrentUsername());
@@ -109,9 +107,21 @@ public class SubjectService {
 
     @Transactional(readOnly = true)
     public SubjectResponseDto getSubjectById(Long id) {
-        Subject subject = subjectRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Subject not found with ID: " + id));
+        Subject subject = findSubjectScoped(id);
         return SubjectResponseDto.fromEntity(subject);
+    }
+
+    /**
+     * Loads a subject scoped to the caller's institute. Non-SUPER_ADMIN callers are restricted to
+     * their JWT institute; a subject in another institute is reported as not found. SUPER_ADMIN
+     * (null instituteId) uses the unscoped lookup.
+     */
+    private Subject findSubjectScoped(Long id) {
+        Long instituteId = RequestUtils.getCurrentUserInstituteId();
+        return (instituteId != null
+                ? subjectRepository.findByIdAndInstituteId(id, instituteId)
+                : subjectRepository.findById(id))
+                .orElseThrow(() -> new IllegalArgumentException("Subject not found with ID: " + id));
     }
 
     @Transactional(readOnly = true)
