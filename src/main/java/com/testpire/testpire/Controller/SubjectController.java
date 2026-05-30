@@ -436,7 +436,8 @@ public class SubjectController {
             @Parameter(description = "Sort direction (optional)", example = "desc")
             @RequestParam(required = false, defaultValue = "desc") String sortDirection) {
         try {
-            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            // No instituteId GET param; non-SA scoped to JWT, SA honors X-Institute-Id header.
+            Long instituteId = RequestUtils.resolveInstituteId(null);
             log.info("Advanced search for subjects with GET parameters");
             
             // Parse date strings to LocalDateTime

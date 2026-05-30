@@ -391,10 +391,12 @@ public class StudentController {
     @Operation(summary = "Advanced search students", description = "Search students with advanced criteria, pagination, and sorting")
     public ResponseEntity<ApiResponseDto> searchStudentsAdvanced(@Valid @RequestBody StudentSearchRequestDto request) {
         try {
-            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            // Non-SUPER_ADMIN: scoped to their JWT institute. SUPER_ADMIN: honor the
+            // acting-institute header / criteria.instituteId via resolveInstituteId.
+            Long instituteId = RequestUtils.resolveInstituteId(request.getInstituteId());
             log.info("Advanced search for students with criteria: {}", request);
-            
-            // Set instituteId from JWT token
+
+            // Set resolved instituteId
             StudentCriteriaDto criteria = StudentCriteriaDto.builder()
                     .instituteId(instituteId)
                     .searchText(request.getSearchText())
@@ -486,7 +488,8 @@ public class StudentController {
             @Parameter(description = "Sort direction (optional)", example = "desc")
             @RequestParam(required = false, defaultValue = "desc") String sortDirection) {
         try {
-            Long instituteId = RequestUtils.getCurrentUserInstituteId();
+            // No instituteId GET param; non-SA scoped to JWT, SA honors X-Institute-Id header.
+            Long instituteId = RequestUtils.resolveInstituteId(null);
             log.info("Advanced search for students with GET parameters");
             
             // Parse date parameters

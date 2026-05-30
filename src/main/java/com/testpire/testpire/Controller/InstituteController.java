@@ -50,6 +50,16 @@ public class InstituteController {
     private final CognitoService cognitoService;
     private final UserService userService;
 
+    /**
+     * Institute isolation guard: returns true when the caller is NOT allowed to act on the given
+     * institute. getCurrentUserInstituteId() is null for SUPER_ADMIN (unrestricted) and the real
+     * institute id for everyone else (restricted to their own institute).
+     */
+    private boolean isForbiddenInstitute(Long instituteId) {
+        Long callerInstituteId = RequestUtils.getCurrentUserInstituteId();
+        return callerInstituteId != null && !callerInstituteId.equals(instituteId);
+    }
+
     // ==================== INSTITUTE CRUD OPERATIONS ====================
 
     @PostMapping
@@ -144,10 +154,18 @@ public class InstituteController {
     }
 
     @GetMapping("/{id}")
-    @RequireRole(UserRole.SUPER_ADMIN)
-    @Operation(summary = "Get institute by ID", description = "Get institute details by ID (SUPER_ADMIN only)")
+    @RequireRole(UserRole.STUDENT)
+    @Operation(summary = "Get institute by ID", description = "Get institute details by ID. SUPER_ADMIN may read any institute; all other roles may read only their own institute.")
     public ResponseEntity<ApiResponseDto> getInstituteById(@PathVariable Long id) {
         try {
+            // Institute isolation: non-SUPER_ADMIN may only read their own institute.
+            // getCurrentUserInstituteId() is null for SUPER_ADMIN (may read any id) and the real id otherwise.
+            Long callerInstituteId = RequestUtils.getCurrentUserInstituteId();
+            if (callerInstituteId != null && !callerInstituteId.equals(id)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponseDto.error("Access denied - you may only access your own institute"));
+            }
+
             Institute institute = instituteService.getInstituteById(id);
             InstituteResponseDto response = InstituteResponseDto.fromEntity(institute);
             return ResponseEntity.ok(ApiResponseDto.success("Institute retrieved successfully", response));
@@ -178,11 +196,16 @@ public class InstituteController {
 
     @GetMapping
     @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN})
-    @Operation(summary = "Get all institutes", description = "Get all active institutes (SUPER_ADMIN only)")
+    @Operation(summary = "Get all institutes", description = "Get institutes. SUPER_ADMIN sees all active institutes; all other roles see only their own institute.")
     public ResponseEntity<InstituteListResponseDto> getAllInstitutes() {
         try {
-            List<Institute> institutes = instituteService.getAllActiveInstitutes();
-            
+            // Institute isolation: non-SUPER_ADMIN may only see their own institute.
+            // getCurrentUserInstituteId() is null for SUPER_ADMIN (sees all) and the real id otherwise.
+            Long callerInstituteId = RequestUtils.getCurrentUserInstituteId();
+            List<Institute> institutes = (callerInstituteId == null)
+                ? instituteService.getAllActiveInstitutes()
+                : List.of(instituteService.getInstituteById(callerInstituteId));
+
             List<InstituteResponseDto> instituteDtos = institutes.stream()
                 .map(InstituteResponseDto::fromEntity)
                 .toList();
@@ -376,6 +399,12 @@ public class InstituteController {
     @Operation(summary = "Register teacher", description = "Register a new teacher in the institute")
     public ResponseEntity<ApiResponseDto> registerTeacher(@PathVariable Long instituteId, @Valid @RequestBody CreateUserRequestDto request) {
         try {
+            // Institute isolation: non-SUPER_ADMIN may only create users in their own institute.
+            if (isForbiddenInstitute(instituteId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponseDto.error("Access denied - you may only manage users in your own institute"));
+            }
+
             // Validate institute exists
             if (!instituteService.instituteExistsById(instituteId)) {
                 return ResponseEntity.badRequest()
@@ -411,6 +440,12 @@ public class InstituteController {
     @Operation(summary = "Register student", description = "Register a new student in the institute")
     public ResponseEntity<ApiResponseDto> registerStudent(@PathVariable Long instituteId, @Valid @RequestBody CreateUserRequestDto request) {
         try {
+            // Institute isolation: non-SUPER_ADMIN may only create users in their own institute.
+            if (isForbiddenInstitute(instituteId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponseDto.error("Access denied - you may only manage users in your own institute"));
+            }
+
             // Validate institute exists
             if (!instituteService.instituteExistsById(instituteId)) {
                 return ResponseEntity.badRequest()
@@ -446,6 +481,12 @@ public class InstituteController {
     @Operation(summary = "Get teachers", description = "Get all teachers in the institute")
     public ResponseEntity<UserListResponseDto> getTeachers(@PathVariable Long instituteId) {
         try {
+            // Institute isolation: non-SUPER_ADMIN may only read their own institute's roster.
+            if (isForbiddenInstitute(instituteId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(UserListResponseDto.error("Access denied - you may only access your own institute"));
+            }
+
             List<User> users = userService.getUsersByRoleAndInstitute(UserRole.TEACHER, instituteId);
             
             List<com.testpire.testpire.dto.response.UserResponseDto> userDtos = users.stream()
@@ -472,6 +513,12 @@ public class InstituteController {
     @Operation(summary = "Get students", description = "Get all students in the institute")
     public ResponseEntity<UserListResponseDto> getStudents(@PathVariable Long instituteId) {
         try {
+            // Institute isolation: non-SUPER_ADMIN may only read their own institute's roster.
+            if (isForbiddenInstitute(instituteId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(UserListResponseDto.error("Access denied - you may only access your own institute"));
+            }
+
             List<User> users = userService.getUsersByRoleAndInstitute(UserRole.STUDENT, instituteId);
             
             List<com.testpire.testpire.dto.response.UserResponseDto> userDtos = users.stream()
