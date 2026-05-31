@@ -36,6 +36,7 @@ public class QuestionService {
     private final QuestionRepository questionRepository;
     private final OptionRepository optionRepository;
     private final TopicRepository topicRepository;
+    private final QuestionImageService questionImageService;
     private final JwksJwtUtil jwtUtil;
 
     @Transactional
@@ -108,7 +109,7 @@ public class QuestionService {
         return QuestionResponseDto.builder()
                 .id(question.getId())
                 .text(question.getText())
-                .questionImagePath(question.getQuestionImagePath())
+                .questionImagePath(questionImageService.toPublicUrl(question.getQuestionImagePath()))
                 .difficultyLevel(question.getDifficultyLevel())
                 .topicId(question.getTopic().getId())
                 .topicName(question.getTopic().getName())
@@ -133,7 +134,7 @@ public class QuestionService {
         return com.testpire.testpire.dto.response.OptionResponseDto.builder()
                 .id(option.getId())
                 .text(option.getText())
-                .optionImagePath(option.getOptionImagePath())
+                .optionImagePath(questionImageService.toPublicUrl(option.getOptionImagePath()))
                 .questionId(option.getQuestion().getId())
                 .optionOrder(option.getOptionOrder())
                 .isCorrect(option.isCorrect())

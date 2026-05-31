@@ -15,6 +15,7 @@ import com.testpire.testpire.dto.response.QuestionResponseDto;
 import com.testpire.testpire.enums.DifficultyLevel;
 import com.testpire.testpire.enums.UserRole;
 import com.testpire.testpire.service.CsvUploadService;
+import com.testpire.testpire.service.QuestionImageService;
 import com.testpire.testpire.service.QuestionService;
 import com.testpire.testpire.util.JwksJwtUtil;
 import com.testpire.testpire.util.RequestUtils;
@@ -44,6 +45,7 @@ public class QuestionController {
 
     private final QuestionService questionService;
     private final CsvUploadService csvUploadService;
+    private final QuestionImageService questionImageService;
     private final JwksJwtUtil jwtUtil;
 
     @PostMapping
@@ -367,6 +369,53 @@ public class QuestionController {
         } catch (Exception e) {
             log.error("Error in bulk upload", e);
             return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to process bulk upload: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping(value = "/images", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @Operation(
+        summary = "Upload a question or option image",
+        description = "Uploads a single image (multipart/form-data) for a question or option to S3, organized under " +
+                "institute_<id>/<course>/<chapter>/<topic>/. Returns the stored S3 key and its public URL. " +
+                "Pass the returned key as questionImagePath/optionImagePath when creating or updating the question. " +
+                "Allowed types: jpeg, png, webp, gif. Only SUPER_ADMIN, INST_ADMIN, or TEACHER roles can upload."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Image uploaded successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiResponseDto.class),
+                examples = @ExampleObject(
+                    value = "{\"message\": \"Image uploaded successfully\", \"success\": true, \"data\": {\"key\": \"institute_1/physics/kinematics/projectile-motion/3f2a.png\", \"url\": \"https://bucket.s3.ap-south-1.amazonaws.com/institute_1/physics/kinematics/projectile-motion/3f2a.png\"}}"
+                )
+            )
+        ),
+        @ApiResponse(responseCode = "400", description = "Invalid file (type/size) or topic not found",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponseDto.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponseDto.class)))
+    })
+    public ResponseEntity<ApiResponseDto> uploadImage(
+            @Parameter(description = "Image file", required = true)
+            @RequestParam("file") MultipartFile file,
+            @Parameter(description = "Topic ID the image belongs to", required = true, example = "1")
+            @RequestParam("topicId") Long topicId,
+            @Parameter(description = "Whether this image is for an option (true) or the question (false)", example = "false")
+            @RequestParam(value = "option", defaultValue = "false") boolean option) {
+        try {
+            Long instituteId = RequestUtils.resolveInstituteId(null);
+            log.info("Uploading {} image for topic: {} in institute: {}", option ? "option" : "question", topicId, instituteId);
+            String key = option
+                    ? questionImageService.uploadOptionImage(topicId, instituteId, file)
+                    : questionImageService.uploadQuestionImage(topicId, instituteId, file);
+            return ResponseEntity.ok(ApiResponseDto.success("Image uploaded successfully",
+                    java.util.Map.of("key", key, "url", questionImageService.toPublicUrl(key))));
+        } catch (Exception e) {
+            log.error("Error uploading image", e);
+            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to upload image: " + e.getMessage()));
         }
     }
 

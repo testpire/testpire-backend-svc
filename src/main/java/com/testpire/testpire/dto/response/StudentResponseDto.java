@@ -27,6 +27,37 @@ public record StudentResponseDto(
     LocalDateTime createdAt,
     LocalDateTime updatedAt
 ) {
+    /**
+     * Minimal projection for peer listings (one student viewing classmates). Excludes PII —
+     * email, username, phone, parent contacts, address, DOB, blood group, emergency contact —
+     * exposing only name and basic academic placement.
+     */
+    public static StudentResponseDto peerView(User user, com.testpire.testpire.entity.StudentDetails studentDetails) {
+        return new StudentResponseDto(
+            user.getId(),
+            null,                 // username
+            null,                 // email
+            user.getFirstName(),
+            user.getLastName(),
+            user.getRole(),
+            null,                 // enabled
+            user.getInstituteId(),
+            null,                 // phone
+            studentDetails != null ? studentDetails.getCourse() : null,
+            studentDetails != null ? studentDetails.getYearOfStudy() : null,
+            studentDetails != null ? studentDetails.getRollNumber() : null,
+            null,                 // parentName
+            null,                 // parentPhone
+            null,                 // parentEmail
+            null,                 // address
+            null,                 // dateOfBirth
+            null,                 // bloodGroup
+            null,                 // emergencyContact
+            null,                 // createdAt
+            null                  // updatedAt
+        );
+    }
+
     public static StudentResponseDto fromEntity(User user, com.testpire.testpire.entity.StudentDetails studentDetails) {
         return new StudentResponseDto(
             user.getId(),

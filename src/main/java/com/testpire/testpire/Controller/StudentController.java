@@ -52,21 +52,30 @@ public class StudentController {
     @Operation(summary = "Create student", description = "Create a new student (SUPER_ADMIN or INST_ADMIN)")
     public ResponseEntity<ApiResponseDto> createStudent(@Valid @RequestBody CreateStudentRequestDto request) {
         try {
-            // Validate institute exists
-            if (!instituteService.instituteExistsById(request.instituteId())) {
+            // Tenant isolation: resolve the effective institute. For non-SUPER_ADMIN this is forced to
+            // the caller's JWT institute (any body instituteId is ignored), preventing creation of users
+            // in another tenant. SUPER_ADMIN may target any institute via header/body.
+            Long instituteId = RequestUtils.resolveInstituteId(request.instituteId());
+            if (instituteId == null) {
                 return ResponseEntity.badRequest()
-                    .body(ApiResponseDto.error("Institute not found with ID: " + request.instituteId()));
+                    .body(ApiResponseDto.error("Institute ID is required"));
+            }
+
+            // Validate institute exists
+            if (!instituteService.instituteExistsById(instituteId)) {
+                return ResponseEntity.badRequest()
+                    .body(ApiResponseDto.error("Institute not found with ID: " + instituteId));
             }
 
             // Create user in Cognito (Cognito emails a temporary password to the user)
             String cognitoUserId = cognitoService.adminCreateUser(
                     request.username(), request.firstName(), request.lastName(),
-                    UserRole.STUDENT, request.instituteId());
+                    UserRole.STUDENT, instituteId);
 
             // Create user in local database
             User createdUser = userService.createUser(
                     request.username(), request.firstName(), request.lastName(),
-                    UserRole.STUDENT, request.instituteId(), cognitoUserId, RequestUtils.getCurrentUsername());
+                    UserRole.STUDENT, instituteId, cognitoUserId, RequestUtils.getCurrentUsername());
             
             // Create student details
             com.testpire.testpire.entity.StudentDetails studentDetails = studentDetailsService.createStudentDetails(
@@ -662,9 +671,9 @@ public class StudentController {
 
             User student = userService.getUserByCognitoUserId(username);
             List<com.testpire.testpire.entity.StudentDetails> studentDetailsList = studentDetailsService.getStudentsByInstitute(student.getInstituteId());
-            
+
             List<StudentResponseDto> studentDtos = studentDetailsList.stream()
-                .map(details -> StudentResponseDto.fromEntity(details.getUser(), details))
+                .map(details -> StudentResponseDto.peerView(details.getUser(), details))
                 .toList();
 
             StudentListResponseDto response = StudentListResponseDto.success(

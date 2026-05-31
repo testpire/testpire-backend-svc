@@ -7,6 +7,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.Arrays;
@@ -14,6 +15,18 @@ import java.util.List;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
+
+  private final DefaultDenyInterceptor defaultDenyInterceptor;
+
+  public WebConfig(DefaultDenyInterceptor defaultDenyInterceptor) {
+    this.defaultDenyInterceptor = defaultDenyInterceptor;
+  }
+
+  @Override
+  public void addInterceptors(InterceptorRegistry registry) {
+    // Default-deny baseline: any /api endpoint lacking @RequireRole and not explicitly public is blocked.
+    registry.addInterceptor(defaultDenyInterceptor).addPathPatterns("/api/**");
+  }
 
   @Override
   public void addCorsMappings(CorsRegistry registry) {

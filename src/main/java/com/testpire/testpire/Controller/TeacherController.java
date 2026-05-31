@@ -53,21 +53,30 @@ public class TeacherController {
     @Operation(summary = "Create teacher", description = "Create a new teacher (SUPER_ADMIN or INST_ADMIN)")
     public ResponseEntity<ApiResponseDto> createTeacher(@Valid @RequestBody CreateTeacherRequestDto request) {
         try {
-            // Validate institute exists
-            if (!instituteService.instituteExistsById(request.instituteId())) {
+            // Tenant isolation: resolve the effective institute. For non-SUPER_ADMIN this is forced to
+            // the caller's JWT institute (any body instituteId is ignored), preventing creation of users
+            // in another tenant. SUPER_ADMIN may target any institute via header/body.
+            Long instituteId = RequestUtils.resolveInstituteId(request.instituteId());
+            if (instituteId == null) {
                 return ResponseEntity.badRequest()
-                    .body(ApiResponseDto.error("Institute not found with ID: " + request.instituteId()));
+                    .body(ApiResponseDto.error("Institute ID is required"));
+            }
+
+            // Validate institute exists
+            if (!instituteService.instituteExistsById(instituteId)) {
+                return ResponseEntity.badRequest()
+                    .body(ApiResponseDto.error("Institute not found with ID: " + instituteId));
             }
 
             // Create user in Cognito (Cognito emails a temporary password to the user)
             String cognitoUserId = cognitoService.adminCreateUser(
                     request.username(), request.firstName(), request.lastName(),
-                    UserRole.TEACHER, request.instituteId());
+                    UserRole.TEACHER, instituteId);
 
             // Create user in local database
             User createdUser = userService.createUser(
                     request.username(), request.firstName(), request.lastName(),
-                    UserRole.TEACHER, request.instituteId(), cognitoUserId, RequestUtils.getCurrentUsername());
+                    UserRole.TEACHER, instituteId, cognitoUserId, RequestUtils.getCurrentUsername());
             
             // Create teacher details
             com.testpire.testpire.entity.TeacherDetails teacherDetails = teacherDetailsService.createTeacherDetails(

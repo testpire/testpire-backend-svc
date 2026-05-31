@@ -14,6 +14,13 @@ import java.util.Optional;
 public interface TopicRepository extends JpaRepository<Topic, Long>, JpaSpecificationExecutor<Topic> {
     Optional<Topic> findByCodeAndInstituteId(String code, Long instituteId);
     Optional<Topic> findByIdAndInstituteId(Long id, Long instituteId);
+
+    // Eagerly loads the topic's full hierarchy (chapter -> subject -> course) for building
+    // the image folder path without a LazyInitializationException outside a session.
+    @Query("SELECT t FROM Topic t " +
+           "JOIN FETCH t.chapter c JOIN FETCH c.subject s JOIN FETCH s.course " +
+           "WHERE t.id = :id")
+    Optional<Topic> findByIdWithHierarchy(@Param("id") Long id);
     boolean existsByCodeAndInstituteId(String code, Long instituteId);
     List<Topic> findByChapterIdOrderByOrderIndex(Long chapterId);
     

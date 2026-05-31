@@ -102,6 +102,12 @@ public class UserManagementController {
                     .body(UserListResponseDto.error("User not found"));
             }
 
+            // Role over-reach guard: callers may not enumerate a higher-privileged role.
+            if (!currentUser.role().canViewRole(userRole)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(UserListResponseDto.error("Access denied - cannot query users of role " + role));
+            }
+
             List<User> users;
             if (currentUser.role() == UserRole.SUPER_ADMIN) {
                 // SUPER_ADMIN can see all users of any role
@@ -143,6 +149,12 @@ public class UserManagementController {
                     .body(Map.of("error", "User not found"));
             }
 
+            // Role over-reach guard: callers may not search a higher-privileged role.
+            if (!currentUser.role().canViewRole(userRole)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Access denied - cannot query users of role " + role));
+            }
+
             List<User> users;
             if (currentUser.role() == UserRole.SUPER_ADMIN) {
                 // SUPER_ADMIN can search all users
@@ -173,8 +185,14 @@ public class UserManagementController {
                     .body(Map.of("error", "User not found"));
             }
 
+            // Role over-reach guard: callers may not fetch a higher-privileged role.
+            if (!currentUser.role().canViewRole(userRole)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Access denied - cannot query users of role " + role));
+            }
+
             User targetUser = userService.getUserById(id);
-            
+
             // Verify the target user has the expected role
             if (targetUser.getRole() != userRole) {
                 return ResponseEntity.badRequest()
@@ -221,10 +239,20 @@ public class UserManagementController {
             }
 
             // Permission check
-            if (currentUser.role() != UserRole.SUPER_ADMIN && 
+            if (currentUser.role() != UserRole.SUPER_ADMIN &&
                 !existingUser.getInstituteId().equals(currentUser.instituteId())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", "Access denied - user not in your institute"));
+            }
+
+            // Tenant isolation: only SUPER_ADMIN may move a user to another institute. For everyone else
+            // the body's instituteId must match the caller's own institute (otherwise the update below
+            // would relocate the user out of the tenant via mass-assignment).
+            if (currentUser.role() != UserRole.SUPER_ADMIN &&
+                request.instituteId() != null &&
+                !request.instituteId().equals(currentUser.instituteId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Access denied - cannot reassign user to another institute"));
             }
 
             User updatedUser = userService.updateUser(id, request, currentUser.username());

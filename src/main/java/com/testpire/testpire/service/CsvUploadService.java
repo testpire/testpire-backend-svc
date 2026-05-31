@@ -24,7 +24,7 @@ import java.util.List;
 public class CsvUploadService {
 
     private final QuestionService questionService;
-    private final S3Service s3Service;
+    private final QuestionImageService questionImageService;
 
     public BulkUploadResponseDto processBulkUpload(MultipartFile csvFile, Long instituteId, String createdBy) {
         List<String> errors = new ArrayList<>();
@@ -112,6 +112,7 @@ public class CsvUploadService {
         String negativeMarksStr = columns.length > 5 ? columns[5].replaceAll("\"", "") : "0";
         String explanation = columns.length > 6 ? columns[6].replaceAll("\"", "") : "";
         String topicId = columns.length > 7 ? columns[7].replaceAll("\"", "") : "1";
+        Long topicIdLong = Long.valueOf(topicId);
 
         // Parse difficulty level
         DifficultyLevel difficultyLevel;
@@ -152,8 +153,7 @@ public class CsvUploadService {
                     String optionImagePath = "";
                     if (!optionImageUrl.isEmpty()) {
                         try {
-                            optionImagePath = s3Service.uploadImageFromUrl(optionImageUrl, 
-                                    "questions/options", "option_" + optionIndex);
+                            optionImagePath = questionImageService.uploadFromUrl(topicIdLong, optionImageUrl, true);
                         } catch (Exception e) {
                             log.warn("Failed to upload option image: {}", e.getMessage());
                         }
@@ -173,8 +173,7 @@ public class CsvUploadService {
         String questionImagePath = "";
         if (!questionImageUrl.isEmpty()) {
             try {
-                questionImagePath = s3Service.uploadImageFromUrl(questionImageUrl, 
-                        "questions", "question");
+                questionImagePath = questionImageService.uploadFromUrl(topicIdLong, questionImageUrl, false);
             } catch (Exception e) {
                 log.warn("Failed to upload question image: {}", e.getMessage());
             }
@@ -187,7 +186,7 @@ public class CsvUploadService {
                 .instituteId(instituteId)
                 .questionType(questionType)
                 .marks(marks)
-                .topicId(Long.valueOf(topicId))
+                .topicId(topicIdLong)
                 .negativeMarks(negativeMarks)
                 .explanation(explanation)
                 .options(options)

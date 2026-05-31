@@ -20,6 +20,16 @@ public enum UserRole {
 		return authorities;
 	}
 
+	/**
+	 * Whether a caller with this role may view/enumerate users of {@code targetRole}.
+	 * A caller may view its own tier and any lower-privileged tier, but never a higher one
+	 * (e.g. a TEACHER must not be able to list INST_ADMINs). Relies on this enum being
+	 * declared in descending-privilege order (SUPER_ADMIN → INST_ADMIN → TEACHER → STUDENT).
+	 */
+	public boolean canViewRole(UserRole targetRole) {
+		return this.ordinal() <= targetRole.ordinal();
+	}
+
 	public boolean canCreateRole(UserRole targetRole) {
 		return switch (this) {
 			case SUPER_ADMIN -> true; // Can create all roles

@@ -20,6 +20,8 @@ import com.testpire.testpire.enums.UserRole;
 import com.testpire.testpire.service.CognitoService;
 import com.testpire.testpire.service.InstituteService;
 import com.testpire.testpire.service.UserService;
+import com.testpire.testpire.service.TeacherDetailsService;
+import com.testpire.testpire.service.StudentDetailsService;
 import com.testpire.testpire.util.RequestUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -49,6 +51,8 @@ public class InstituteController {
     private final InstituteService instituteService;
     private final CognitoService cognitoService;
     private final UserService userService;
+    private final TeacherDetailsService teacherDetailsService;
+    private final StudentDetailsService studentDetailsService;
 
     /**
      * Institute isolation guard: returns true when the caller is NOT allowed to act on the given
@@ -183,7 +187,8 @@ public class InstituteController {
     public ResponseEntity<ApiResponseDto> getInstituteByCode(@PathVariable String code) {
         try {
             Institute institute = instituteService.getInstituteByCode(code);
-            InstituteResponseDto response = InstituteResponseDto.fromEntity(institute);
+            // Public endpoint: return only minimal, non-sensitive fields (no contact/address details).
+            InstituteResponseDto response = InstituteResponseDto.publicView(institute);
             return ResponseEntity.ok(ApiResponseDto.success("Institute retrieved successfully", response));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ApiResponseDto.error(e.getMessage()));
@@ -420,6 +425,11 @@ public class InstituteController {
                     request.username(), request.firstName(), request.lastName(),
                     UserRole.TEACHER, instituteId, cognitoUserId, RequestUtils.getCurrentUsername());
 
+            // Create teacher details so the user is a complete teacher record,
+            // deletable/editable via /api/teachers/{id}. CreateUserRequestDto carries
+            // no teacher-specific fields, so persist a valid details row with nulls.
+            teacherDetailsService.createTeacherDetails(createdUser, null, null, null);
+
             return ResponseEntity.ok(ApiResponseDto.success(
                 "Teacher registered successfully",
                 Map.of(
@@ -460,6 +470,12 @@ public class InstituteController {
             User createdUser = userService.createUser(
                     request.username(), request.firstName(), request.lastName(),
                     UserRole.STUDENT, instituteId, cognitoUserId, RequestUtils.getCurrentUsername());
+
+            // Create student details so the user is a complete student record,
+            // deletable/editable via /api/students/{id}. CreateUserRequestDto carries
+            // no student-specific fields, so persist a valid details row with nulls.
+            studentDetailsService.createStudentDetails(
+                    createdUser, null, null, null, null, null, null, null, null, null, null, null);
 
             return ResponseEntity.ok(ApiResponseDto.success(
                 "Student registered successfully",
