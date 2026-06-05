@@ -1,6 +1,7 @@
 package com.testpire.testpire.Controller;
 
-import com.testpire.testpire.annotation.RequireRole;
+import com.testpire.testpire.annotation.RequirePermission;
+import com.testpire.testpire.enums.Permission;
 import com.testpire.testpire.dto.InstituteDto;
 import com.testpire.testpire.dto.RegisterRequest;
 import com.testpire.testpire.dto.request.CreateInstituteRequestDto;
@@ -67,7 +68,7 @@ public class InstituteController {
     // ==================== INSTITUTE CRUD OPERATIONS ====================
 
     @PostMapping
-    @RequireRole(UserRole.SUPER_ADMIN)
+    @RequirePermission(Permission.INSTITUTE_CREATE)
     @Operation(summary = "Create institute", description = "Create a new institute (SUPER_ADMIN only)")
     public ResponseEntity<ApiResponseDto> createInstitute(@Valid @RequestBody CreateInstituteRequestDto request) {
         try {
@@ -104,7 +105,7 @@ public class InstituteController {
     }
 
     @PutMapping("/{id}")
-    @RequireRole(UserRole.SUPER_ADMIN)
+    @RequirePermission(Permission.INSTITUTE_UPDATE)
     @Operation(summary = "Update institute", description = "Update an existing institute (SUPER_ADMIN only)")
     public ResponseEntity<ApiResponseDto> updateInstitute(@PathVariable Long id, @Valid @RequestBody UpdateInstituteRequestDto request) {
         try {
@@ -142,7 +143,7 @@ public class InstituteController {
     }
 
     @DeleteMapping("/{id}")
-    @RequireRole(UserRole.SUPER_ADMIN)
+    @RequirePermission(Permission.INSTITUTE_DELETE)
     @Operation(summary = "Delete institute", description = "Delete an institute (SUPER_ADMIN only)")
     public ResponseEntity<ApiResponseDto> deleteInstitute(@PathVariable Long id) {
         try {
@@ -158,7 +159,7 @@ public class InstituteController {
     }
 
     @GetMapping("/{id}")
-    @RequireRole(UserRole.STUDENT)
+    @RequirePermission(Permission.INSTITUTE_READ)
     @Operation(summary = "Get institute by ID", description = "Get institute details by ID. SUPER_ADMIN may read any institute; all other roles may read only their own institute.")
     public ResponseEntity<ApiResponseDto> getInstituteById(@PathVariable Long id) {
         try {
@@ -200,7 +201,7 @@ public class InstituteController {
     }
 
     @GetMapping
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN})
+    @RequirePermission(Permission.INSTITUTE_LIST)
     @Operation(summary = "Get all institutes", description = "Get institutes. SUPER_ADMIN sees all active institutes; all other roles see only their own institute.")
     public ResponseEntity<InstituteListResponseDto> getAllInstitutes() {
         try {
@@ -231,7 +232,7 @@ public class InstituteController {
     }
 
     @GetMapping("/search")
-    @RequireRole(UserRole.SUPER_ADMIN)
+    @RequirePermission(Permission.INSTITUTE_SEARCH)
     @Operation(summary = "Search institutes", description = "Search institutes by name or code (SUPER_ADMIN only)")
     public ResponseEntity<InstituteListResponseDto> searchInstitutes(@RequestParam String query) {
         try {
@@ -257,7 +258,7 @@ public class InstituteController {
     }
 
     @PostMapping("/search/advanced")
-    @RequireRole(UserRole.INST_ADMIN)
+    @RequirePermission(Permission.INSTITUTE_SEARCH_ADVANCED)
     @Operation(summary = "Advanced search institutes", description = "Search institutes with advanced criteria, pagination, and sorting (SUPER_ADMIN only)")
     public ResponseEntity<ApiResponseDto> searchInstitutesAdvanced(@Valid @RequestBody InstituteSearchRequestDto request) {
         try {
@@ -282,7 +283,7 @@ public class InstituteController {
     }
 
     @GetMapping("/search/advanced")
-    @RequireRole(UserRole.INST_ADMIN)
+    @RequirePermission(Permission.INSTITUTE_SEARCH_ADVANCED)
     @Operation(summary = "Advanced search institutes (GET)", description = "Search institutes with advanced criteria via GET parameters (SUPER_ADMIN only)")
     public ResponseEntity<ApiResponseDto> searchInstitutesAdvancedGet(
             @Parameter(description = "Search text for name, code, address, city, state, country, email, website, or description")
@@ -400,7 +401,7 @@ public class InstituteController {
     // ==================== USER MANAGEMENT WITHIN INSTITUTES ====================
 
     @PostMapping("/{instituteId}/users/teachers")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN})
+    @RequirePermission(Permission.TEACHER_CREATE)
     @Operation(summary = "Register teacher", description = "Register a new teacher in the institute")
     public ResponseEntity<ApiResponseDto> registerTeacher(@PathVariable Long instituteId, @Valid @RequestBody CreateUserRequestDto request) {
         try {
@@ -446,7 +447,7 @@ public class InstituteController {
     }
 
     @PostMapping("/{instituteId}/users/students")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN})
+    @RequirePermission(Permission.STUDENT_CREATE)
     @Operation(summary = "Register student", description = "Register a new student in the institute")
     public ResponseEntity<ApiResponseDto> registerStudent(@PathVariable Long instituteId, @Valid @RequestBody CreateUserRequestDto request) {
         try {
@@ -493,7 +494,7 @@ public class InstituteController {
     }
 
     @GetMapping("/{instituteId}/users/teachers")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN})
+    @RequirePermission(Permission.INSTITUTE_TEACHER_LIST)
     @Operation(summary = "Get teachers", description = "Get all teachers in the institute")
     public ResponseEntity<UserListResponseDto> getTeachers(@PathVariable Long instituteId) {
         try {
@@ -525,7 +526,7 @@ public class InstituteController {
     }
 
     @GetMapping("/{instituteId}/users/students")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN})
+    @RequirePermission(Permission.INSTITUTE_STUDENT_LIST)
     @Operation(summary = "Get students", description = "Get all students in the institute")
     public ResponseEntity<UserListResponseDto> getStudents(@PathVariable Long instituteId) {
         try {

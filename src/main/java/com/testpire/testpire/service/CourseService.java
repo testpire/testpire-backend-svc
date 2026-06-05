@@ -6,7 +6,9 @@ import com.testpire.testpire.dto.request.UpdateCourseRequestDto;
 import com.testpire.testpire.dto.response.CourseListResponseDto;
 import com.testpire.testpire.dto.response.CourseResponseDto;
 import com.testpire.testpire.entity.Course;
+import com.testpire.testpire.entity.Subject;
 import com.testpire.testpire.repository.CourseRepository;
+import com.testpire.testpire.repository.SubjectRepository;
 import com.testpire.testpire.repository.specification.CourseSpecification;
 import com.testpire.testpire.util.RequestUtils;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,6 +31,7 @@ import java.util.Optional;
 public class CourseService {
 
     private final CourseRepository courseRepository;
+    private final SubjectRepository subjectRepository;
 
     @Transactional
     public CourseResponseDto createCourse(CreateCourseRequestDto request) {
@@ -50,6 +54,10 @@ public class CourseService {
                 .build();
 
         Course savedCourse = courseRepository.save(course);
+        if (request.subjectCodes() != null && !request.subjectCodes().isEmpty()) {
+            savedCourse.setSubjects(resolveSubjectCodes(request.subjectCodes(), savedCourse.getInstituteId()));
+            savedCourse = courseRepository.save(savedCourse);
+        }
         log.info("Course created successfully with ID: {}", savedCourse.getId());
         return CourseResponseDto.fromEntity(savedCourse);
     }
@@ -73,6 +81,9 @@ public class CourseService {
         Optional.ofNullable(request.level()).ifPresent(existingCourse::setLevel);
         Optional.ofNullable(request.prerequisites()).ifPresent(existingCourse::setPrerequisites);
         Optional.ofNullable(request.active()).ifPresent(existingCourse::setActive);
+        if (request.subjectCodes() != null) {
+            existingCourse.setSubjects(resolveSubjectCodes(request.subjectCodes(), existingCourse.getInstituteId()));
+        }
         existingCourse.setUpdatedBy(RequestUtils.getCurrentUsername());
 
         Course updatedCourse = courseRepository.save(existingCourse);
@@ -96,6 +107,17 @@ public class CourseService {
     public CourseResponseDto getCourseById(Long id) {
         Course course = findCourseScoped(id);
         return CourseResponseDto.fromEntity(course);
+    }
+
+    private List<Subject> resolveSubjectCodes(List<String> codes, Long instituteId) {
+        List<Subject> subjects = new ArrayList<>();
+        for (String code : codes) {
+            Subject subject = subjectRepository.findByCodeAndInstituteId(code.trim(), instituteId)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Subject with code \"" + code.trim() + "\" not found in this institute"));
+            subjects.add(subject);
+        }
+        return subjects;
     }
 
     /**

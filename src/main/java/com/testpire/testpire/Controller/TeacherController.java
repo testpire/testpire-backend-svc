@@ -1,6 +1,7 @@
 package com.testpire.testpire.Controller;
 
-import com.testpire.testpire.annotation.RequireRole;
+import com.testpire.testpire.annotation.RequirePermission;
+import com.testpire.testpire.enums.Permission;
 import com.testpire.testpire.dto.RegisterRequest;
 import com.testpire.testpire.dto.request.CreateTeacherRequestDto;
 import com.testpire.testpire.dto.request.TeacherCriteriaDto;
@@ -49,7 +50,7 @@ public class TeacherController {
     // ==================== TEACHER CRUD OPERATIONS ====================
 
     @PostMapping
-    @RequireRole({UserRole.INST_ADMIN})
+    @RequirePermission(Permission.TEACHER_CREATE)
     @Operation(summary = "Create teacher", description = "Create a new teacher (SUPER_ADMIN or INST_ADMIN)")
     public ResponseEntity<ApiResponseDto> createTeacher(@Valid @RequestBody CreateTeacherRequestDto request) {
         try {
@@ -98,7 +99,7 @@ public class TeacherController {
     }
 
     @GetMapping("/{id}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.TEACHER_READ)
     @Operation(summary = "Get teacher by ID", description = "Get teacher details by ID")
     public ResponseEntity<ApiResponseDto> getTeacherById(@PathVariable Long id) {
         try {
@@ -136,7 +137,7 @@ public class TeacherController {
     }
 
     @PutMapping("/{id}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN})
+    @RequirePermission(Permission.TEACHER_UPDATE)
     @Operation(summary = "Update teacher", description = "Update teacher details (SUPER_ADMIN or INST_ADMIN)")
     public ResponseEntity<ApiResponseDto> updateTeacher(@PathVariable Long id, @Valid @RequestBody UpdateTeacherRequestDto request) {
         try {
@@ -206,7 +207,7 @@ public class TeacherController {
     }
 
     @DeleteMapping("/{id}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN})
+    @RequirePermission(Permission.TEACHER_DELETE)
     @Operation(summary = "Delete teacher", description = "Delete teacher (SUPER_ADMIN or INST_ADMIN)")
     public ResponseEntity<ApiResponseDto> deleteTeacher(@PathVariable Long id) {
         try {
@@ -247,7 +248,7 @@ public class TeacherController {
     // ==================== TEACHER LISTING OPERATIONS ====================
 
     @GetMapping
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.TEACHER_LIST)
     @Operation(summary = "Get all teachers", description = "Get all teachers with optional filtering")
     public ResponseEntity<TeacherListResponseDto> getAllTeachers(
             @RequestParam(required = false) Long instituteId,
@@ -298,7 +299,7 @@ public class TeacherController {
     }
 
     @GetMapping("/institute/{instituteId}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.TEACHER_LIST)
     @Operation(summary = "Get teachers by institute", description = "Get all teachers in a specific institute")
     public ResponseEntity<TeacherListResponseDto> getTeachersByInstitute(@PathVariable Long instituteId) {
         try {
@@ -339,7 +340,7 @@ public class TeacherController {
     // ==================== ADVANCED SEARCH OPERATIONS ====================
 
     @PostMapping("/search/advanced")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.TEACHER_SEARCH)
     @Operation(summary = "Advanced search teachers", description = "Search teachers with advanced criteria, pagination, and sorting")
     public ResponseEntity<ApiResponseDto> searchTeachersAdvanced(@Valid @RequestBody TeacherSearchRequestDto request) {
         try {
@@ -385,7 +386,7 @@ public class TeacherController {
     }
 
     @GetMapping("/search/advanced")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.TEACHER_SEARCH)
     @Operation(summary = "Advanced search teachers (GET)", description = "Search teachers with advanced criteria via GET parameters")
     public ResponseEntity<ApiResponseDto> searchTeachersAdvancedGet(
             @Parameter(description = "Search text (optional)", example = "john")
@@ -500,7 +501,7 @@ public class TeacherController {
     }
 
     @GetMapping("/profile")
-    @RequireRole(UserRole.TEACHER)
+    @RequirePermission(Permission.TEACHER_PROFILE_READ)
     @Operation(summary = "Get teacher profile", description = "Get current teacher's profile")
     public ResponseEntity<ApiResponseDto> getTeacherProfile() {
         try {
@@ -525,7 +526,7 @@ public class TeacherController {
     }
 
     @PutMapping("/profile")
-    @RequireRole(UserRole.TEACHER)
+    @RequirePermission(Permission.TEACHER_PROFILE_UPDATE)
     @Operation(summary = "Update teacher profile", description = "Update current teacher's profile")
     public ResponseEntity<ApiResponseDto> updateTeacherProfile(@Valid @RequestBody UpdateTeacherRequestDto request) {
         try {
@@ -578,7 +579,7 @@ public class TeacherController {
     // ==================== DEBUG ENDPOINTS ====================
 
     @GetMapping("/debug")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN})
+    @RequirePermission(Permission.TEACHER_DEBUG)
     @Operation(summary = "Debug teachers", description = "Debug endpoint to check teacher data")
     public ResponseEntity<ApiResponseDto> debugTeachers() {
         try {

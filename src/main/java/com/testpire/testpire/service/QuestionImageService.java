@@ -1,7 +1,6 @@
 package com.testpire.testpire.service;
 
 import com.testpire.testpire.entity.Chapter;
-import com.testpire.testpire.entity.Course;
 import com.testpire.testpire.entity.Subject;
 import com.testpire.testpire.entity.Topic;
 import com.testpire.testpire.repository.TopicRepository;
@@ -107,14 +106,13 @@ public class QuestionImageService {
         return folderFor(topic);
     }
 
-    /** {@code institute_<id>/<course-slug>/<chapter-slug>/<topic-slug>} from the hierarchy. */
+    /** {@code institute_<id>/<subject-slug>/<chapter-slug>/<topic-slug>} from the hierarchy. */
     private String folderFor(Topic topic) {
         Chapter chapter = topic.getChapter();
         Subject subject = chapter.getSubject();
-        Course course = subject.getCourse();
         return String.format("institute_%d/%s/%s/%s",
                 topic.getInstituteId(),
-                SlugUtils.slugify(course.getName(), course.getId()),
+                SlugUtils.slugify(subject.getName(), subject.getId()),
                 SlugUtils.slugify(chapter.getName(), chapter.getId()),
                 SlugUtils.slugify(topic.getName(), topic.getId()));
     }

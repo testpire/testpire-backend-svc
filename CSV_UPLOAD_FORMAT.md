@@ -2,63 +2,105 @@
 
 This document describes the CSV format for bulk uploading questions to the system.
 
+> This format matches the parser in `service/CsvUploadService.createQuestionFromCsvRow`. The first
+> line of the file is always treated as a **header and skipped**.
+
 ## CSV Structure
 
-The CSV file should have the following columns in order:
+Each row is one question followed by its options. The columns, **in order**, are:
 
-| Column | Description | Required | Example |
-|--------|-------------|----------|---------|
-| Question Text | The main question text | Yes | "What is the capital of France?" |
-| Question Image URL | URL to the question image (optional) | No | "https://example.com/question.jpg" |
-| Difficulty Level | EASY, MEDIUM, HARD, or ALL | Yes | "EASY" |
-| Question Type | Type of question (e.g., MCQ, TRUE_FALSE) | Yes | "MCQ" |
-| Marks | Points for correct answer | Yes | "1" |
-| Negative Marks | Points deducted for wrong answer | Yes | "0" |
-| Explanation | Explanation for the answer (optional) | No | "Paris is the capital of France" |
-| Option1 Text | First option text | Yes | "Paris" |
-| Option1 Image URL | URL to first option image (optional) | No | "https://example.com/option1.jpg" |
-| Option1 IsCorrect | Whether first option is correct (true/false/1/0/yes/no) | Yes | "true" |
-| Option2 Text | Second option text | Yes | "London" |
-| Option2 Image URL | URL to second option image (optional) | No | "https://example.com/option2.jpg" |
-| Option2 IsCorrect | Whether second option is correct | Yes | "false" |
-| Option3 Text | Third option text (optional) | No | "Berlin" |
-| Option3 Image URL | URL to third option image (optional) | No | "https://example.com/option3.jpg" |
-| Option3 IsCorrect | Whether third option is correct | No | "false" |
-| Option4 Text | Fourth option text (optional) | No | "Madrid" |
-| Option4 Image URL | URL to fourth option image (optional) | No | "https://example.com/option4.jpg" |
-| Option4 IsCorrect | Whether fourth option is correct | No | "false" |
+| # | Column | Required | Notes |
+|---|--------|----------|-------|
+| 0 | Question Text | Yes | Wrap in double quotes if it contains commas. |
+| 1 | Question Image URL | No | Leave empty (`""`) for none. If set, the image is downloaded and re-hosted to S3 (see Notes). |
+| 2 | Difficulty Level | Yes | One of `EASY`, `MEDIUM`, `HARD`, `ALL`. Empty or unrecognized values reject the row. |
+| 3 | Question Type | Yes | e.g. `MCQ`, `TRUE_FALSE`. Required (empty rejects the row). |
+| 4 | Marks | No | **Integer.** Empty defaults to `1`; a non-integer value rejects the row. |
+| 5 | Negative Marks | No | **Integer** (use `0`, not `0.5`). Empty defaults to `0`; a non-integer value rejects the row. |
+| 6 | Explanation | No | |
+| 7 | **Topic ID** | Yes | Numeric ID of the topic. Must belong to your institute. A non-numeric value fails the row. |
+| 8 | Option1 Text | Yes | |
+| 9 | Option1 Image URL | No | |
+| 10 | Option1 IsCorrect | Yes | `true` / `1` / `yes` = correct (case-insensitive); anything else = not correct. |
+| 11 | Option2 Text | Yes | |
+| 12 | Option2 Image URL | No | |
+| 13 | Option2 IsCorrect | Yes | |
+| 14+ | Option3 … (Text, Image URL, IsCorrect) | No | Options continue in repeating **triples**. |
+| 17+ | Option4 … (Text, Image URL, IsCorrect) | No | |
+
+**Institute ID is not a column** — it is resolved from your authentication token, not the CSV.
+
+Options are parsed as repeating `(Text, Image URL, IsCorrect)` triples starting at column 8, so a
+complete triple is required for each option (provide all three sub-columns, leaving Image URL empty
+if there is no image). An entirely empty trailing triple is ignored; a triple with an image or
+IsCorrect value but **no text** rejects the row.
+
+## Validation
+
+The header row is validated **before any data is processed**. If the fixed columns are missing,
+renamed, or out of order, or the option columns don't come in complete groups of three, the **entire
+upload is rejected** with a single descriptive error (no rows are imported). This prevents silent
+column-drift where, e.g., an option's text gets mis-read as the Topic ID.
+
+Each data row is then validated independently; an invalid row is skipped and reported in the
+`errors` list (prefixed with its row number) while valid rows still import. A row is rejected when:
+
+- Question Text, Difficulty Level, Question Type, or Topic ID is missing.
+- Difficulty Level is not one of `EASY`, `MEDIUM`, `HARD`, `ALL`.
+- Marks or Negative Marks is present but not a whole number.
+- Topic ID is not a number.
+- Fewer than two options are provided, or no option is marked correct.
+- An option `IsCorrect` value is not one of `true/false/1/0/yes/no`.
+
+Image-fetch failures are **not** fatal: the row still imports and the failure is reported in `errors`
+as a `Row N (warning): ...` entry.
 
 ## Example CSV Content
 
 ```csv
-Question Text,Question Image URL,Difficulty Level,Question Type,Marks,Negative Marks,Explanation,Option1 Text,Option1 Image URL,Option1 IsCorrect,Option2 Text,Option2 Image URL,Option2 IsCorrect,Option3 Text,Option3 Image URL,Option3 IsCorrect,Option4 Text,Option4 Image URL,Option4 IsCorrect
-"What is the capital of France?","https://example.com/france.jpg","EASY","MCQ","1","0","Paris is the capital and largest city of France","Paris","https://example.com/paris.jpg","true","London","https://example.com/london.jpg","false","Berlin","https://example.com/berlin.jpg","false","Madrid","https://example.com/madrid.jpg","false"
-"Which planet is closest to the Sun?","","MEDIUM","MCQ","2","0.5","Mercury is the smallest planet and closest to the Sun","Mercury","","true","Venus","","false","Earth","","false","Mars","","false"
-"What is 2 + 2?","","EASY","MCQ","1","0","Basic arithmetic","4","","true","3","","false","5","","false","6","","false"
+Question Text,Question Image URL,Difficulty Level,Question Type,Marks,Negative Marks,Explanation,Topic ID,Option1 Text,Option1 Image URL,Option1 IsCorrect,Option2 Text,Option2 Image URL,Option2 IsCorrect,Option3 Text,Option3 Image URL,Option3 IsCorrect,Option4 Text,Option4 Image URL,Option4 IsCorrect
+"What is the SI unit of force?","","EASY","MCQ","1","0","Force is measured in newtons (N).","1","Newton","","true","Joule","","false","Pascal","","false","Watt","","false"
+"A body moves with uniform acceleration. Identify the correct v-t graph.","https://upload.wikimedia.org/wikipedia/commons/3/3f/Velocity-time_graph.png","MEDIUM","MCQ","4","1","Uniform acceleration gives a straight sloped line.","1","Graph A","https://example.com/opt-a.png","true","Graph B","https://example.com/opt-b.png","false","Graph C","","false","Graph D","","false"
+"Two charges are separated by distance r. The force between them is governed by which law?","","HARD","MCQ","4","1","Coulomb's law: F = k q1 q2 / r^2.","1","Coulomb's Law","","true","Ohm's Law","","false","Lenz's Law","","false","Faraday's Law","","false"
 ```
+
+Replace the `Topic ID` value (`1` above) with a real topic ID in your institute. See
+`sample-questions.csv` in the repo root for a ready-to-upload copy.
 
 ## Notes
 
-1. **Image URLs**: If provided, images will be automatically downloaded and uploaded to AWS S3. The original URLs will be replaced with S3 URLs in the database.
+1. **Image URLs**: If provided, the image is downloaded and uploaded to AWS S3 under
+   `institute_<id>/<course>/<chapter>/<topic>/...` (option images under an `options/` subfolder). The
+   database stores the **S3 object key** (not the full URL); API responses render the full public URL.
+   For security, the fetch rejects non-`http(s)` URLs and hosts that resolve to internal/private
+   addresses. A failed image fetch is non-fatal — the question is still created with an empty image.
 
-2. **Option Count**: You can have between 2 and 6 options per question. If you have fewer than 6 options, leave the extra columns empty.
+2. **Marks / Negative Marks**: Both are integers. Decimal values (e.g. `0.5`) are not supported; an
+   empty value uses the default (`1` / `0`), but a non-integer value rejects the row.
 
-3. **Correct Answer**: At least one option must be marked as correct. You can have multiple correct answers if needed.
+3. **Correct Answer**: At least one option **must** be marked correct, or the row fails. If more than
+   one is marked correct, only the **first** correct option is recorded as the question's canonical
+   correct answer (`correctOptionId`).
 
-4. **Difficulty Levels**: Must be one of: EASY, MEDIUM, HARD, ALL
+4. **Difficulty Levels**: One of `EASY`, `MEDIUM`, `HARD`, `ALL`. An empty or unrecognized value
+   rejects the row.
 
-5. **Boolean Values**: For IsCorrect columns, you can use: true/false, 1/0, yes/no (case insensitive)
+5. **Boolean Values**: For IsCorrect columns, `true` / `1` / `yes` (case-insensitive) mean correct;
+   everything else (including `false` / `0` / `no` / blank) means not correct.
 
-6. **CSV Format**: Use standard CSV format with comma separators. If your text contains commas, wrap it in double quotes.
+6. **CSV Format**: Standard comma separators. Wrap any field containing a comma in double quotes.
 
 ## API Endpoint
 
-**POST** `/api/question/bulk-upload`
+**POST** `/api/questions/bulk-upload`
+
+**Auth:** Requires a Bearer token with role `SUPER_ADMIN`, `INST_ADMIN`, or `TEACHER`.
 
 **Parameters:**
-- `file`: CSV file (multipart/form-data)
-- `topicId`: Long - ID of the topic to add questions to
-- `instituteId`: Long - ID of the institute
+- `file`: CSV file (`multipart/form-data`).
+
+The institute is taken from your token; the topic for each question is taken from the **Topic ID**
+column of that row. There are no `topicId` / `instituteId` request parameters.
 
 **Response:**
 ```json
@@ -70,12 +112,10 @@ Question Text,Question Image URL,Difficulty Level,Question Type,Marks,Negative M
     "successfulUploads": 8,
     "failedUploads": 2,
     "errors": [
-      "Row 3: Invalid difficulty level",
-      "Row 7: Missing question text"
+      "Row 3: For input string: \"abc\"",
+      "Row 7: At least one option must be marked as correct"
     ],
     "uploadedQuestions": [...]
   }
 }
 ```
-
-

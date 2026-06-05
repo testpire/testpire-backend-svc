@@ -1,6 +1,7 @@
 package com.testpire.testpire.Controller;
 
-import com.testpire.testpire.annotation.RequireRole;
+import com.testpire.testpire.annotation.RequirePermission;
+import com.testpire.testpire.enums.Permission;
 import com.testpire.testpire.dto.request.CreateSubjectRequestDto;
 import com.testpire.testpire.dto.request.SubjectCriteriaDto;
 import com.testpire.testpire.dto.request.SubjectSearchRequestDto;
@@ -12,7 +13,6 @@ import java.time.format.DateTimeFormatter;
 import com.testpire.testpire.dto.response.ApiResponseDto;
 import com.testpire.testpire.dto.response.SubjectListResponseDto;
 import com.testpire.testpire.dto.response.SubjectResponseDto;
-import com.testpire.testpire.enums.UserRole;
 import com.testpire.testpire.service.SubjectService;
 import com.testpire.testpire.util.JwksJwtUtil;
 import com.testpire.testpire.util.RequestUtils;
@@ -43,7 +43,7 @@ public class SubjectController {
     private final JwksJwtUtil jwtUtil;
 
     @PostMapping
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.SUBJECT_CREATE)
     @Operation(
         summary = "Create a new subject",
         description = "Creates a new subject for a specific course within an institute. Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can create subjects."
@@ -106,7 +106,7 @@ public class SubjectController {
     }
 
     @PutMapping("/{id}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.SUBJECT_UPDATE)
     @Operation(
         summary = "Update an existing subject",
         description = "Updates an existing subject by ID. Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can update subjects."
@@ -152,7 +152,7 @@ public class SubjectController {
     }
 
     @DeleteMapping("/{id}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.SUBJECT_DELETE)
     @Operation(
         summary = "Delete a subject",
         description = "Soft deletes a subject by ID (sets active to false). Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can delete subjects."
@@ -197,7 +197,7 @@ public class SubjectController {
     }
 
     @GetMapping("/{id}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @RequirePermission(Permission.SUBJECT_READ)
     @Operation(
         summary = "Get subject by ID",
         description = "Retrieves a subject by its ID. All authenticated users can view subjects."
@@ -242,7 +242,7 @@ public class SubjectController {
     }
 
     @GetMapping("/code/{code}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @RequirePermission(Permission.SUBJECT_READ)
     @Operation(
         summary = "Get subject by code",
         description = "Retrieves a subject by its code within a specific institute. All authenticated users can view subjects."
@@ -288,7 +288,7 @@ public class SubjectController {
     }
 
     @PostMapping("/search/advanced")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @RequirePermission(Permission.SUBJECT_READ)
     @Operation(
         summary = "Advanced search for subjects",
         description = "Performs advanced search for subjects using multiple criteria including name, code, description, duration, credits, and more. Supports pagination and sorting. All authenticated users can search subjects."
@@ -361,7 +361,7 @@ public class SubjectController {
     }
 
     @GetMapping("/search/advanced")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @RequirePermission(Permission.SUBJECT_READ)
     @Operation(
         summary = "Advanced search for subjects (GET)",
         description = "Performs advanced search for subjects using query parameters. Supports filtering by name, code, description, duration, credits, and more. Supports pagination and sorting. All authenticated users can search subjects."

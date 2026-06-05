@@ -43,7 +43,6 @@ public class StudentDetailsService {
                 .yearOfStudy(yearOfStudy)
                 .rollNumber(rollNumber)
                 .parentName(parentName)
-                .yearOfStudy(2) //todo : fix this
                 .parentPhone(parentPhone)
                 .parentEmail(parentEmail)
                 .address(address)

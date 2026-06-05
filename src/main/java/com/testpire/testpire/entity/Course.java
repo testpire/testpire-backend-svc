@@ -61,7 +61,12 @@ public class Course {
     @Builder.Default
     private boolean active = true;
 
-    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "course_subjects",
+            joinColumns = @JoinColumn(name = "course_id"),
+            inverseJoinColumns = @JoinColumn(name = "subject_id")
+    )
     @Builder.Default
     private List<Subject> subjects = new ArrayList<>();
 

@@ -1,6 +1,7 @@
 package com.testpire.testpire.Controller;
 
-import com.testpire.testpire.annotation.RequireRole;
+import com.testpire.testpire.annotation.RequirePermission;
+import com.testpire.testpire.enums.Permission;
 import com.testpire.testpire.dto.request.CreateTopicRequestDto;
 import com.testpire.testpire.dto.request.TopicCriteriaDto;
 import com.testpire.testpire.dto.request.TopicSearchRequestDto;
@@ -12,7 +13,6 @@ import java.time.format.DateTimeFormatter;
 import com.testpire.testpire.dto.response.ApiResponseDto;
 import com.testpire.testpire.dto.response.TopicListResponseDto;
 import com.testpire.testpire.dto.response.TopicResponseDto;
-import com.testpire.testpire.enums.UserRole;
 import com.testpire.testpire.service.TopicService;
 import com.testpire.testpire.util.JwksJwtUtil;
 import com.testpire.testpire.util.RequestUtils;
@@ -43,7 +43,7 @@ public class TopicController {
     private final JwksJwtUtil jwtUtil;
 
     @PostMapping
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.TOPIC_CREATE)
     @Operation(
         summary = "Create a new topic",
         description = "Creates a new topic for a specific chapter within an institute. Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can create topics."
@@ -107,7 +107,7 @@ public class TopicController {
     }
 
     @PutMapping("/{id}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.TOPIC_UPDATE)
     @Operation(
         summary = "Update an existing topic",
         description = "Updates an existing topic by ID. Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can update topics."
@@ -153,7 +153,7 @@ public class TopicController {
     }
 
     @DeleteMapping("/{id}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.TOPIC_DELETE)
     @Operation(
         summary = "Delete a topic",
         description = "Soft deletes a topic by ID (sets active to false). Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can delete topics."
@@ -198,7 +198,7 @@ public class TopicController {
     }
 
     @GetMapping("/{id}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @RequirePermission(Permission.TOPIC_READ)
     @Operation(
         summary = "Get topic by ID",
         description = "Retrieves a topic by its ID. All authenticated users can view topics."
@@ -243,7 +243,7 @@ public class TopicController {
     }
 
     @GetMapping("/code/{code}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @RequirePermission(Permission.TOPIC_READ)
     @Operation(
         summary = "Get topic by code",
         description = "Retrieves a topic by its code within a specific institute. All authenticated users can view topics."
@@ -289,7 +289,7 @@ public class TopicController {
     }
 
     @PostMapping("/search/advanced")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @RequirePermission(Permission.TOPIC_READ)
     @Operation(
         summary = "Advanced search for topics",
         description = "Performs advanced search for topics using multiple criteria including name, code, description, order index, duration, content, and more. Supports pagination and sorting. All authenticated users can search topics."
@@ -365,7 +365,7 @@ public class TopicController {
     }
 
     @GetMapping("/search/advanced")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @RequirePermission(Permission.TOPIC_READ)
     @Operation(
         summary = "Advanced search for topics (GET)",
         description = "Performs advanced search for topics using query parameters. Supports filtering by name, code, description, order index, duration, content, and more. Supports pagination and sorting. All authenticated users can search topics."

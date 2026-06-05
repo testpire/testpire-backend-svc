@@ -34,9 +34,9 @@ public class Subject {
     @Column(nullable = false)
     private String code;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "course_id", nullable = false)
-    private Course course;
+    @ManyToMany(mappedBy = "subjects", fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Course> courses = new ArrayList<>();
 
     @Column(nullable = false)
     private Long instituteId;

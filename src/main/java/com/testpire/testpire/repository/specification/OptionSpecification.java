@@ -72,11 +72,12 @@ public class OptionSpecification {
             if (courseId == null) {
                 return criteriaBuilder.conjunction();
             }
+            query.distinct(true);
             Join<Option, Object> questionJoin = root.join("question", JoinType.INNER);
             Join<Object, Object> topicJoin = questionJoin.join("topic", JoinType.INNER);
             Join<Object, Object> chapterJoin = topicJoin.join("chapter", JoinType.INNER);
             Join<Object, Object> subjectJoin = chapterJoin.join("subject", JoinType.INNER);
-            Join<Object, Object> courseJoin = subjectJoin.join("course", JoinType.INNER);
+            Join<Object, Object> courseJoin = subjectJoin.join("courses", JoinType.INNER);
             return criteriaBuilder.equal(courseJoin.get("id"), courseId);
         };
     }

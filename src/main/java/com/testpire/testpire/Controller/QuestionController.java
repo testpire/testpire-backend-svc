@@ -1,6 +1,7 @@
 package com.testpire.testpire.Controller;
 
-import com.testpire.testpire.annotation.RequireRole;
+import com.testpire.testpire.annotation.RequirePermission;
+import com.testpire.testpire.enums.Permission;
 import com.testpire.testpire.dto.request.BulkUploadQuestionsRequestDto;
 import com.testpire.testpire.dto.request.CreateQuestionRequestDto;
 import com.testpire.testpire.dto.request.QuestionCriteriaDto;
@@ -13,7 +14,6 @@ import com.testpire.testpire.dto.response.BulkUploadResponseDto;
 import com.testpire.testpire.dto.response.QuestionListResponseDto;
 import com.testpire.testpire.dto.response.QuestionResponseDto;
 import com.testpire.testpire.enums.DifficultyLevel;
-import com.testpire.testpire.enums.UserRole;
 import com.testpire.testpire.service.CsvUploadService;
 import com.testpire.testpire.service.QuestionImageService;
 import com.testpire.testpire.service.QuestionService;
@@ -49,7 +49,7 @@ public class QuestionController {
     private final JwksJwtUtil jwtUtil;
 
     @PostMapping
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.QUESTION_CREATE)
     @Operation(
         summary = "Create a new question",
         description = "Creates a new question with options for a specific topic within an institute. Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can create questions."
@@ -113,7 +113,7 @@ public class QuestionController {
     }
 
     @PutMapping("/{id}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.QUESTION_UPDATE)
     @Operation(
         summary = "Update an existing question",
         description = "Updates an existing question by ID. Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can update questions."
@@ -159,7 +159,7 @@ public class QuestionController {
     }
 
     @DeleteMapping("/{id}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.QUESTION_DELETE)
     @Operation(
         summary = "Delete a question",
         description = "Soft deletes a question by ID (sets active to false). All associated options are also deleted. Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can delete questions."
@@ -204,7 +204,7 @@ public class QuestionController {
     }
 
     @GetMapping("/{id}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @RequirePermission(Permission.QUESTION_READ)
     @Operation(
         summary = "Get question by ID",
         description = "Retrieves a question by its ID. All authenticated users can view questions."
@@ -249,7 +249,7 @@ public class QuestionController {
     }
 
     @GetMapping("/topic/{topicId}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @RequirePermission(Permission.QUESTION_READ)
     @Operation(
         summary = "Get questions by topic",
         description = "Retrieves all active questions for a specific topic within an institute. All authenticated users can view questions."
@@ -287,7 +287,7 @@ public class QuestionController {
     }
 
     @GetMapping("/institute/{instituteId}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @RequirePermission(Permission.QUESTION_READ)
     @Operation(
         summary = "Get questions by institute",
         description = "Retrieves all active questions for a specific institute. All authenticated users can view questions."
@@ -324,7 +324,7 @@ public class QuestionController {
 
 
     @PostMapping("/bulk-upload")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.QUESTION_BULK_UPLOAD)
     @Operation(
         summary = "Bulk upload questions from CSV",
         description = "Uploads multiple questions from a CSV file. The CSV should contain question text, image URLs, difficulty level, options, etc. Images are automatically uploaded to S3. Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can bulk upload questions."
@@ -373,7 +373,7 @@ public class QuestionController {
     }
 
     @PostMapping(value = "/images", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.QUESTION_IMAGE_UPLOAD)
     @Operation(
         summary = "Upload a question or option image",
         description = "Uploads a single image (multipart/form-data) for a question or option to S3, organized under " +
@@ -420,7 +420,7 @@ public class QuestionController {
     }
 
     @PostMapping("/search/advanced")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @RequirePermission(Permission.QUESTION_READ)
     @Operation(
         summary = "Advanced search for questions",
         description = "Performs advanced search for questions using multiple criteria including institute, course, subject, chapter, topic, difficulty level, question type, marks range, text search, and more. Supports pagination and sorting. All authenticated users can search questions."
@@ -500,7 +500,7 @@ public class QuestionController {
     }
 
     @GetMapping("/search/advanced")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @RequirePermission(Permission.QUESTION_READ)
     @Operation(
         summary = "Advanced search for questions (GET)",
         description = "Performs advanced search for questions using query parameters. Supports filtering by institute, course, subject, chapter, topic, difficulty level, question type, marks range, text search, and more. Supports pagination and sorting. All authenticated users can search questions."

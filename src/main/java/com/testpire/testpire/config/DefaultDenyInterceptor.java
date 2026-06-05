@@ -1,7 +1,7 @@
 package com.testpire.testpire.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.testpire.testpire.annotation.RequireRole;
+import com.testpire.testpire.annotation.RequirePermission;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -18,11 +18,11 @@ import java.util.Map;
 /**
  * Default-deny baseline for the API.
  *
- * <p>Authorization in this service is opt-in via {@link RequireRole} (enforced by
+ * <p>Authorization in this service is opt-in via {@link RequirePermission} (enforced by
  * {@code AuthorizationAspect}). Because there is no Spring Security filter chain, any controller
  * endpoint that simply forgets the annotation would be silently reachable with no authentication.
- * This interceptor closes that gap: a request whose handler has neither {@link RequireRole} nor a
- * matching entry in the explicit public allowlist is rejected with 401.</p>
+ * This interceptor closes that gap: a request whose handler has neither {@link RequirePermission} nor
+ * a matching entry in the explicit public allowlist is rejected with 401.</p>
  *
  * <p>It deliberately performs NO role/JWT validation of its own — annotated endpoints continue to
  * be authenticated and authorized by the aspect. This only changes the default for UNannotated
@@ -58,7 +58,7 @@ public class DefaultDenyInterceptor implements HandlerInterceptor {
     }
 
     // Annotated endpoints are authenticated/authorized by AuthorizationAspect — let them through.
-    if (handlerMethod.hasMethodAnnotation(RequireRole.class)) {
+    if (handlerMethod.hasMethodAnnotation(RequirePermission.class)) {
       return true;
     }
 
@@ -67,7 +67,7 @@ public class DefaultDenyInterceptor implements HandlerInterceptor {
       return true;
     }
 
-    // Default deny: the endpoint is neither annotated with @RequireRole nor allowlisted.
+    // Default deny: the endpoint is neither annotated with @RequirePermission nor allowlisted.
     log.warn("Default-deny blocked unannotated/non-public endpoint: {} {}",
         request.getMethod(), request.getRequestURI());
     response.setStatus(HttpStatus.UNAUTHORIZED.value());

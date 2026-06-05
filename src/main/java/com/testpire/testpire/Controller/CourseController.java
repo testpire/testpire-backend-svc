@@ -1,6 +1,7 @@
 package com.testpire.testpire.Controller;
 
-import com.testpire.testpire.annotation.RequireRole;
+import com.testpire.testpire.annotation.RequirePermission;
+import com.testpire.testpire.enums.Permission;
 import com.testpire.testpire.dto.request.CreateCourseRequestDto;
 import com.testpire.testpire.dto.request.CourseCriteriaDto;
 import com.testpire.testpire.dto.request.CourseSearchRequestDto;
@@ -12,7 +13,6 @@ import java.time.format.DateTimeFormatter;
 import com.testpire.testpire.dto.response.ApiResponseDto;
 import com.testpire.testpire.dto.response.CourseListResponseDto;
 import com.testpire.testpire.dto.response.CourseResponseDto;
-import com.testpire.testpire.enums.UserRole;
 import com.testpire.testpire.service.CourseService;
 import com.testpire.testpire.util.JwksJwtUtil;
 import com.testpire.testpire.util.RequestUtils;
@@ -43,7 +43,7 @@ public class CourseController {
     private final JwksJwtUtil jwtUtil;
 
     @PostMapping
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.COURSE_CREATE)
     @Operation(
         summary = "Create a new course",
         description = "Creates a new course for a specific institute. Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can create courses."
@@ -93,7 +93,8 @@ public class CourseController {
                     instituteId,
                     request.duration(),
                     request.level(),
-                    request.prerequisites()
+                    request.prerequisites(),
+                    request.subjectCodes()
             );
                     
             CourseResponseDto course = courseService.createCourse(requestWithInstituteId);
@@ -105,7 +106,7 @@ public class CourseController {
     }
 
     @PutMapping("/{id}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.COURSE_UPDATE)
     @Operation(
         summary = "Update an existing course",
         description = "Updates an existing course by ID. Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can update courses."
@@ -151,7 +152,7 @@ public class CourseController {
     }
 
     @DeleteMapping("/{id}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.COURSE_DELETE)
     @Operation(
         summary = "Delete a course",
         description = "Soft deletes a course by ID (sets active to false). Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can delete courses."
@@ -196,7 +197,7 @@ public class CourseController {
     }
 
     @GetMapping("/{id}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @RequirePermission(Permission.COURSE_READ)
     @Operation(
         summary = "Get course by ID",
         description = "Retrieves a course by its ID. All authenticated users can view courses."
@@ -241,7 +242,7 @@ public class CourseController {
     }
 
     @GetMapping("/code/{code}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @RequirePermission(Permission.COURSE_READ)
     @Operation(
         summary = "Get course by code",
         description = "Retrieves a course by its code within a specific institute. All authenticated users can view courses."
@@ -289,7 +290,7 @@ public class CourseController {
     }
 
     @PostMapping("/search/advanced")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @RequirePermission(Permission.COURSE_READ)
     @Operation(
         summary = "Advanced search for courses",
         description = "Performs advanced search for courses using multiple criteria including name, code, description, duration, level, and more. Supports pagination and sorting. All authenticated users can search courses."
@@ -337,7 +338,7 @@ public class CourseController {
     }
 
     @GetMapping("/search/advanced")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @RequirePermission(Permission.COURSE_READ)
     @Operation(
         summary = "Advanced search for courses (GET)",
         description = "Performs advanced search for courses using query parameters. Supports filtering by name, code, description, duration, level, and more. Supports pagination and sorting. All authenticated users can search courses."

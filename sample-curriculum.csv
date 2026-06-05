@@ -1,0 +1,10 @@
+Subject Code,Subject Name,Subject Description,Chapter Code,Chapter Name,Chapter Description,Chapter Order,Topic Code,Topic Name,Topic Description,Topic Order
+MATH,Mathematics,Core mathematics,,,,,,,,
+MATH,Mathematics,,CH-MATH-01,Algebra,Introduction to algebra,1,,,,
+MATH,Mathematics,,CH-MATH-01,Algebra,,1,T-ALG-01,Linear Equations,Solving linear equations,1
+MATH,Mathematics,,CH-MATH-01,Algebra,,1,T-ALG-02,Quadratic Equations,,2
+MATH,Mathematics,,CH-MATH-02,Geometry,Shapes and proofs,2,T-GEO-01,Triangles,,1
+PHYS,Physics,Core physics,,,,,,,,
+PHYS,Physics,,CH-PHYS-01,Mechanics,Newton's laws,1,T-MECH-01,Forces and Motion,,1
+PHYS,Physics,,CH-PHYS-01,Mechanics,,1,T-MECH-02,Energy and Work,,2
+CHEM,Chemistry,,CH-CHEM-01,Organic Chemistry,,1,T-ORG-01,Hydrocarbons,,1

@@ -10,7 +10,7 @@ public record SubjectResponseDto(
         String name,
         String description,
         String code,
-        Long courseId,
+        List<Long> courseIds,
         Long instituteId,
         String duration,
         Integer credits,
@@ -28,7 +28,9 @@ public record SubjectResponseDto(
                 subject.getName(),
                 subject.getDescription(),
                 subject.getCode(),
-                subject.getCourse().getId(),
+                subject.getCourses() != null
+                        ? subject.getCourses().stream().map(c -> c.getId()).toList()
+                        : List.of(),
                 subject.getInstituteId(),
                 subject.getDuration(),
                 subject.getCredits(),
@@ -38,10 +40,10 @@ public record SubjectResponseDto(
                 subject.getCreatedBy(),
                 subject.getUpdatedBy(),
                 subject.isActive(),
-                subject.getChapters() != null ? 
+                subject.getChapters() != null ?
                     subject.getChapters().stream()
                         .map(ChapterResponseDto::fromEntity)
-                        .toList() : 
+                        .toList() :
                     List.of()
         );
     }

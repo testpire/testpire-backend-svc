@@ -16,7 +16,6 @@ public record CreateSubjectRequestDto(
         @Size(max = 20, message = "Subject code must not exceed 20 characters")
         String code,
 
-        @NotNull(message = "Course ID is required")
         Long courseId,
 
         @NotNull(message = "Institute ID is required")

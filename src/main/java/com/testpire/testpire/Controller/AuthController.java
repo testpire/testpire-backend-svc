@@ -1,6 +1,7 @@
 package com.testpire.testpire.Controller;
 
-import com.testpire.testpire.annotation.RequireRole;
+import com.testpire.testpire.annotation.RequirePermission;
+import com.testpire.testpire.enums.Permission;
 import com.testpire.testpire.dto.UserDto;
 import com.testpire.testpire.dto.request.ConfirmForgotPasswordRequestDto;
 import com.testpire.testpire.dto.request.ForgotPasswordRequestDto;
@@ -11,7 +12,6 @@ import com.testpire.testpire.dto.response.LoginResponseDto;
 import com.testpire.testpire.dto.response.LogoutResponseDto;
 import com.testpire.testpire.dto.response.ProfileResponseDto;
 import com.testpire.testpire.entity.User;
-import com.testpire.testpire.enums.UserRole;
 import com.testpire.testpire.service.CognitoService;
 import com.testpire.testpire.service.InstituteService;
 import com.testpire.testpire.service.UserService;
@@ -126,7 +126,7 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @RequirePermission(Permission.AUTH_LOGOUT)
     @Operation(summary = "User logout", description = "Logout user and invalidate all sessions")
     public ResponseEntity<LogoutResponseDto> logout() {
         try {
@@ -141,7 +141,7 @@ public class AuthController {
     }
 
     @GetMapping("/profile")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @RequirePermission(Permission.AUTH_PROFILE)
     @Operation(summary = "Get user profile", description = "Get current user's profile")
     public ResponseEntity<ProfileResponseDto> getProfile() {
         try {

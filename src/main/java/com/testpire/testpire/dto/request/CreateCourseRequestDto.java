@@ -1,8 +1,9 @@
 package com.testpire.testpire.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+
+import java.util.List;
 
 public record CreateCourseRequestDto(
         @NotBlank(message = "Course name is required")
@@ -20,7 +21,9 @@ public record CreateCourseRequestDto(
 
         String duration,
         String level,
-        String prerequisites
+        String prerequisites,
+
+        List<String> subjectCodes
 ) {}
 
 

@@ -25,7 +25,8 @@ public class SubjectSpecification {
             if (courseId == null) {
                 return criteriaBuilder.conjunction();
             }
-            Join<Subject, Object> courseJoin = root.join("course", JoinType.INNER);
+            query.distinct(true);
+            Join<Subject, Object> courseJoin = root.join("courses", JoinType.INNER);
             return criteriaBuilder.equal(courseJoin.get("id"), courseId);
         };
     }

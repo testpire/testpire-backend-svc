@@ -1,6 +1,7 @@
 package com.testpire.testpire.Controller;
 
-import com.testpire.testpire.annotation.RequireRole;
+import com.testpire.testpire.annotation.RequirePermission;
+import com.testpire.testpire.enums.Permission;
 import com.testpire.testpire.dto.request.ChapterCriteriaDto;
 import com.testpire.testpire.dto.request.ChapterSearchRequestDto;
 import com.testpire.testpire.dto.request.CreateChapterRequestDto;
@@ -12,7 +13,6 @@ import java.time.format.DateTimeFormatter;
 import com.testpire.testpire.dto.response.ApiResponseDto;
 import com.testpire.testpire.dto.response.ChapterListResponseDto;
 import com.testpire.testpire.dto.response.ChapterResponseDto;
-import com.testpire.testpire.enums.UserRole;
 import com.testpire.testpire.service.ChapterService;
 import com.testpire.testpire.util.JwksJwtUtil;
 import com.testpire.testpire.util.RequestUtils;
@@ -43,7 +43,7 @@ public class ChapterController {
     private final JwksJwtUtil jwtUtil;
 
     @PostMapping
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.CHAPTER_CREATE)
     @Operation(
         summary = "Create a new chapter",
         description = "Creates a new chapter for a specific subject within an institute. Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can create chapters."
@@ -106,7 +106,7 @@ public class ChapterController {
     }
 
     @PutMapping("/{id}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.CHAPTER_UPDATE)
     @Operation(
         summary = "Update an existing chapter",
         description = "Updates an existing chapter by ID. Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can update chapters."
@@ -152,7 +152,7 @@ public class ChapterController {
     }
 
     @DeleteMapping("/{id}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.CHAPTER_DELETE)
     @Operation(
         summary = "Delete a chapter",
         description = "Soft deletes a chapter by ID (sets active to false). Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can delete chapters."
@@ -197,7 +197,7 @@ public class ChapterController {
     }
 
     @GetMapping("/{id}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @RequirePermission(Permission.CHAPTER_READ)
     @Operation(
         summary = "Get chapter by ID",
         description = "Retrieves a chapter by its ID. All authenticated users can view chapters."
@@ -242,7 +242,7 @@ public class ChapterController {
     }
 
     @GetMapping("/code/{code}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @RequirePermission(Permission.CHAPTER_READ)
     @Operation(
         summary = "Get chapter by code",
         description = "Retrieves a chapter by its code within a specific institute. All authenticated users can view chapters."
@@ -288,7 +288,7 @@ public class ChapterController {
     }
 
     @PostMapping("/search/advanced")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @RequirePermission(Permission.CHAPTER_READ)
     @Operation(
         summary = "Advanced search for chapters",
         description = "Performs advanced search for chapters using multiple criteria including name, code, description, order index, duration, and more. Supports pagination and sorting. All authenticated users can search chapters."
@@ -361,7 +361,7 @@ public class ChapterController {
     }
 
     @GetMapping("/search/advanced")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @RequirePermission(Permission.CHAPTER_READ)
     @Operation(
         summary = "Advanced search for chapters (GET)",
         description = "Performs advanced search for chapters using query parameters. Supports filtering by name, code, description, order index, duration, and more. Supports pagination and sorting. All authenticated users can search chapters."

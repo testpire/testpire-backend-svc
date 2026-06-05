@@ -15,18 +15,19 @@ public interface TopicRepository extends JpaRepository<Topic, Long>, JpaSpecific
     Optional<Topic> findByCodeAndInstituteId(String code, Long instituteId);
     Optional<Topic> findByIdAndInstituteId(Long id, Long instituteId);
 
-    // Eagerly loads the topic's full hierarchy (chapter -> subject -> course) for building
-    // the image folder path without a LazyInitializationException outside a session.
+    // Eagerly loads the topic's hierarchy (chapter -> subject) for building the S3 folder path.
     @Query("SELECT t FROM Topic t " +
-           "JOIN FETCH t.chapter c JOIN FETCH c.subject s JOIN FETCH s.course " +
+           "JOIN FETCH t.chapter c JOIN FETCH c.subject s " +
            "WHERE t.id = :id")
     Optional<Topic> findByIdWithHierarchy(@Param("id") Long id);
     boolean existsByCodeAndInstituteId(String code, Long instituteId);
     List<Topic> findByChapterIdOrderByOrderIndex(Long chapterId);
     
     // Advanced search with multiple filters
-    @Query("SELECT t FROM Topic t WHERE t.instituteId = :instituteId " +
-        "AND (:courseId IS NULL OR t.chapter.subject.course.id = :courseId) " +
+    @Query("SELECT DISTINCT t FROM Topic t " +
+        "LEFT JOIN t.chapter.subject.courses tc " +
+        "WHERE t.instituteId = :instituteId " +
+        "AND (:courseId IS NULL OR tc.id = :courseId) " +
         "AND (:subjectId IS NULL OR t.chapter.subject.id = :subjectId) " +
         "AND (:chapterId IS NULL OR t.chapter.id = :chapterId) " +
         "AND (:active IS NULL OR COALESCE(t.active, true) = :active) " +
@@ -34,17 +35,19 @@ public interface TopicRepository extends JpaRepository<Topic, Long>, JpaSpecific
         "     LOWER(t.name) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
         "     LOWER(t.code) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
         "     LOWER(t.description) LIKE LOWER(CONCAT('%', :searchQuery, '%'))) " +
-        "ORDER BY t.chapter.subject.course.name, t.chapter.subject.name, t.chapter.name, t.orderIndex")
+        "ORDER BY t.chapter.subject.name, t.chapter.name, t.orderIndex")
     List<Topic> findTopicsWithFilters(@Param("instituteId") Long instituteId,
         @Param("courseId") Long courseId,
         @Param("subjectId") Long subjectId,
         @Param("chapterId") Long chapterId,
         @Param("searchQuery") String searchQuery,
         @Param("active") Boolean active);
-    
+
     // Count topics with filters
-    @Query("SELECT COUNT(t) FROM Topic t WHERE t.instituteId = :instituteId " +
-           "AND (:courseId IS NULL OR t.chapter.subject.course.id = :courseId) " +
+    @Query("SELECT COUNT(DISTINCT t) FROM Topic t " +
+           "LEFT JOIN t.chapter.subject.courses tc " +
+           "WHERE t.instituteId = :instituteId " +
+           "AND (:courseId IS NULL OR tc.id = :courseId) " +
            "AND (:subjectId IS NULL OR t.chapter.subject.id = :subjectId) " +
            "AND (:chapterId IS NULL OR t.chapter.id = :chapterId) " +
            "AND (:active IS NULL OR t.active = :active) " +

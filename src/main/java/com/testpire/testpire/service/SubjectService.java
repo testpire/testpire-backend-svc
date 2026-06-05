@@ -34,16 +34,7 @@ public class SubjectService {
 
     @Transactional
     public SubjectResponseDto createSubject(CreateSubjectRequestDto request) {
-        log.info("Creating subject: {} for course: {} in institute: {}", 
-                request.name(), request.courseId(), request.instituteId());
-
-        // Verify course exists and belongs to the same institute
-        Course course = courseRepository.findById(request.courseId())
-                .orElseThrow(() -> new IllegalArgumentException("Course not found with ID: " + request.courseId()));
-
-        if (!course.getInstituteId().equals(request.instituteId())) {
-            throw new IllegalArgumentException("Course does not belong to the specified institute");
-        }
+        log.info("Creating subject: {} in institute: {}", request.name(), request.instituteId());
 
         // Check if subject code already exists in the institute
         if (subjectRepository.existsByCodeAndInstituteId(request.code(), request.instituteId())) {
@@ -54,7 +45,6 @@ public class SubjectService {
                 .name(request.name())
                 .description(request.description())
                 .code(request.code())
-                .course(course)
                 .instituteId(request.instituteId())
                 .duration(request.duration())
                 .credits(request.credits())
@@ -63,6 +53,18 @@ public class SubjectService {
                 .build();
 
         Subject savedSubject = subjectRepository.save(subject);
+
+        // Optionally link to a course when courseId is supplied
+        if (request.courseId() != null) {
+            Course course = courseRepository.findById(request.courseId())
+                    .orElseThrow(() -> new IllegalArgumentException("Course not found with ID: " + request.courseId()));
+            if (!course.getInstituteId().equals(request.instituteId())) {
+                throw new IllegalArgumentException("Course does not belong to the specified institute");
+            }
+            course.getSubjects().add(savedSubject);
+            courseRepository.save(course);
+        }
+
         log.info("Subject created successfully with ID: {}", savedSubject.getId());
         return SubjectResponseDto.fromEntity(savedSubject);
     }

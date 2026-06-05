@@ -24,7 +24,7 @@ public class WebConfig implements WebMvcConfigurer {
 
   @Override
   public void addInterceptors(InterceptorRegistry registry) {
-    // Default-deny baseline: any /api endpoint lacking @RequireRole and not explicitly public is blocked.
+    // Default-deny baseline: any /api endpoint lacking @RequirePermission and not explicitly public is blocked.
     registry.addInterceptor(defaultDenyInterceptor).addPathPatterns("/api/**");
   }
 

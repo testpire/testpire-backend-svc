@@ -1,6 +1,7 @@
 package com.testpire.testpire.Controller;
 
-import com.testpire.testpire.annotation.RequireRole;
+import com.testpire.testpire.annotation.RequirePermission;
+import com.testpire.testpire.enums.Permission;
 import com.testpire.testpire.dto.RegisterRequest;
 import com.testpire.testpire.dto.request.CreateStudentRequestDto;
 import com.testpire.testpire.dto.request.StudentCriteriaDto;
@@ -48,7 +49,7 @@ public class StudentController {
     // ==================== STUDENT CRUD OPERATIONS ====================
 
     @PostMapping
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN})
+    @RequirePermission(Permission.STUDENT_CREATE)
     @Operation(summary = "Create student", description = "Create a new student (SUPER_ADMIN or INST_ADMIN)")
     public ResponseEntity<ApiResponseDto> createStudent(@Valid @RequestBody CreateStudentRequestDto request) {
         try {
@@ -105,7 +106,7 @@ public class StudentController {
     }
 
     @GetMapping("/{id}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER, UserRole.STUDENT})
+    @RequirePermission(Permission.STUDENT_READ)
     @Operation(summary = "Get student by ID", description = "Get student details by ID")
     public ResponseEntity<ApiResponseDto> getStudentById(@PathVariable Long id) {
         try {
@@ -143,7 +144,7 @@ public class StudentController {
     }
 
     @PutMapping("/{id}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN})
+    @RequirePermission(Permission.STUDENT_UPDATE)
     @Operation(summary = "Update student", description = "Update student details (SUPER_ADMIN or INST_ADMIN)")
     public ResponseEntity<ApiResponseDto> updateStudent(@PathVariable Long id, @Valid @RequestBody UpdateStudentRequestDto request) {
         try {
@@ -217,7 +218,7 @@ public class StudentController {
     }
 
     @DeleteMapping("/{id}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN})
+    @RequirePermission(Permission.STUDENT_DELETE)
     @Operation(summary = "Delete student", description = "Delete student (SUPER_ADMIN or INST_ADMIN)")
     public ResponseEntity<ApiResponseDto> deleteStudent(@PathVariable Long id) {
         try {
@@ -258,7 +259,7 @@ public class StudentController {
     // ==================== STUDENT LISTING OPERATIONS ====================
 
     @GetMapping
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.STUDENT_LIST)
     @Operation(summary = "Get all students", description = "Get all students with optional filtering")
     public ResponseEntity<StudentListResponseDto> getAllStudents(
             @RequestParam(required = false) Long instituteId,
@@ -314,7 +315,7 @@ public class StudentController {
     }
 
     @GetMapping("/institute/{instituteId}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.STUDENT_LIST)
     @Operation(summary = "Get students by institute", description = "Get all students in a specific institute")
     public ResponseEntity<StudentListResponseDto> getStudentsByInstitute(@PathVariable Long instituteId) {
         try {
@@ -353,7 +354,7 @@ public class StudentController {
     }
 
     @GetMapping("/institute/{instituteId}/course/{course}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.STUDENT_LIST)
     @Operation(summary = "Get students by institute and course", description = "Get all students in a specific institute and course")
     public ResponseEntity<StudentListResponseDto> getStudentsByInstituteAndCourse(
             @PathVariable Long instituteId,
@@ -396,7 +397,7 @@ public class StudentController {
     // ==================== ADVANCED SEARCH OPERATIONS ====================
 
     @PostMapping("/search/advanced")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.STUDENT_SEARCH)
     @Operation(summary = "Advanced search students", description = "Search students with advanced criteria, pagination, and sorting")
     public ResponseEntity<ApiResponseDto> searchStudentsAdvanced(@Valid @RequestBody StudentSearchRequestDto request) {
         try {
@@ -445,7 +446,7 @@ public class StudentController {
     }
 
     @GetMapping("/search/advanced")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.STUDENT_SEARCH)
     @Operation(summary = "Advanced search students (GET)", description = "Search students with advanced criteria via GET parameters")
     public ResponseEntity<ApiResponseDto> searchStudentsAdvancedGet(
             @Parameter(description = "Search text (optional)", example = "john")
@@ -571,7 +572,7 @@ public class StudentController {
     // ==================== STUDENT PROFILE OPERATIONS ====================
 
     @GetMapping("/profile")
-    @RequireRole(UserRole.STUDENT)
+    @RequirePermission(Permission.STUDENT_PROFILE_READ)
     @Operation(summary = "Get student profile", description = "Get current student's profile")
     public ResponseEntity<ApiResponseDto> getStudentProfile() {
         try {
@@ -602,7 +603,7 @@ public class StudentController {
     }
 
     @PutMapping("/profile")
-    @RequireRole(UserRole.STUDENT)
+    @RequirePermission(Permission.STUDENT_PROFILE_UPDATE)
     @Operation(summary = "Update student profile", description = "Update current student's profile")
     public ResponseEntity<ApiResponseDto> updateStudentProfile(@Valid @RequestBody UpdateStudentRequestDto request) {
         try {
@@ -659,7 +660,7 @@ public class StudentController {
     // ==================== LEGACY ENDPOINTS (for backward compatibility) ====================
 
     @GetMapping("/peers")
-    @RequireRole(UserRole.STUDENT)
+    @RequirePermission(Permission.STUDENT_PEERS_READ)
     @Operation(summary = "Get student peers", description = "Get all students in the same institute")
     public ResponseEntity<StudentListResponseDto> getPeers() {
         try {
@@ -694,7 +695,7 @@ public class StudentController {
     // ==================== DEBUG ENDPOINTS ====================
 
     @GetMapping("/debug")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN})
+    @RequirePermission(Permission.STUDENT_DEBUG)
     @Operation(summary = "Debug students", description = "Debug endpoint to check student data")
     public ResponseEntity<ApiResponseDto> debugStudents() {
         try {

@@ -118,6 +118,7 @@ public final class ApplicationConstants {
     public static final String STUDENT_DETAILS_TABLE = "student_details";
     public static final String COURSES_TABLE = "courses";
     public static final String SUBJECTS_TABLE = "subjects";
+    public static final String COURSE_SUBJECTS_TABLE = "course_subjects";
     public static final String CHAPTERS_TABLE = "chapters";
     public static final String TOPICS_TABLE = "topics";
     public static final String CREATED_AT_COLUMN = "created_at";

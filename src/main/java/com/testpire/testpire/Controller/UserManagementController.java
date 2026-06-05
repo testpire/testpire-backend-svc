@@ -1,6 +1,7 @@
 package com.testpire.testpire.Controller;
 
-import com.testpire.testpire.annotation.RequireRole;
+import com.testpire.testpire.annotation.RequirePermission;
+import com.testpire.testpire.enums.Permission;
 import com.testpire.testpire.dto.RegisterRequest;
 import com.testpire.testpire.dto.UserDto;
 import com.testpire.testpire.dto.request.CreateUserRequestDto;
@@ -40,7 +41,7 @@ public class UserManagementController {
     // ========== USER REGISTRATION ==========
 
     @PostMapping("/register")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.USER_CREATE)
     @Operation(summary = "Register user", description = "Register a new user based on role and permissions")
     public ResponseEntity<ApiResponseDto> registerUser(@Valid @RequestBody CreateUserRequestDto request) {
         try {
@@ -91,7 +92,7 @@ public class UserManagementController {
     // ========== USER RETRIEVAL ==========
 
     @GetMapping("/{role}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.USER_READ)
     @Operation(summary = "Get users by role", description = "Get users by role with institute-based filtering")
     public ResponseEntity<UserListResponseDto> getUsersByRole(@PathVariable String role) {
         try {
@@ -137,7 +138,7 @@ public class UserManagementController {
     }
 
     @GetMapping("/{role}/search")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.USER_READ)
     @Operation(summary = "Search users by role", description = "Search users by role and institute")
     public ResponseEntity<?> searchUsersByRole(@PathVariable String role,
                                             @RequestParam String searchTerm) {
@@ -173,7 +174,7 @@ public class UserManagementController {
     }
 
     @GetMapping("/{role}/{id}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.USER_READ)
     @Operation(summary = "Get user by ID", description = "Get user details by ID with permission check")
     public ResponseEntity<?> getUserById(@PathVariable String role,
                                        @PathVariable Long id) {
@@ -217,7 +218,7 @@ public class UserManagementController {
     // ========== USER UPDATES ==========
 
     @PutMapping("/{role}/{id}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.USER_UPDATE)
     @Operation(summary = "Update user", description = "Update user details with permission check")
     public ResponseEntity<?> updateUser(@PathVariable String role,
                                       @PathVariable Long id,
@@ -270,7 +271,7 @@ public class UserManagementController {
     // ========== USER DELETION ==========
 
     @DeleteMapping("/{role}/{id}")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN, UserRole.TEACHER})
+    @RequirePermission(Permission.USER_DELETE)
     @Operation(summary = "Delete user", description = "Deactivate user with permission check")
     public ResponseEntity<?> deleteUser(@PathVariable String role,
                                       @PathVariable Long id) {
@@ -309,7 +310,7 @@ public class UserManagementController {
     // ========== RESEND INVITATION ==========
 
     @PostMapping("/{id}/resend-invitation")
-    @RequireRole({UserRole.SUPER_ADMIN, UserRole.INST_ADMIN})
+    @RequirePermission(Permission.USER_RESEND_INVITATION)
     @Operation(summary = "Resend invitation", description = "Resends the Cognito invitation email with a new temporary password to a user who hasn't logged in yet.")
     public ResponseEntity<ApiResponseDto> resendInvitation(@PathVariable Long id) {
         try {

@@ -1,6 +1,7 @@
 package com.testpire.testpire.Controller;
 
-import com.testpire.testpire.annotation.RequireRole;
+import com.testpire.testpire.annotation.RequirePermission;
+import com.testpire.testpire.enums.Permission;
 import com.testpire.testpire.entity.User;
 import com.testpire.testpire.enums.UserRole;
 import com.testpire.testpire.service.CognitoService;
@@ -32,7 +33,7 @@ public class SuperAdminController {
     // ========== GENERAL USER MANAGEMENT ==========
 
     @GetMapping("/users")
-    @RequireRole(UserRole.SUPER_ADMIN)
+    @RequirePermission(Permission.SYSTEM_USERS_READ)
     @Operation(summary = "Get all users", description = "Get all users (SUPER_ADMIN only)")
     public ResponseEntity<?> getAllUsers() {
         try {
@@ -46,7 +47,7 @@ public class SuperAdminController {
     }
 
     @GetMapping("/users/{id}")
-    @RequireRole(UserRole.SUPER_ADMIN)
+    @RequirePermission(Permission.SYSTEM_USERS_READ)
     @Operation(summary = "Get user by ID", description = "Get user details by ID")
     public ResponseEntity<?> getUserById(@PathVariable Long id) {
         try {
@@ -62,7 +63,7 @@ public class SuperAdminController {
     // ========== SYSTEM OVERVIEW ==========
 
     @GetMapping("/dashboard")
-    @RequireRole(UserRole.SUPER_ADMIN)
+    @RequirePermission(Permission.SYSTEM_DASHBOARD)
     @Operation(summary = "Get system dashboard", description = "Get system overview and statistics")
     public ResponseEntity<?> getSystemDashboard() {
         try {
