@@ -25,11 +25,11 @@ public record CreateStudentRequestDto(
     String phone,
     
     String course,
-    
-    @Min(value = 1, message = "Year of study must be at least 1")
-    @Max(value = 10, message = "Year of study must be at most 10")
-    Integer yearOfStudy,
-    
+
+    @Min(value = 1, message = "Class must be at least 1")
+    @Max(value = 14, message = "Class must be at most 14")
+    Integer currentClass,
+
     String rollNumber,
     
     String parentName,

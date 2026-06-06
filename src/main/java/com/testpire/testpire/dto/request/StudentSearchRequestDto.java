@@ -73,14 +73,14 @@ public class StudentSearchRequestDto {
         return criteria != null ? criteria.getCourse() : null;
     }
     
-    public Integer getMinYearOfStudy() {
-        return criteria != null ? criteria.getMinYearOfStudy() : null;
+    public Integer getMinCurrentClass() {
+        return criteria != null ? criteria.getMinCurrentClass() : null;
     }
-    
-    public Integer getMaxYearOfStudy() {
-        return criteria != null ? criteria.getMaxYearOfStudy() : null;
+
+    public Integer getMaxCurrentClass() {
+        return criteria != null ? criteria.getMaxCurrentClass() : null;
     }
-    
+
     public String getRollNumber() {
         return criteria != null ? criteria.getRollNumber() : null;
     }

@@ -5,15 +5,18 @@ import com.testpire.testpire.enums.Permission;
 import com.testpire.testpire.enums.UserRole;
 import com.testpire.testpire.repository.RolePermissionRepository;
 import jakarta.annotation.PostConstruct;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Loads the role -> permission grants from {@code role_permissions} and answers permission checks
@@ -92,6 +95,27 @@ public class PermissionService {
 
     public Set<Permission> getPermissions(UserRole role) {
         return cache.get().getOrDefault(role, Collections.emptySet());
+    }
+
+    /**
+     * Replaces all grants for {@code role} with exactly {@code permissions} (the desired full state),
+     * then refreshes the in-memory cache so the change takes effect without a redeploy or manual
+     * reload. SUPER_ADMIN is not stored here — it is always-allowed in {@link #hasPermission}, so its
+     * grants are immaterial; callers should reject edits to it rather than silently no-op.
+     */
+    @Transactional
+    public void setPermissions(UserRole role, Set<Permission> permissions) {
+        rolePermissionRepository.deleteByRole(role.name());
+        List<RolePermission> grants = new ArrayList<>(permissions.size());
+        for (Permission p : permissions) {
+            grants.add(RolePermission.builder()
+                    .role(role.name())
+                    .permissionCode(p.name())
+                    .build());
+        }
+        rolePermissionRepository.saveAll(grants);
+        reload();
+        log.info("Replaced permissions for role {} with {} grants", role, permissions.size());
     }
 
     private UserRole parseRole(String role) {

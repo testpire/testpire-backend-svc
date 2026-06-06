@@ -83,7 +83,7 @@ public class StudentController {
                 createdUser,
                 request.phone(),
                 request.course(),
-                request.yearOfStudy(),
+                request.currentClass(),
                 request.rollNumber(),
                 request.parentName(),
                 request.parentPhone(),
@@ -196,7 +196,7 @@ public class StudentController {
                 student,
                 request.phone(),
                 request.course(),
-                request.yearOfStudy(),
+                request.currentClass(),
                 request.rollNumber(),
                 request.parentName(),
                 request.parentPhone(),
@@ -264,7 +264,7 @@ public class StudentController {
     public ResponseEntity<StudentListResponseDto> getAllStudents(
             @RequestParam(required = false) Long instituteId,
             @RequestParam(required = false) String course,
-            @RequestParam(required = false) Integer yearOfStudy) {
+            @RequestParam(required = false) Integer currentClass) {
         try {
             // Institute isolation: non-SUPER_ADMIN may only list students in their own institute,
             // regardless of any client-supplied instituteId.
@@ -295,14 +295,14 @@ public class StudentController {
 
             // Apply additional filters
             List<StudentResponseDto> studentDtos = studentDetailsList.stream()
-                .filter(details -> yearOfStudy == null || yearOfStudy.equals(details.getYearOfStudy()))
+                .filter(details -> currentClass == null || currentClass.equals(details.getCurrentClass()))
                 .map(details -> StudentResponseDto.fromEntity(details.getUser(), details))
                 .toList();
 
             StudentListResponseDto response = StudentListResponseDto.success(
-                studentDtos, 
-                studentDtos.size(), 
-                0, 
+                studentDtos,
+                studentDtos.size(),
+                0,
                 studentDtos.size()
             );
 
@@ -416,8 +416,8 @@ public class StudentController {
                     .email(request.getEmail())
                     .phone(request.getPhone())
                     .course(request.getCourse())
-                    .minYearOfStudy(request.getMinYearOfStudy())
-                    .maxYearOfStudy(request.getMaxYearOfStudy())
+                    .minCurrentClass(request.getMinCurrentClass())
+                    .maxCurrentClass(request.getMaxCurrentClass())
                     .rollNumber(request.getRollNumber())
                     .parentName(request.getParentName())
                     .parentPhone(request.getParentPhone())
@@ -463,10 +463,10 @@ public class StudentController {
             @RequestParam(required = false) String phone,
             @Parameter(description = "Course (optional)", example = "Computer Science")
             @RequestParam(required = false) String course,
-            @Parameter(description = "Minimum year of study (optional)", example = "1")
-            @RequestParam(required = false) Integer minYearOfStudy,
-            @Parameter(description = "Maximum year of study (optional)", example = "4")
-            @RequestParam(required = false) Integer maxYearOfStudy,
+            @Parameter(description = "Minimum class (optional)", example = "1")
+            @RequestParam(required = false) Integer minCurrentClass,
+            @Parameter(description = "Maximum class (optional)", example = "14")
+            @RequestParam(required = false) Integer maxCurrentClass,
             @Parameter(description = "Roll number (optional)", example = "CS2024001")
             @RequestParam(required = false) String rollNumber,
             @Parameter(description = "Parent name (optional)", example = "Jane Doe")
@@ -530,8 +530,8 @@ public class StudentController {
                     .email(email)
                     .phone(phone)
                     .course(course)
-                    .minYearOfStudy(minYearOfStudy)
-                    .maxYearOfStudy(maxYearOfStudy)
+                    .minCurrentClass(minCurrentClass)
+                    .maxCurrentClass(maxCurrentClass)
                     .rollNumber(rollNumber)
                     .parentName(parentName)
                     .parentPhone(parentPhone)
@@ -636,7 +636,7 @@ public class StudentController {
                 student,
                 request.phone(),
                 request.course(),
-                request.yearOfStudy(),
+                request.currentClass(),
                 request.rollNumber(),
                 request.parentName(),
                 request.parentPhone(),

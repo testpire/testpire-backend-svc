@@ -160,7 +160,7 @@ public class LeadService {
             user,
             lead.getPhone(),
             course.getName(),
-            request.yearOfStudy(),
+            null,
             request.rollNumber(),
             request.parentName(),
             request.parentPhone(),

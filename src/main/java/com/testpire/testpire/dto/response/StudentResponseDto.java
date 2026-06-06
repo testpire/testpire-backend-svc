@@ -15,7 +15,7 @@ public record StudentResponseDto(
     Long instituteId,
     String phone,
     String course,
-    Integer yearOfStudy,
+    Integer currentClass,
     String rollNumber,
     String parentName,
     String parentPhone,
@@ -44,7 +44,7 @@ public record StudentResponseDto(
             user.getInstituteId(),
             null,                 // phone
             studentDetails != null ? studentDetails.getCourse() : null,
-            studentDetails != null ? studentDetails.getYearOfStudy() : null,
+            studentDetails != null ? studentDetails.getCurrentClass() : null,
             studentDetails != null ? studentDetails.getRollNumber() : null,
             null,                 // parentName
             null,                 // parentPhone
@@ -70,7 +70,7 @@ public record StudentResponseDto(
             user.getInstituteId(),
             studentDetails != null ? studentDetails.getPhone() : null,
             studentDetails != null ? studentDetails.getCourse() : null,
-            studentDetails != null ? studentDetails.getYearOfStudy() : null,
+            studentDetails != null ? studentDetails.getCurrentClass() : null,
             studentDetails != null ? studentDetails.getRollNumber() : null,
             studentDetails != null ? studentDetails.getParentName() : null,
             studentDetails != null ? studentDetails.getParentPhone() : null,

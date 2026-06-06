@@ -30,17 +30,17 @@ public class StudentDetailsService {
 
     private final StudentDetailsRepository studentDetailsRepository;
 
-    public StudentDetails createStudentDetails(User user, String phone, String course, Integer yearOfStudy, 
-                                             String rollNumber, String parentName, String parentPhone, 
-                                             String parentEmail, String address, LocalDateTime dateOfBirth, 
+    public StudentDetails createStudentDetails(User user, String phone, String course, Integer currentClass,
+                                             String rollNumber, String parentName, String parentPhone,
+                                             String parentEmail, String address, LocalDateTime dateOfBirth,
                                              String bloodGroup, String emergencyContact) {
         log.info("Creating student details for user ID: {}", user.getId());
-        
+
         StudentDetails studentDetails = StudentDetails.builder()
                 .user(user)
                 .phone(phone)
                 .course(course)
-                .yearOfStudy(yearOfStudy)
+                .currentClass(currentClass)
                 .rollNumber(rollNumber)
                 .parentName(parentName)
                 .parentPhone(parentPhone)
@@ -57,9 +57,9 @@ public class StudentDetailsService {
         return savedDetails;
     }
 
-    public StudentDetails updateStudentDetails(User user, String phone, String course, Integer yearOfStudy,
-                                             String rollNumber, String parentName, String parentPhone, 
-                                             String parentEmail, String address, LocalDateTime dateOfBirth, 
+    public StudentDetails updateStudentDetails(User user, String phone, String course, Integer currentClass,
+                                             String rollNumber, String parentName, String parentPhone,
+                                             String parentEmail, String address, LocalDateTime dateOfBirth,
                                              String bloodGroup, String emergencyContact) {
         log.info("Updating student details for user ID: {}", user.getId());
         
@@ -72,8 +72,8 @@ public class StudentDetailsService {
         if (course != null) {
             studentDetails.setCourse(course);
         }
-        if (yearOfStudy != null) {
-            studentDetails.setYearOfStudy(yearOfStudy);
+        if (currentClass != null) {
+            studentDetails.setCurrentClass(currentClass);
         }
         if (rollNumber != null) {
             studentDetails.setRollNumber(rollNumber);
@@ -123,16 +123,8 @@ public class StudentDetailsService {
         return studentDetailsRepository.findByCourse(course);
     }
 
-    public List<StudentDetails> getStudentsByYearOfStudy(Integer yearOfStudy) {
-        return studentDetailsRepository.findByYearOfStudy(yearOfStudy);
-    }
-
     public List<StudentDetails> getStudentsByInstituteAndCourse(Long instituteId, String course) {
         return studentDetailsRepository.findByInstituteIdAndCourse(instituteId, course);
-    }
-
-    public List<StudentDetails> getStudentsByInstituteAndYearOfStudy(Long instituteId, Integer yearOfStudy) {
-        return studentDetailsRepository.findByInstituteIdAndYearOfStudy(instituteId, yearOfStudy);
     }
 
     public List<StudentDetails> searchStudents(String query) {
@@ -171,7 +163,7 @@ public class StudentDetailsService {
                 .and(StudentSpecification.hasEmailContaining(request.getEmail()))
                 .and(StudentSpecification.hasPhoneContaining(request.getPhone()))
                 .and(StudentSpecification.hasCourse(request.getCourse()))
-                .and(StudentSpecification.hasYearOfStudyRange(request.getMinYearOfStudy(), request.getMaxYearOfStudy()))
+                .and(StudentSpecification.hasCurrentClassRange(request.getMinCurrentClass(), request.getMaxCurrentClass()))
                 .and(StudentSpecification.hasRollNumberContaining(request.getRollNumber()))
                 .and(StudentSpecification.hasParentNameContaining(request.getParentName()))
                 .and(StudentSpecification.hasParentPhoneContaining(request.getParentPhone()))

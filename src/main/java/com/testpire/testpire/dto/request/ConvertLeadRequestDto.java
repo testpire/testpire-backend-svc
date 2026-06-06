@@ -1,8 +1,6 @@
 package com.testpire.testpire.dto.request;
 
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
@@ -21,11 +19,6 @@ public record ConvertLeadRequestDto(
 
     @Email(message = "Email must be valid")
     String email,
-
-    @NotNull(message = "Year of study is required")
-    @Min(value = 1, message = "Year of study must be at least 1")
-    @Max(value = 10, message = "Year of study must be at most 10")
-    Integer yearOfStudy,
 
     String rollNumber,
 

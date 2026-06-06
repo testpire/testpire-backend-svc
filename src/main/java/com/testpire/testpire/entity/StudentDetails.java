@@ -29,10 +29,10 @@ public class StudentDetails {
     
     @Column(name = "course", length = 100)
     private String course;
-    
-    @Column(name = "year_of_study")
-    private Integer yearOfStudy;
-    
+
+    @Column(name = "current_class")
+    private Integer currentClass;
+
     @Column(name = "roll_number", length = 50)
     private String rollNumber;
     

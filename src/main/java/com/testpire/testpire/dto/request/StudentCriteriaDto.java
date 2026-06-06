@@ -21,8 +21,8 @@ public class StudentCriteriaDto {
     private String email;
     private String phone;
     private String course;
-    private Integer minYearOfStudy;
-    private Integer maxYearOfStudy;
+    private Integer minCurrentClass;
+    private Integer maxCurrentClass;
     private String rollNumber;
     private String parentName;
     private String parentPhone;

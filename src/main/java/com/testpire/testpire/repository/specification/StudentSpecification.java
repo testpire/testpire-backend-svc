@@ -79,22 +79,22 @@ public class StudentSpecification {
         };
     }
     
-    public static Specification<StudentDetails> hasYearOfStudyRange(Integer minYear, Integer maxYear) {
+    public static Specification<StudentDetails> hasCurrentClassRange(Integer minClass, Integer maxClass) {
         return (root, query, criteriaBuilder) -> {
-            if (minYear == null && maxYear == null) return null;
-            
+            if (minClass == null && maxClass == null) return null;
+
             Predicate predicate = null;
-            if (minYear != null) {
-                predicate = criteriaBuilder.greaterThanOrEqualTo(root.get("yearOfStudy"), minYear);
+            if (minClass != null) {
+                predicate = criteriaBuilder.greaterThanOrEqualTo(root.get("currentClass"), minClass);
             }
-            if (maxYear != null) {
-                Predicate maxPredicate = criteriaBuilder.lessThanOrEqualTo(root.get("yearOfStudy"), maxYear);
+            if (maxClass != null) {
+                Predicate maxPredicate = criteriaBuilder.lessThanOrEqualTo(root.get("currentClass"), maxClass);
                 predicate = predicate == null ? maxPredicate : criteriaBuilder.and(predicate, maxPredicate);
             }
             return predicate;
         };
     }
-    
+
     public static Specification<StudentDetails> hasRollNumberContaining(String rollNumber) {
         return (root, query, criteriaBuilder) -> {
             if (rollNumber == null || rollNumber.trim().isEmpty()) return null;

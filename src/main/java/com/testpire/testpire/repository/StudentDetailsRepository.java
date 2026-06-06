@@ -23,16 +23,10 @@ public interface StudentDetailsRepository extends JpaRepository<StudentDetails, 
     
     @Query("SELECT sd FROM StudentDetails sd WHERE sd.course = :course")
     List<StudentDetails> findByCourse(@Param("course") String course);
-    
-    @Query("SELECT sd FROM StudentDetails sd WHERE sd.yearOfStudy = :yearOfStudy")
-    List<StudentDetails> findByYearOfStudy(@Param("yearOfStudy") Integer yearOfStudy);
-    
+
     @Query("SELECT sd FROM StudentDetails sd WHERE sd.user.instituteId = :instituteId AND sd.course = :course")
     List<StudentDetails> findByInstituteIdAndCourse(@Param("instituteId") Long instituteId, @Param("course") String course);
-    
-    @Query("SELECT sd FROM StudentDetails sd WHERE sd.user.instituteId = :instituteId AND sd.yearOfStudy = :yearOfStudy")
-    List<StudentDetails> findByInstituteIdAndYearOfStudy(@Param("instituteId") Long instituteId, @Param("yearOfStudy") Integer yearOfStudy);
-    
+
     @Query("SELECT sd FROM StudentDetails sd WHERE " +
            "LOWER(sd.user.firstName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            "LOWER(sd.user.lastName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
