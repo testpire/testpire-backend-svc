@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Max;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 public record CreateStudentRequestDto(
     @NotBlank(message = "Username is required")
@@ -41,7 +41,7 @@ public record CreateStudentRequestDto(
     
     String address,
     
-    LocalDateTime dateOfBirth,
+    LocalDate dateOfBirth,
     
     String bloodGroup,
     

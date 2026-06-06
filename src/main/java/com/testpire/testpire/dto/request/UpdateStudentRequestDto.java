@@ -4,7 +4,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Email;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 public record UpdateStudentRequestDto(
     String firstName,
@@ -20,7 +20,7 @@ public record UpdateStudentRequestDto(
     @Email(message = "Parent email must be a valid email")
     String parentEmail,
     String address,
-    LocalDateTime dateOfBirth,
+    LocalDate dateOfBirth,
     String bloodGroup,
     String emergencyContact,
     Long instituteId,

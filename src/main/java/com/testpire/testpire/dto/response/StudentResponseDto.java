@@ -2,6 +2,7 @@ package com.testpire.testpire.dto.response;
 
 import com.testpire.testpire.entity.User;
 import com.testpire.testpire.enums.UserRole;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public record StudentResponseDto(
@@ -21,7 +22,7 @@ public record StudentResponseDto(
     String parentPhone,
     String parentEmail,
     String address,
-    LocalDateTime dateOfBirth,
+    LocalDate dateOfBirth,
     String bloodGroup,
     String emergencyContact,
     LocalDateTime createdAt,

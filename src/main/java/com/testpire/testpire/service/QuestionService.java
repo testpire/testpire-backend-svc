@@ -1,14 +1,17 @@
 package com.testpire.testpire.service;
 
+import com.testpire.testpire.dto.request.CreateOptionRequestDto;
 import com.testpire.testpire.dto.request.CreateQuestionRequestDto;
 import com.testpire.testpire.dto.request.QuestionSearchRequestDto;
 import com.testpire.testpire.dto.request.UpdateQuestionRequestDto;
 import com.testpire.testpire.dto.response.QuestionListResponseDto;
 import com.testpire.testpire.dto.response.QuestionResponseDto;
+import com.testpire.testpire.entity.Institute;
 import com.testpire.testpire.entity.Option;
 import com.testpire.testpire.entity.Question;
 import com.testpire.testpire.entity.Topic;
 import com.testpire.testpire.enums.DifficultyLevel;
+import com.testpire.testpire.repository.InstituteRepository;
 import com.testpire.testpire.repository.OptionRepository;
 import com.testpire.testpire.repository.QuestionRepository;
 import com.testpire.testpire.repository.TopicRepository;
@@ -26,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,24 +40,31 @@ public class QuestionService {
     private final QuestionRepository questionRepository;
     private final OptionRepository optionRepository;
     private final TopicRepository topicRepository;
+    private final InstituteRepository instituteRepository;
     private final QuestionImageService questionImageService;
     private final JwksJwtUtil jwtUtil;
 
     @Transactional
     public QuestionResponseDto createQuestion(CreateQuestionRequestDto request) {
+        // When an external id is supplied (bulk CSV upload), re-uploading the same id updates the
+        // existing question in place rather than creating a duplicate — keeping the upload idempotent.
+        if (request.externalId() != null && !request.externalId().isBlank()) {
+            Optional<Question> existing = questionRepository
+                    .findByInstituteIdAndExternalIdAndActiveTrueAndDeletedFalse(
+                            request.instituteId(), request.externalId());
+            if (existing.isPresent()) {
+                return updateQuestionFromRequest(existing.get(), request);
+            }
+        }
+
         log.info("Creating question for topic: {} in institute: {}", request.topicId(), request.instituteId());
 
-        // Validate topic exists and user has access
-        Topic topic = topicRepository.findById(request.topicId())
-                .orElseThrow(() -> new IllegalArgumentException("Topic not found with ID: " + request.topicId()));
-
-        if (!topic.getInstituteId().equals(request.instituteId())) {
-            throw new IllegalArgumentException("Topic does not belong to the specified institute");
-        }
+        Topic topic = resolveTopic(request);
 
         // Create question
         Question question = Question.builder()
                 .text(request.text())
+                .externalId(request.externalId())
                 .questionImagePath(request.questionImagePath())
                 .difficultyLevel(request.difficultyLevel())
                 .topic(topic)
@@ -67,31 +78,95 @@ public class QuestionService {
 
         question = questionRepository.save(question);
 
-        // Create options
-        final Question finalQuestion = question;
-        List<Option> options = request.options().stream()
+        // No external id supplied (normal create): default it to "<instituteCode>_<generated id>" so
+        // every question still carries a stable, institute-scoped external id. rebuildOptions persists it.
+        if (question.getExternalId() == null || question.getExternalId().isBlank()) {
+            question.setExternalId(resolveInstituteCode(request.instituteId()) + "_" + question.getId());
+        }
+
+        rebuildOptions(question, request.options());
+
+        log.info("Successfully created question with ID: {}", question.getId());
+        return convertToResponseDto(question);
+    }
+
+    /** Institute code for the default external-id prefix; falls back to the numeric id if not found. */
+    private String resolveInstituteCode(Long instituteId) {
+        return instituteRepository.findById(instituteId)
+                .map(Institute::getCode)
+                .filter(code -> code != null && !code.isBlank())
+                .orElse(String.valueOf(instituteId));
+    }
+
+    /**
+     * Updates an existing question (matched by external id) in place from a create request: scalar
+     * fields are overwritten and options are fully replaced. Used by the idempotent bulk-upload path.
+     */
+    private QuestionResponseDto updateQuestionFromRequest(Question question, CreateQuestionRequestDto request) {
+        log.info("Updating existing question {} (externalId: {}) from bulk upload",
+                question.getId(), request.externalId());
+
+        Topic topic = resolveTopic(request);
+
+        question.setText(request.text());
+        question.setQuestionImagePath(request.questionImagePath());
+        question.setDifficultyLevel(request.difficultyLevel());
+        question.setTopic(topic);
+        question.setQuestionType(request.questionType());
+        question.setMarks(request.marks());
+        question.setNegativeMarks(request.negativeMarks());
+        question.setExplanation(request.explanation());
+        question.setUpdatedBy(getCurrentUsername());
+        question = questionRepository.save(question);
+
+        rebuildOptions(question, request.options());
+
+        log.info("Successfully updated question with ID: {}", question.getId());
+        return convertToResponseDto(question);
+    }
+
+    private Topic resolveTopic(CreateQuestionRequestDto request) {
+        Topic topic = topicRepository.findById(request.topicId())
+                .orElseThrow(() -> new IllegalArgumentException("Topic not found with ID: " + request.topicId()));
+        if (!topic.getInstituteId().equals(request.instituteId())) {
+            throw new IllegalArgumentException("Topic does not belong to the specified institute");
+        }
+        return topic;
+    }
+
+    /**
+     * Soft-deletes any existing options for the question, persists the supplied options, and updates
+     * {@code correctOptionId}. Shared by the create and idempotent-update paths.
+     */
+    private void rebuildOptions(Question question, List<CreateOptionRequestDto> optionRequests) {
+        List<Option> existingOptions =
+                optionRepository.findByQuestionIdAndActiveTrueAndDeletedFalseOrderByOptionOrder(question.getId());
+        if (!existingOptions.isEmpty()) {
+            existingOptions.forEach(option -> {
+                option.setDeleted(true);
+                option.setActive(false);
+            });
+            optionRepository.saveAll(existingOptions);
+        }
+
+        List<Option> options = optionRequests.stream()
                 .map(optionRequest -> Option.builder()
                         .text(optionRequest.text())
                         .optionImagePath(optionRequest.optionImagePath())
-                        .question(finalQuestion)
+                        .question(question)
                         .isCorrect(optionRequest.isCorrect())
                         .createdBy(getCurrentUsername())
                         .build())
                 .collect(Collectors.toList());
-
         options = optionRepository.saveAll(options);
 
-        // Set correct option ID
         Option correctOption = options.stream()
                 .filter(Option::isCorrect)
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("At least one option must be marked as correct"));
 
         question.setCorrectOptionId(correctOption.getId());
-        question = questionRepository.save(question);
-
-        log.info("Successfully created question with ID: {}", question.getId());
-        return convertToResponseDto(question);
+        questionRepository.save(question);
     }
 
     private String getCurrentUsername() {
@@ -108,6 +183,7 @@ public class QuestionService {
         
         return QuestionResponseDto.builder()
                 .id(question.getId())
+                .externalId(question.getExternalId())
                 .text(question.getText())
                 .questionImagePath(questionImageService.toPublicUrl(question.getQuestionImagePath()))
                 .difficultyLevel(question.getDifficultyLevel())

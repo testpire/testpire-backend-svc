@@ -14,7 +14,10 @@ public record CreateQuestionRequestDto(
     String text,
     
     String questionImagePath,
-    
+
+    // Optional external id (CSV "Question Id", institute-code prefixed). Null for normal create.
+    String externalId,
+
     @NotNull(message = "Difficulty level is required")
     DifficultyLevel difficultyLevel,
     

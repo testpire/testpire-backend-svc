@@ -4,7 +4,9 @@ import com.testpire.testpire.dto.request.CreateQuestionRequestDto;
 import com.testpire.testpire.dto.request.CreateOptionRequestDto;
 import com.testpire.testpire.dto.response.BulkUploadResponseDto;
 import com.testpire.testpire.dto.response.QuestionResponseDto;
+import com.testpire.testpire.entity.Institute;
 import com.testpire.testpire.enums.DifficultyLevel;
+import com.testpire.testpire.repository.InstituteRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -26,9 +29,9 @@ public class CsvUploadService {
 
     /** Fixed (non-option) columns, in order, that every CSV must start with. */
     static final List<String> FIXED_HEADERS = List.of(
-            "Question Text", "Question Image URL", "Difficulty Level", "Question Type",
+            "Question Id", "Question Text", "Question Image URL", "Difficulty Level", "Question Type",
             "Marks", "Negative Marks", "Explanation", "Topic ID");
-    private static final int FIXED_COLUMN_COUNT = FIXED_HEADERS.size(); // 8
+    private static final int FIXED_COLUMN_COUNT = FIXED_HEADERS.size(); // 9
     private static final int OPTION_GROUP_SIZE = 3; // Text, Image URL, IsCorrect
 
     private static final Set<String> TRUE_VALUES = Set.of("true", "1", "yes");
@@ -36,6 +39,7 @@ public class CsvUploadService {
 
     private final QuestionService questionService;
     private final QuestionImageService questionImageService;
+    private final InstituteRepository instituteRepository;
 
     public BulkUploadResponseDto processBulkUpload(MultipartFile csvFile, Long instituteId, String createdBy) {
         List<String> errors = new ArrayList<>();
@@ -43,6 +47,20 @@ public class CsvUploadService {
         int totalProcessed = 0;
         int successfulUploads = 0;
         int failedUploads = 0;
+
+        if (instituteId == null) {
+            return failFast("No institute resolved for this upload; cannot derive question ids.");
+        }
+        // External question ids are prefixed with the institute code so the same CSV id (e.g. "Q01")
+        // can be reused across institutes without collision. Resolve it once for the whole upload; if
+        // the institute has no code on record, fall back to its numeric id.
+        String institutePrefix = instituteRepository.findById(instituteId)
+                .map(Institute::getCode)
+                .filter(code -> code != null && !code.isBlank())
+                .orElse(String.valueOf(instituteId));
+        // Raw ids seen in this file, to reject duplicates within a single upload (a re-run across
+        // uploads still updates the existing question — that is the intended idempotent behavior).
+        Set<String> seenRawIds = new HashSet<>();
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(csvFile.getInputStream(), StandardCharsets.UTF_8))) {
             String headerLine = reader.readLine();
@@ -66,8 +84,8 @@ public class CsvUploadService {
 
                 try {
                     String[] columns = parseCsvLine(line);
-                    CreateQuestionRequestDto questionRequest =
-                            createQuestionFromCsvRow(columns, instituteId, createdBy, rowNumber, errors);
+                    CreateQuestionRequestDto questionRequest = createQuestionFromCsvRow(
+                            columns, instituteId, institutePrefix, seenRawIds, createdBy, rowNumber, errors);
                     QuestionResponseDto question = questionService.createQuestion(questionRequest);
                     uploadedQuestions.add(question);
                     successfulUploads++;
@@ -165,7 +183,8 @@ public class CsvUploadService {
      * fetch failures are non-fatal and recorded as warnings in {@code warnings}.
      */
     private CreateQuestionRequestDto createQuestionFromCsvRow(
-            String[] columns, Long instituteId, String createdBy, int rowNumber, List<String> warnings) {
+            String[] columns, Long instituteId, String institutePrefix, Set<String> seenRawIds,
+            String createdBy, int rowNumber, List<String> warnings) {
         List<String> rowErrors = new ArrayList<>();
 
         if (columns.length < FIXED_COLUMN_COUNT + OPTION_GROUP_SIZE) {
@@ -180,11 +199,23 @@ public class CsvUploadService {
                     optionColumns % OPTION_GROUP_SIZE, OPTION_GROUP_SIZE));
         }
 
-        String questionText = unquote(columns[0]);
-        String questionImageUrl = unquote(columns[1]);
-        String difficultyStr = unquote(columns[2]);
-        String questionType = unquote(columns[3]);
-        String explanation = unquote(columns[6]);
+        // Column 0 is the caller-supplied Question Id; it is prefixed with the institute code (or the
+        // institute id, if no code) to form the stored external id, which drives idempotent re-uploads.
+        String rawQuestionId = unquote(columns[0]);
+        String externalId = null;
+        if (rawQuestionId.isEmpty()) {
+            rowErrors.add("Question Id is required.");
+        } else if (!seenRawIds.add(rawQuestionId)) {
+            rowErrors.add("Duplicate Question Id \"" + rawQuestionId + "\" within this file.");
+        } else {
+            externalId = institutePrefix + "_" + rawQuestionId;
+        }
+
+        String questionText = unquote(columns[1]);
+        String questionImageUrl = unquote(columns[2]);
+        String difficultyStr = unquote(columns[3]);
+        String questionType = unquote(columns[4]);
+        String explanation = unquote(columns[7]);
 
         if (questionText.isEmpty()) {
             rowErrors.add("Question Text is required.");
@@ -206,11 +237,11 @@ public class CsvUploadService {
             rowErrors.add("Question Type is required.");
         }
 
-        Integer marks = parseIntField(unquote(columns[4]), "Marks", 1, rowErrors);
-        Integer negativeMarks = parseIntField(unquote(columns[5]), "Negative Marks", 0, rowErrors);
+        Integer marks = parseIntField(unquote(columns[5]), "Marks", 1, rowErrors);
+        Integer negativeMarks = parseIntField(unquote(columns[6]), "Negative Marks", 0, rowErrors);
 
         Long topicIdLong = null;
-        String topicIdStr = unquote(columns[7]);
+        String topicIdStr = unquote(columns[8]);
         if (topicIdStr.isEmpty()) {
             rowErrors.add("Topic ID is required.");
         } else {
@@ -294,6 +325,7 @@ public class CsvUploadService {
 
         return CreateQuestionRequestDto.builder()
                 .text(questionText)
+                .externalId(externalId)
                 .questionImagePath(questionImagePath)
                 .difficultyLevel(difficultyLevel)
                 .instituteId(instituteId)

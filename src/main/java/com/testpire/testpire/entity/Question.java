@@ -28,6 +28,13 @@ public class Question {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String text;
 
+    /**
+     * Caller-supplied external identifier, prefixed with the institute code (e.g. "ABC_Q01"),
+     * used to make bulk CSV uploads idempotent. Null for questions created via the normal API.
+     */
+    @Column(name = "external_id")
+    private String externalId;
+
     @Column(name = "question_image_path")
     private String questionImagePath;
 

@@ -18,7 +18,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,7 +32,7 @@ public class StudentDetailsService {
 
     public StudentDetails createStudentDetails(User user, String phone, String course, Integer currentClass,
                                              String rollNumber, String parentName, String parentPhone,
-                                             String parentEmail, String address, LocalDateTime dateOfBirth,
+                                             String parentEmail, String address, LocalDate dateOfBirth,
                                              String bloodGroup, String emergencyContact) {
         log.info("Creating student details for user ID: {}", user.getId());
 
@@ -59,7 +59,7 @@ public class StudentDetailsService {
 
     public StudentDetails updateStudentDetails(User user, String phone, String course, Integer currentClass,
                                              String rollNumber, String parentName, String parentPhone,
-                                             String parentEmail, String address, LocalDateTime dateOfBirth,
+                                             String parentEmail, String address, LocalDate dateOfBirth,
                                              String bloodGroup, String emergencyContact) {
         log.info("Updating student details for user ID: {}", user.getId());
         

@@ -3,7 +3,7 @@ package com.testpire.testpire.dto.request;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 /**
  * Enrolls a lead: provisions a Cognito user + {@code User} + {@code StudentDetails} and links them
@@ -31,7 +31,7 @@ public record ConvertLeadRequestDto(
 
     String address,
 
-    LocalDateTime dateOfBirth,
+    LocalDate dateOfBirth,
 
     String bloodGroup,
 

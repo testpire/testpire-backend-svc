@@ -10,6 +10,7 @@ import lombok.Data;
 @Data
 public class QuestionResponseDto {
   Long id;
+  String externalId;
   String text;
   String questionImagePath;
   DifficultyLevel difficultyLevel;
