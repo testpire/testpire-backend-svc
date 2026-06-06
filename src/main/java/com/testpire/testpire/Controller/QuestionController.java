@@ -2,7 +2,6 @@ package com.testpire.testpire.Controller;
 
 import com.testpire.testpire.annotation.RequirePermission;
 import com.testpire.testpire.enums.Permission;
-import com.testpire.testpire.dto.request.BulkUploadQuestionsRequestDto;
 import com.testpire.testpire.dto.request.CreateQuestionRequestDto;
 import com.testpire.testpire.dto.request.QuestionCriteriaDto;
 import com.testpire.testpire.dto.request.QuestionSearchRequestDto;
@@ -17,7 +16,6 @@ import com.testpire.testpire.enums.DifficultyLevel;
 import com.testpire.testpire.service.CsvUploadService;
 import com.testpire.testpire.service.QuestionImageService;
 import com.testpire.testpire.service.QuestionService;
-import com.testpire.testpire.util.JwksJwtUtil;
 import com.testpire.testpire.util.RequestUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -46,7 +44,6 @@ public class QuestionController {
     private final QuestionService questionService;
     private final CsvUploadService csvUploadService;
     private final QuestionImageService questionImageService;
-    private final JwksJwtUtil jwtUtil;
 
     @PostMapping
     @RequirePermission(Permission.QUESTION_CREATE)
@@ -90,21 +87,8 @@ public class QuestionController {
         try {
             Long instituteId = RequestUtils.resolveInstituteId(request.instituteId());
             log.info("Creating question for topic: {} in institute: {}", request.topicId(), instituteId);
-
-            CreateQuestionRequestDto requestWithInstituteId = CreateQuestionRequestDto.builder()
-                    .text(request.text())
-                    .difficultyLevel(request.difficultyLevel())
-                    .questionType(request.questionType())
-                    .marks(request.marks())
-                    .negativeMarks(request.negativeMarks())
-                    .explanation(request.explanation())
-                    .questionImagePath(request.questionImagePath())
-                    .topicId(request.topicId())
-                    .instituteId(instituteId)
-                    .options(request.options())
-                    .build();
-            
-            QuestionResponseDto question = questionService.createQuestion(requestWithInstituteId);
+            QuestionResponseDto question = questionService.createQuestion(
+                    request.withInstituteId(instituteId));
             return ResponseEntity.ok(ApiResponseDto.success("Question created successfully", question));
         } catch (Exception e) {
             log.error("Error creating question", e);
@@ -458,40 +442,11 @@ public class QuestionController {
         try {
             Long instituteId = RequestUtils.resolveInstituteId(request.getInstituteId());
             log.info("Advanced search for questions with criteria: {}", request);
-            
-            // Set instituteId from JWT token
-            QuestionCriteriaDto criteria = QuestionCriteriaDto.builder()
-                    .instituteId(instituteId)
-                    .courseId(request.getCourseId())
-                    .subjectId(request.getSubjectId())
-                    .chapterId(request.getChapterId())
-                    .topicId(request.getTopicId())
-                    .searchText(request.getSearchText())
-                    .difficultyLevel(request.getDifficultyLevel())
-                    .questionType(request.getQuestionType())
-                    .minMarks(request.getMinMarks())
-                    .maxMarks(request.getMaxMarks())
-                    .minNegativeMarks(request.getMinNegativeMarks())
-                    .maxNegativeMarks(request.getMaxNegativeMarks())
-                    .hasQuestionImage(request.getHasQuestionImage())
-                    .hasExplanation(request.getHasExplanation())
-                    .hasCorrectOption(request.getHasCorrectOption())
-                    .hasOptions(request.getHasOptions())
-                    .minOptions(request.getMinOptions())
-                    .maxOptions(request.getMaxOptions())
-                    .active(request.getActive())
-                    .createdAfter(request.getCreatedAfter())
-                    .createdBefore(request.getCreatedBefore())
-                    .createdBy(request.getCreatedBy())
-                    .build();
-                    
-            QuestionSearchRequestDto requestWithInstituteId = QuestionSearchRequestDto.builder()
-                    .criteria(criteria)
-                    .pagination(request.getPagination())
-                    .sorting(request.getSorting())
-                    .build();
-            
-            QuestionListResponseDto questions = questionService.searchQuestionsWithSpecification(requestWithInstituteId);
+            // Enforce tenant scope: overwrite whatever instituteId the client sent.
+            QuestionCriteriaDto criteria = request.getCriteria() != null ? request.getCriteria() : new QuestionCriteriaDto();
+            criteria.setInstituteId(instituteId);
+            request.setCriteria(criteria);
+            QuestionListResponseDto questions = questionService.searchQuestionsWithSpecification(request);
             return ResponseEntity.ok(ApiResponseDto.success("Questions retrieved successfully", questions));
         } catch (Exception e) {
             log.error("Error in advanced search", e);

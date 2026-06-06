@@ -184,15 +184,8 @@ public class CourseService {
     }
 
     private Pageable createPageable(CourseSearchRequestDto request) {
-        int page = request.getPage() != null ? request.getPage() : 0;
-        int size = request.getSize() != null ? request.getSize() : 20;
-        
-        String sortBy = request.getSortBy() != null ? request.getSortBy() : "createdAt";
-        String sortDirection = request.getSortDirection() != null ? request.getSortDirection() : "desc";
-        
-        Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
-        
-        return PageRequest.of(page, size, sort);
+        Sort sort = Sort.by(Sort.Direction.fromString(request.getSortDirection()), request.getSortBy());
+        return PageRequest.of(request.getPage(), request.getSize(), sort);
     }
 }
 

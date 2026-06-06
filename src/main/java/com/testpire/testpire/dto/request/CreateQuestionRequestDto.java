@@ -44,6 +44,23 @@ public record CreateQuestionRequestDto(
     @Size(min = 2, max = 6, message = "Question must have between 2 and 6 options")
     @Valid
     List<CreateOptionRequestDto> options
-) {}
+) {
+    /** Returns a copy of this request with the instituteId replaced by the resolved value. */
+    public CreateQuestionRequestDto withInstituteId(Long resolvedInstituteId) {
+        return CreateQuestionRequestDto.builder()
+                .text(text)
+                .externalId(externalId)
+                .questionImagePath(questionImagePath)
+                .difficultyLevel(difficultyLevel)
+                .topicId(topicId)
+                .instituteId(resolvedInstituteId)
+                .questionType(questionType)
+                .marks(marks)
+                .negativeMarks(negativeMarks)
+                .explanation(explanation)
+                .options(options)
+                .build();
+    }
+}
 
 

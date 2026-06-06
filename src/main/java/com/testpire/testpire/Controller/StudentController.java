@@ -2,7 +2,6 @@ package com.testpire.testpire.Controller;
 
 import com.testpire.testpire.annotation.RequirePermission;
 import com.testpire.testpire.enums.Permission;
-import com.testpire.testpire.dto.RegisterRequest;
 import com.testpire.testpire.dto.request.CreateStudentRequestDto;
 import com.testpire.testpire.dto.request.StudentCriteriaDto;
 import com.testpire.testpire.dto.request.StudentSearchRequestDto;
@@ -288,8 +287,7 @@ public class StudentController {
                 // Get all students
                 List<User> students = userService.getUsersByRole(UserRole.STUDENT);
                 studentDetailsList = students.stream()
-                    .map(student -> studentDetailsService.getStudentDetailsByUser(student).orElse(null))
-                    .filter(details -> details != null)
+                    .flatMap(student -> studentDetailsService.getStudentDetailsByUser(student).stream())
                     .toList();
             }
 
@@ -405,39 +403,11 @@ public class StudentController {
             // acting-institute header / criteria.instituteId via resolveInstituteId.
             Long instituteId = RequestUtils.resolveInstituteId(request.getInstituteId());
             log.info("Advanced search for students with criteria: {}", request);
-
-            // Set resolved instituteId
-            StudentCriteriaDto criteria = StudentCriteriaDto.builder()
-                    .instituteId(instituteId)
-                    .searchText(request.getSearchText())
-                    .firstName(request.getFirstName())
-                    .lastName(request.getLastName())
-                    .username(request.getUsername())
-                    .email(request.getEmail())
-                    .phone(request.getPhone())
-                    .course(request.getCourse())
-                    .minCurrentClass(request.getMinCurrentClass())
-                    .maxCurrentClass(request.getMaxCurrentClass())
-                    .rollNumber(request.getRollNumber())
-                    .parentName(request.getParentName())
-                    .parentPhone(request.getParentPhone())
-                    .parentEmail(request.getParentEmail())
-                    .address(request.getAddress())
-                    .bloodGroup(request.getBloodGroup())
-                    .emergencyContact(request.getEmergencyContact())
-                    .enabled(request.getEnabled())
-                    .createdAfter(request.getCreatedAfter())
-                    .createdBefore(request.getCreatedBefore())
-                    .createdBy(request.getCreatedBy())
-                    .build();
-                    
-            StudentSearchRequestDto requestWithInstituteId = StudentSearchRequestDto.builder()
-                    .criteria(criteria)
-                    .pagination(request.getPagination())
-                    .sorting(request.getSorting())
-                    .build();
-                    
-            StudentListResponseDto students = studentDetailsService.searchStudentsWithSpecification(requestWithInstituteId);
+            // Enforce tenant scope: overwrite whatever instituteId the client sent.
+            StudentCriteriaDto criteria = request.getCriteria() != null ? request.getCriteria() : new StudentCriteriaDto();
+            criteria.setInstituteId(instituteId);
+            request.setCriteria(criteria);
+            StudentListResponseDto students = studentDetailsService.searchStudentsWithSpecification(request);
             return ResponseEntity.ok(ApiResponseDto.success("Students retrieved successfully", students));
         } catch (Exception e) {
             log.error("Error in advanced search", e);
@@ -692,18 +662,4 @@ public class StudentController {
         }
     }
 
-    // ==================== DEBUG ENDPOINTS ====================
-
-    @GetMapping("/debug")
-    @RequirePermission(Permission.STUDENT_DEBUG)
-    @Operation(summary = "Debug students", description = "Debug endpoint to check student data")
-    public ResponseEntity<ApiResponseDto> debugStudents() {
-        try {
-            studentDetailsService.debugStudentCount();
-            return ResponseEntity.ok(ApiResponseDto.success("Debug information logged"));
-        } catch (Exception e) {
-            log.error("Error in debug", e);
-            return ResponseEntity.badRequest().body(ApiResponseDto.error("Debug failed: " + e.getMessage()));
-        }
-    }
-} 
+}

@@ -16,7 +16,6 @@ import com.testpire.testpire.repository.OptionRepository;
 import com.testpire.testpire.repository.QuestionRepository;
 import com.testpire.testpire.repository.TopicRepository;
 import com.testpire.testpire.repository.specification.QuestionSpecification;
-import com.testpire.testpire.util.JwksJwtUtil;
 import com.testpire.testpire.util.RequestUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -42,7 +40,6 @@ public class QuestionService {
     private final TopicRepository topicRepository;
     private final InstituteRepository instituteRepository;
     private final QuestionImageService questionImageService;
-    private final JwksJwtUtil jwtUtil;
 
     @Transactional
     public QuestionResponseDto createQuestion(CreateQuestionRequestDto request) {
@@ -157,7 +154,7 @@ public class QuestionService {
                         .isCorrect(optionRequest.isCorrect())
                         .createdBy(getCurrentUsername())
                         .build())
-                .collect(Collectors.toList());
+                .toList();
         options = optionRepository.saveAll(options);
 
         Option correctOption = options.stream()
@@ -176,6 +173,18 @@ public class QuestionService {
 
     private Long getCurrentUserInstituteId() {
         return RequestUtils.getCurrentUserInstituteId();
+    }
+
+    /**
+     * Loads a question by id, scoped to the caller's institute. Non-SUPER_ADMIN callers are
+     * restricted to their JWT institute; SUPER_ADMIN (null instituteId) uses an unscoped lookup.
+     */
+    private Question findQuestionScoped(Long id) {
+        Long instituteId = getCurrentUserInstituteId();
+        return (instituteId != null
+                ? questionRepository.findByIdAndInstituteIdAndActiveTrueAndDeletedFalse(id, instituteId)
+                : questionRepository.findByIdAndActiveTrueAndDeletedFalse(id))
+                .orElseThrow(() -> new IllegalArgumentException("Question not found with ID: " + id));
     }
 
     private QuestionResponseDto convertToResponseDto(Question question) {
@@ -197,7 +206,7 @@ public class QuestionService {
                 .explanation(question.getExplanation())
                 .options(options.stream()
                         .map(this::convertOptionToResponseDto)
-                        .collect(Collectors.toList()))
+                        .toList())
                 .createdAt(question.getCreatedAt())
                 .updatedAt(question.getUpdatedAt())
                 .createdBy(question.getCreatedBy())
@@ -226,11 +235,7 @@ public class QuestionService {
     public QuestionResponseDto updateQuestion(Long id, UpdateQuestionRequestDto request) {
         log.info("Updating question with ID: {}", id);
 
-        Long instituteId = getCurrentUserInstituteId();
-        Question question = (instituteId != null
-                ? questionRepository.findByIdAndInstituteIdAndActiveTrueAndDeletedFalse(id, instituteId)
-                : questionRepository.findByIdAndActiveTrueAndDeletedFalse(id))
-                .orElseThrow(() -> new IllegalArgumentException("Question not found with ID: " + id));
+        Question question = findQuestionScoped(id);
 
         // Update question fields
         question.setText(request.text());
@@ -256,18 +261,18 @@ public class QuestionService {
         });
         optionRepository.saveAll(existingOptions);
 
-        // Create new options
-        final Question finalQuestionForUpdate = question;
+        // Create new options; question is captured here before the reassignment below.
+        final Question savedQuestion = question;
         List<Option> newOptions = request.options().stream()
                 .map(optionRequest -> Option.builder()
                         .text(optionRequest.text())
                         .optionImagePath(optionRequest.optionImagePath())
-                        .question(finalQuestionForUpdate)
+                        .question(savedQuestion)
                         .optionOrder(optionRequest.optionOrder())
                         .isCorrect(optionRequest.isCorrect())
                         .createdBy(getCurrentUsername())
                         .build())
-                .collect(Collectors.toList());
+                .toList();
 
         newOptions = optionRepository.saveAll(newOptions);
 
@@ -288,11 +293,7 @@ public class QuestionService {
     public void deleteQuestion(Long id) {
         log.info("Deleting question with ID: {}", id);
 
-        Long instituteId = getCurrentUserInstituteId();
-        Question question = (instituteId != null
-                ? questionRepository.findByIdAndInstituteIdAndActiveTrueAndDeletedFalse(id, instituteId)
-                : questionRepository.findByIdAndActiveTrueAndDeletedFalse(id))
-                .orElseThrow(() -> new IllegalArgumentException("Question not found with ID: " + id));
+        Question question = findQuestionScoped(id);
 
         // Soft delete question (options will be cascade deleted)
         question.setDeleted(true);
@@ -305,14 +306,7 @@ public class QuestionService {
 
     public QuestionResponseDto getQuestionById(Long id) {
         log.info("Getting question with ID: {}", id);
-
-        Long instituteId = getCurrentUserInstituteId();
-        Question question = (instituteId != null
-                ? questionRepository.findByIdAndInstituteIdAndActiveTrueAndDeletedFalse(id, instituteId)
-                : questionRepository.findByIdAndActiveTrueAndDeletedFalse(id))
-                .orElseThrow(() -> new IllegalArgumentException("Question not found with ID: " + id));
-
-        return convertToResponseDto(question);
+        return convertToResponseDto(findQuestionScoped(id));
     }
 
     public QuestionListResponseDto getQuestionsByTopic(Long topicId, Long instituteId) {
@@ -324,7 +318,7 @@ public class QuestionService {
         
         List<QuestionResponseDto> questionDtos = questions.stream()
                 .map(this::convertToResponseDto)
-                .collect(Collectors.toList());
+                .toList();
 
         return QuestionListResponseDto.builder()
                 .questions(questionDtos)
@@ -339,7 +333,7 @@ public class QuestionService {
         
         List<QuestionResponseDto> questionDtos = questions.stream()
                 .map(this::convertToResponseDto)
-                .collect(Collectors.toList());
+                .toList();
 
         return QuestionListResponseDto.builder()
                 .questions(questionDtos)
@@ -364,7 +358,7 @@ public class QuestionService {
         // Convert to DTOs
         List<QuestionResponseDto> questionDtos = questionPage.getContent().stream()
                 .map(this::convertToResponseDto)
-                .collect(Collectors.toList());
+                .toList();
 
         return QuestionListResponseDto.builder()
                 .questions(questionDtos)
@@ -401,14 +395,7 @@ public class QuestionService {
     }
 
     private Pageable createPageable(QuestionSearchRequestDto request) {
-        int page = request.getPage() != null ? request.getPage() : 0;
-        int size = request.getSize() != null ? request.getSize() : 20;
-        
-        String sortBy = request.getSortBy() != null ? request.getSortBy() : "createdAt";
-        String sortDirection = request.getSortDirection() != null ? request.getSortDirection() : "desc";
-        
-        Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
-        
-        return PageRequest.of(page, size, sort);
+        Sort sort = Sort.by(Sort.Direction.fromString(request.getSortDirection()), request.getSortBy());
+        return PageRequest.of(request.getPage(), request.getSize(), sort);
     }
 }

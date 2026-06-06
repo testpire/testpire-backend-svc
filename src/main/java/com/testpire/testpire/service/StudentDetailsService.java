@@ -150,10 +150,6 @@ public class StudentDetailsService {
     }
     
     public StudentListResponseDto searchStudentsWithSpecification(StudentSearchRequestDto request) {
-        log.info("Searching students with specification: {}", request);
-        log.info("Institute ID from request: {}", request.getInstituteId());
-        
-        // Build specification
         Specification<StudentDetails> spec = Specification.where(StudentSpecification.isStudent())
                 .and(StudentSpecification.hasInstituteId(request.getInstituteId()))
                 .and(StudentSpecification.hasSearchText(request.getSearchText()))
@@ -175,81 +171,22 @@ public class StudentDetailsService {
                 .and(StudentSpecification.createdAfter(request.getCreatedAfter()))
                 .and(StudentSpecification.createdBefore(request.getCreatedBefore()))
                 .and(StudentSpecification.createdBy(request.getCreatedBy()));
-        
-        // Create pageable
-        Sort sort = Sort.by(
-            Sort.Direction.fromString(request.getSortDirection()),
-            request.getSortBy()
-        );
+
+        Sort sort = Sort.by(Sort.Direction.fromString(request.getSortDirection()), request.getSortBy());
         Pageable pageable = PageRequest.of(request.getPage(), request.getSize(), sort);
-        
-        // Execute query
+
         Page<StudentDetails> page = studentDetailsRepository.findAll(spec, pageable);
-        log.info("Found {} students out of {} total", page.getContent().size(), page.getTotalElements());
-        
-        // Additional debug: Check if there are any students at all
-        long totalCount = studentDetailsRepository.count();
-        log.info("Total students in database: {}", totalCount);
-        
-        if (totalCount == 0) {
-            log.warn("No students found in database at all!");
-        } else {
-            // Check if there are students with the correct role
-            List<StudentDetails> allStudents = studentDetailsRepository.findAll();
-            long studentRoleCount = allStudents.stream()
-                .filter(s -> s.getUser().getRole().name().equals("STUDENT"))
-                .count();
-            log.info("Students with STUDENT role: {}", studentRoleCount);
-            
-            // Check if there are students with the correct institute ID
-            long instituteCount = allStudents.stream()
-                .filter(s -> s.getUser().getInstituteId().equals(request.getInstituteId()))
-                .count();
-            log.info("Students with institute ID {}: {}", request.getInstituteId(), instituteCount);
-        }
-        
-        // Convert to DTOs
+        log.info("Student search returned {}/{} total", page.getContent().size(), page.getTotalElements());
+
         List<StudentResponseDto> studentDtos = page.getContent().stream()
                 .map(details -> StudentResponseDto.fromEntity(details.getUser(), details))
                 .toList();
-        
+
         return StudentListResponseDto.success(
             studentDtos,
             studentDtos.size(),
             page.getNumber(),
             (int) page.getTotalElements()
         );
-    }
-    
-    // Debug method to check if there are any students in the database
-    public void debugStudentCount() {
-        long totalStudents = studentDetailsRepository.count();
-        log.info("Total students in database: {}", totalStudents);
-        
-        // Check students by role
-        List<StudentDetails> allStudents = studentDetailsRepository.findAll();
-        log.info("All students: {}", allStudents.size());
-        
-        for (StudentDetails student : allStudents) {
-            log.info("Student: {} - Role: {} - InstituteId: {}", 
-                student.getUser().getUsername(), 
-                student.getUser().getRole(), 
-                student.getUser().getInstituteId());
-        }
-        
-        // Test specification with institute ID 3
-        log.info("Testing specification with institute ID 3...");
-        Specification<StudentDetails> spec = Specification.where(StudentSpecification.isStudent())
-                .and(StudentSpecification.hasInstituteId(3L));
-        
-        List<StudentDetails> studentsWithSpec = studentDetailsRepository.findAll(spec);
-        log.info("Students found with specification (instituteId=3): {}", studentsWithSpec.size());
-        
-        for (StudentDetails student : studentsWithSpec) {
-            log.info("Specification result - Student: {} - Role: {} - InstituteId: {}", 
-                student.getUser().getUsername(), 
-                student.getUser().getRole(), 
-                student.getUser().getInstituteId());
-        }
     }
 }
