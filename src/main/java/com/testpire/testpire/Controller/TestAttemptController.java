@@ -120,12 +120,20 @@ public class TestAttemptController {
         }
     }
 
-    /** Resolves the authenticated user from the JWT username. */
+    /**
+     * Resolves the authenticated student to the local {@code users} row.
+     *
+     * <p>{@link RequestUtils#getCurrentUsername()} returns the JWT principal, which is the
+     * Cognito {@code cognito:username}/{@code sub} (a UUID) — NOT the local {@code username}
+     * column (which holds the email). So we must look up by {@code cognito_user_id}, exactly
+     * as {@code /api/students/profile} and {@code /peers} do; looking up by username here was a
+     * bug that made every {@code /api/student/tests/*} call fail with "User not found".</p>
+     */
     private User currentStudent() {
         String username = RequestUtils.getCurrentUsername();
         if (username == null) {
             throw new IllegalStateException("No authenticated user on the request");
         }
-        return userService.getUserByUsername(username);
+        return userService.getUserByCognitoUserId(username);
     }
 }
