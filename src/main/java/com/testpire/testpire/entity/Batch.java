@@ -6,6 +6,7 @@ import lombok.*;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -51,6 +52,13 @@ public class Batch {
     private LocalDate endDate;
 
     private Integer capacity;
+
+    /**
+     * Per-batch fee OVERRIDE. {@code null} = inherit the parent {@link Course}'s fee; a value overrides
+     * it for this batch only. The effective fee is resolved as {@code COALESCE(fee, course.fee)}.
+     */
+    @Column(precision = 12, scale = 2)
+    private BigDecimal fee;
 
     @Builder.Default
     private boolean active = true;

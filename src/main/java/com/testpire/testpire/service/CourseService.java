@@ -50,6 +50,7 @@ public class CourseService {
                 .duration(request.duration())
                 .level(request.level())
                 .prerequisites(request.prerequisites())
+                .fee(request.fee())
                 .createdBy(RequestUtils.getCurrentUsername())
                 .build();
 
@@ -81,6 +82,7 @@ public class CourseService {
         Optional.ofNullable(request.level()).ifPresent(existingCourse::setLevel);
         Optional.ofNullable(request.prerequisites()).ifPresent(existingCourse::setPrerequisites);
         Optional.ofNullable(request.active()).ifPresent(existingCourse::setActive);
+        Optional.ofNullable(request.fee()).ifPresent(existingCourse::setFee);
         if (request.subjectCodes() != null) {
             existingCourse.setSubjects(resolveSubjectCodes(request.subjectCodes(), existingCourse.getInstituteId()));
         }

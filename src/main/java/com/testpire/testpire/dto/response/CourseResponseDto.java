@@ -2,6 +2,7 @@ package com.testpire.testpire.dto.response;
 
 import com.testpire.testpire.entity.Course;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -14,6 +15,7 @@ public record CourseResponseDto(
         String duration,
         String level,
         String prerequisites,
+        BigDecimal fee,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         String createdBy,
@@ -31,6 +33,7 @@ public record CourseResponseDto(
                 course.getDuration(),
                 course.getLevel(),
                 course.getPrerequisites(),
+                course.getFee(),
                 course.getCreatedAt(),
                 course.getUpdatedAt(),
                 course.getCreatedBy(),

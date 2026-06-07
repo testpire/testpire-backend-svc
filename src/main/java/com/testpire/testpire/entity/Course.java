@@ -6,6 +6,7 @@ import lombok.*;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +41,10 @@ public class Course {
     private String duration;
     private String level;
     private String prerequisites;
+
+    /** Course fee; {@code null} = not set. Batches inherit this unless they set their own override. */
+    @Column(precision = 12, scale = 2)
+    private BigDecimal fee;
 
     @Builder.Default
     @Column(name = ApplicationConstants.Database.CREATED_AT_COLUMN)

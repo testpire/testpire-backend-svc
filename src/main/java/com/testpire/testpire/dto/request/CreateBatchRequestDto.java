@@ -1,10 +1,12 @@
 package com.testpire.testpire.dto.request;
 
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
@@ -31,6 +33,10 @@ public record CreateBatchRequestDto(
 
         @Min(value = 1, message = "Capacity must be at least 1")
         Integer capacity,
+
+        // Optional fee override. null = inherit the parent course's fee.
+        @DecimalMin(value = "0", message = "Fee must not be negative")
+        BigDecimal fee,
 
         Long instituteId
 ) {}

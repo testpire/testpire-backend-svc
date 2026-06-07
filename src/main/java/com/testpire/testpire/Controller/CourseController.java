@@ -94,6 +94,7 @@ public class CourseController {
                     request.duration(),
                     request.level(),
                     request.prerequisites(),
+                    request.fee(),
                     request.subjectCodes()
             );
                     

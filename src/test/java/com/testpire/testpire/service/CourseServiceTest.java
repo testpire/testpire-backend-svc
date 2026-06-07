@@ -36,7 +36,7 @@ class CourseServiceTest {
     }
 
     private static CreateCourseRequestDto createDto(String code) {
-        return new CreateCourseRequestDto("Physics 101", null, code, 2L, "60 hours", "BEGINNER", null, null);
+        return new CreateCourseRequestDto("Physics 101", null, code, 2L, "60 hours", "BEGINNER", null, null, null);
     }
 
     // ── CREATE ───────────────────────────────────────────────────────────────
@@ -116,7 +116,7 @@ class CourseServiceTest {
         when(courseRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> courseService.updateCourse(99L,
-                new UpdateCourseRequestDto(null, "Updated desc", null, null, null, null, null, null)))
+                new UpdateCourseRequestDto(null, "Updated desc", null, null, null, null, null, null, null)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("99");
     }
@@ -128,7 +128,7 @@ class CourseServiceTest {
         when(courseRepository.existsByCodeAndInstituteId("CHEM101", 2L)).thenReturn(true);
 
         assertThatThrownBy(() -> courseService.updateCourse(1L,
-                new UpdateCourseRequestDto(null, null, "CHEM101", null, null, null, null, null)))
+                new UpdateCourseRequestDto(null, null, "CHEM101", null, null, null, null, null, null)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("CHEM101");
     }
