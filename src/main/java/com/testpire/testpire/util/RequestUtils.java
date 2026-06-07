@@ -1,6 +1,7 @@
 package com.testpire.testpire.util;
 
 import com.testpire.testpire.dto.UserDto;
+import com.testpire.testpire.enums.UserRole;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -24,13 +25,31 @@ public class RequestUtils {
         }
         return null;
     }
-    
+
     public static Long getCurrentUserInstituteId() {
         UserDto currentUser = getCurrentUser();
-        if (currentUser == null || currentUser.instituteId() == null || currentUser.instituteId() < 1) {
+        if (currentUser == null) {
             return null;
         }
-        return currentUser.instituteId();
+        // SUPER_ADMIN may act on behalf of a selected institute via the X-Institute-Id header.
+        // The role is taken from the JWT-resolved user, never from the header. With no (or a
+        // malformed) header the SUPER_ADMIN falls back to their JWT institute, which for a global
+        // super-admin is the -1 sentinel (see CognitoService) — normalized to null (unrestricted),
+        // preserving the "null instituteId == all institutes" contract that callers rely on.
+        if (UserRole.SUPER_ADMIN == currentUser.role()) {
+            Long actingInstituteId = getActingInstituteIdHeader();
+            if (actingInstituteId != null) {
+                return actingInstituteId;               // act-on-behalf-of the selected institute
+            }
+            return normalizeInstituteId(currentUser.instituteId());
+        }
+        // Everyone else: locked to their JWT institute (multi-tenancy isolation).
+        return normalizeInstituteId(currentUser.instituteId());
+    }
+
+    /** Treats the {@code -1} sentinel (and null / non-positive ids) as "no institute" → null. */
+    private static Long normalizeInstituteId(Long instituteId) {
+        return (instituteId == null || instituteId < 1) ? null : instituteId;
     }
 
     /**
