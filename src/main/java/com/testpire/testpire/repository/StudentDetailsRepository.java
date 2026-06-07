@@ -27,6 +27,11 @@ public interface StudentDetailsRepository extends JpaRepository<StudentDetails, 
     @Query("SELECT sd FROM StudentDetails sd WHERE sd.user.instituteId = :instituteId AND sd.course = :course")
     List<StudentDetails> findByInstituteIdAndCourse(@Param("instituteId") Long instituteId, @Param("course") String course);
 
+    /** Students enrolled in a given batch (via the student_enrollments source of truth). */
+    @Query("SELECT sd FROM StudentDetails sd WHERE sd.user.id IN " +
+           "(SELECT e.studentUserId FROM StudentEnrollment e WHERE e.batchId = :batchId)")
+    List<StudentDetails> findByBatchId(@Param("batchId") Long batchId);
+
     @Query("SELECT sd FROM StudentDetails sd WHERE " +
            "LOWER(sd.user.firstName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            "LOWER(sd.user.lastName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +

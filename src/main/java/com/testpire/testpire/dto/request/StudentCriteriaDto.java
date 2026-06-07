@@ -21,6 +21,10 @@ public class StudentCriteriaDto {
     private String email;
     private String phone;
     private String course;
+    /** Filter by enrolled course (student_enrollments.course_id) — the enrollment source of truth, not the legacy free-text {@code course}. */
+    private Long courseId;
+    /** Filter by enrolled batch (student_enrollments.batch_id). */
+    private Long batchId;
     private Integer minCurrentClass;
     private Integer maxCurrentClass;
     private String rollNumber;

@@ -1,5 +1,6 @@
 package com.testpire.testpire.entity;
 
+import com.testpire.testpire.enums.Gender;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,6 +34,10 @@ public class StudentDetails {
 
     @Column(name = "current_class")
     private Integer currentClass;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "gender", length = 16)
+    private Gender gender;
 
     @Column(name = "roll_number", length = 50)
     private String rollNumber;

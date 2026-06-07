@@ -1,5 +1,7 @@
 package com.testpire.testpire.entity;
 
+import com.testpire.testpire.enums.Board;
+import com.testpire.testpire.enums.Gender;
 import com.testpire.testpire.enums.LeadSource;
 import com.testpire.testpire.enums.LeadStatus;
 import jakarta.persistence.*;
@@ -8,6 +10,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -47,6 +50,37 @@ public class Lead {
 
     @Column(name = "phone", nullable = false, length = 20)
     private String phone;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "gender", length = 16)
+    private Gender gender;
+
+    /** Lead's current school. */
+    @Column(name = "school", length = 200)
+    private String school;
+
+    /** Class/grade the lead is currently in; carried into {@code StudentDetails.currentClass} on conversion. */
+    @Column(name = "current_class")
+    private Integer currentClass;
+
+    /** Education board the lead's school follows. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "board", length = 16)
+    private Board board;
+
+    /** Course fee the lead has committed to pay (amount agreed during follow-up). */
+    @Column(name = "course_fee_committed", precision = 12, scale = 2)
+    private BigDecimal courseFeeCommitted;
+
+    /** Parent/guardian contact, captured at enquiry time and carried into {@code StudentDetails} on conversion. */
+    @Column(name = "parent_name", length = 100)
+    private String parentName;
+
+    @Column(name = "parent_phone", length = 20)
+    private String parentPhone;
+
+    @Column(name = "parent_email", length = 100)
+    private String parentEmail;
 
     @Enumerated(EnumType.STRING)
     @Builder.Default

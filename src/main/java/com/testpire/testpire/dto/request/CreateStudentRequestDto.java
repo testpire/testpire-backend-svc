@@ -1,5 +1,7 @@
 package com.testpire.testpire.dto.request;
 
+import com.testpire.testpire.enums.Gender;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
@@ -7,6 +9,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Max;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public record CreateStudentRequestDto(
     @NotBlank(message = "Username is required")
@@ -30,6 +33,8 @@ public record CreateStudentRequestDto(
     @Max(value = 14, message = "Class must be at most 14")
     Integer currentClass,
 
+    Gender gender,
+
     String rollNumber,
     
     String parentName,
@@ -44,6 +49,10 @@ public record CreateStudentRequestDto(
     LocalDate dateOfBirth,
     
     String bloodGroup,
-    
-    String emergencyContact
+
+    String emergencyContact,
+
+    /** Optional initial course+batch assignments. Each batch must belong to its course and institute. */
+    @Valid
+    List<EnrollmentRequestDto> enrollments
 ) {}

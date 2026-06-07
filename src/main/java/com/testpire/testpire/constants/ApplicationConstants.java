@@ -117,6 +117,8 @@ public final class ApplicationConstants {
     public static final String TEACHER_DETAILS_TABLE = "teacher_details";
     public static final String STUDENT_DETAILS_TABLE = "student_details";
     public static final String COURSES_TABLE = "courses";
+    public static final String BATCHES_TABLE = "batches";
+    public static final String STUDENT_ENROLLMENTS_TABLE = "student_enrollments";
     public static final String SUBJECTS_TABLE = "subjects";
     public static final String COURSE_SUBJECTS_TABLE = "course_subjects";
     public static final String CHAPTERS_TABLE = "chapters";

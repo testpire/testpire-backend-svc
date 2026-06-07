@@ -476,7 +476,7 @@ public class InstituteController {
             // deletable/editable via /api/students/{id}. CreateUserRequestDto carries
             // no student-specific fields, so persist a valid details row with nulls.
             studentDetailsService.createStudentDetails(
-                    createdUser, null, null, null, null, null, null, null, null, null, null, null);
+                    createdUser, null, null, null, null, null, null, null, null, null, null, null, null);
 
             return ResponseEntity.ok(ApiResponseDto.success(
                 "Student registered successfully",

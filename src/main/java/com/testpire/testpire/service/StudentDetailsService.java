@@ -1,10 +1,12 @@
 package com.testpire.testpire.service;
 
 import com.testpire.testpire.dto.request.StudentSearchRequestDto;
+import com.testpire.testpire.dto.response.EnrollmentResponseDto;
 import com.testpire.testpire.dto.response.StudentListResponseDto;
 import com.testpire.testpire.dto.response.StudentResponseDto;
 import com.testpire.testpire.entity.StudentDetails;
 import com.testpire.testpire.entity.User;
+import com.testpire.testpire.enums.Gender;
 import com.testpire.testpire.repository.StudentDetailsRepository;
 import com.testpire.testpire.repository.specification.StudentSpecification;
 import com.testpire.testpire.util.RequestUtils;
@@ -20,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -29,9 +32,10 @@ import java.util.Optional;
 public class StudentDetailsService {
 
     private final StudentDetailsRepository studentDetailsRepository;
+    private final StudentEnrollmentService studentEnrollmentService;
 
     public StudentDetails createStudentDetails(User user, String phone, String course, Integer currentClass,
-                                             String rollNumber, String parentName, String parentPhone,
+                                             Gender gender, String rollNumber, String parentName, String parentPhone,
                                              String parentEmail, String address, LocalDate dateOfBirth,
                                              String bloodGroup, String emergencyContact) {
         log.info("Creating student details for user ID: {}", user.getId());
@@ -41,6 +45,7 @@ public class StudentDetailsService {
                 .phone(phone)
                 .course(course)
                 .currentClass(currentClass)
+                .gender(gender)
                 .rollNumber(rollNumber)
                 .parentName(parentName)
                 .parentPhone(parentPhone)
@@ -58,11 +63,11 @@ public class StudentDetailsService {
     }
 
     public StudentDetails updateStudentDetails(User user, String phone, String course, Integer currentClass,
-                                             String rollNumber, String parentName, String parentPhone,
+                                             Gender gender, String rollNumber, String parentName, String parentPhone,
                                              String parentEmail, String address, LocalDate dateOfBirth,
                                              String bloodGroup, String emergencyContact) {
         log.info("Updating student details for user ID: {}", user.getId());
-        
+
         StudentDetails studentDetails = studentDetailsRepository.findByUserId(user.getId())
                 .orElse(StudentDetails.builder().user(user).build());
 
@@ -74,6 +79,9 @@ public class StudentDetailsService {
         }
         if (currentClass != null) {
             studentDetails.setCurrentClass(currentClass);
+        }
+        if (gender != null) {
+            studentDetails.setGender(gender);
         }
         if (rollNumber != null) {
             studentDetails.setRollNumber(rollNumber);
@@ -127,6 +135,10 @@ public class StudentDetailsService {
         return studentDetailsRepository.findByInstituteIdAndCourse(instituteId, course);
     }
 
+    public List<StudentDetails> getStudentsByBatch(Long batchId) {
+        return studentDetailsRepository.findByBatchId(batchId);
+    }
+
     public List<StudentDetails> searchStudents(String query) {
         return studentDetailsRepository.searchStudents(query);
     }
@@ -159,6 +171,8 @@ public class StudentDetailsService {
                 .and(StudentSpecification.hasEmailContaining(request.getEmail()))
                 .and(StudentSpecification.hasPhoneContaining(request.getPhone()))
                 .and(StudentSpecification.hasCourse(request.getCourse()))
+                .and(StudentSpecification.hasEnrollmentInCourse(request.getCourseId()))
+                .and(StudentSpecification.hasEnrollmentInBatch(request.getBatchId()))
                 .and(StudentSpecification.hasCurrentClassRange(request.getMinCurrentClass(), request.getMaxCurrentClass()))
                 .and(StudentSpecification.hasRollNumberContaining(request.getRollNumber()))
                 .and(StudentSpecification.hasParentNameContaining(request.getParentName()))
@@ -178,9 +192,7 @@ public class StudentDetailsService {
         Page<StudentDetails> page = studentDetailsRepository.findAll(spec, pageable);
         log.info("Student search returned {}/{} total", page.getContent().size(), page.getTotalElements());
 
-        List<StudentResponseDto> studentDtos = page.getContent().stream()
-                .map(details -> StudentResponseDto.fromEntity(details.getUser(), details))
-                .toList();
+        List<StudentResponseDto> studentDtos = toResponsesWithEnrollments(page.getContent());
 
         return StudentListResponseDto.success(
             studentDtos,
@@ -188,5 +200,21 @@ public class StudentDetailsService {
             page.getNumber(),
             (int) page.getTotalElements()
         );
+    }
+
+    /**
+     * Maps a list of students to response DTOs with their enrolled course/batch lists populated. Use
+     * this for list/search results so callers (the UI) get each student's enrollments, not an empty
+     * list. Enrollments are resolved in bulk (a fixed number of queries), not per student.
+     */
+    @Transactional(readOnly = true)
+    public List<StudentResponseDto> toResponsesWithEnrollments(List<StudentDetails> students) {
+        List<Long> userIds = students.stream().map(d -> d.getUser().getId()).toList();
+        Map<Long, List<EnrollmentResponseDto>> byStudent =
+            studentEnrollmentService.getEnrollmentsForStudents(userIds);
+        return students.stream()
+            .map(d -> StudentResponseDto.fromEntity(d.getUser(), d,
+                byStudent.getOrDefault(d.getUser().getId(), List.of())))
+            .toList();
     }
 }

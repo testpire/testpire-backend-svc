@@ -1,9 +1,12 @@
 package com.testpire.testpire.dto.response;
 
 import com.testpire.testpire.entity.Lead;
+import com.testpire.testpire.enums.Board;
+import com.testpire.testpire.enums.Gender;
 import com.testpire.testpire.enums.LeadSource;
 import com.testpire.testpire.enums.LeadStatus;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -14,6 +17,14 @@ public record LeadResponseDto(
     String lastName,
     String email,
     String phone,
+    Gender gender,
+    String school,
+    Integer currentClass,
+    Board board,
+    BigDecimal courseFeeCommitted,
+    String parentName,
+    String parentPhone,
+    String parentEmail,
     LeadStatus status,
     LeadSource source,
     Long interestedCourseId,
@@ -35,6 +46,14 @@ public record LeadResponseDto(
             lead.getLastName(),
             lead.getEmail(),
             lead.getPhone(),
+            lead.getGender(),
+            lead.getSchool(),
+            lead.getCurrentClass(),
+            lead.getBoard(),
+            lead.getCourseFeeCommitted(),
+            lead.getParentName(),
+            lead.getParentPhone(),
+            lead.getParentEmail(),
             lead.getStatus(),
             lead.getSource(),
             lead.getInterestedCourseId(),

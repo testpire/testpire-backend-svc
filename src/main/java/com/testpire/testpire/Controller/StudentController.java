@@ -17,6 +17,9 @@ import com.testpire.testpire.service.CognitoService;
 import com.testpire.testpire.service.InstituteService;
 import com.testpire.testpire.service.UserService;
 import com.testpire.testpire.service.StudentDetailsService;
+import com.testpire.testpire.service.StudentEnrollmentService;
+import com.testpire.testpire.service.BatchService;
+import com.testpire.testpire.dto.response.EnrollmentResponseDto;
 import com.testpire.testpire.util.RequestUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -44,6 +47,8 @@ public class StudentController {
     private final CognitoService cognitoService;
     private final InstituteService instituteService;
     private final StudentDetailsService studentDetailsService;
+    private final StudentEnrollmentService studentEnrollmentService;
+    private final BatchService batchService;
 
     // ==================== STUDENT CRUD OPERATIONS ====================
 
@@ -83,6 +88,7 @@ public class StudentController {
                 request.phone(),
                 request.course(),
                 request.currentClass(),
+                request.gender(),
                 request.rollNumber(),
                 request.parentName(),
                 request.parentPhone(),
@@ -93,7 +99,14 @@ public class StudentController {
                 request.emergencyContact()
             );
 
-            StudentResponseDto response = StudentResponseDto.fromEntity(createdUser, studentDetails);
+            // Assign course+batch enrollments (if any were provided).
+            if (request.enrollments() != null && !request.enrollments().isEmpty()) {
+                studentEnrollmentService.syncEnrollments(
+                    createdUser.getId(), instituteId, request.enrollments(), RequestUtils.getCurrentUsername());
+            }
+            List<EnrollmentResponseDto> enrollments = studentEnrollmentService.getEnrollments(createdUser.getId());
+
+            StudentResponseDto response = StudentResponseDto.fromEntity(createdUser, studentDetails, enrollments);
             return ResponseEntity.status(HttpStatus.CREATED).body(
                 ApiResponseDto.success("Student created successfully", response)
             );
@@ -133,7 +146,8 @@ public class StudentController {
             // Get student details
             com.testpire.testpire.entity.StudentDetails studentDetails = studentDetailsService.getStudentDetailsByUser(student).orElse(null);
 
-            StudentResponseDto response = StudentResponseDto.fromEntity(student, studentDetails);
+            List<EnrollmentResponseDto> enrollments = studentEnrollmentService.getEnrollments(student.getId());
+            StudentResponseDto response = StudentResponseDto.fromEntity(student, studentDetails, enrollments);
             return ResponseEntity.ok(ApiResponseDto.success("Student retrieved successfully", response));
         } catch (Exception e) {
             log.error("Error fetching student", e);
@@ -196,6 +210,7 @@ public class StudentController {
                 request.phone(),
                 request.course(),
                 request.currentClass(),
+                request.gender(),
                 request.rollNumber(),
                 request.parentName(),
                 request.parentPhone(),
@@ -206,8 +221,16 @@ public class StudentController {
                 request.emergencyContact()
             );
             
-            StudentResponseDto response = StudentResponseDto.fromEntity(updatedStudent, studentDetails);
-            
+            // When enrollments is non-null, replace the student's full course+batch set.
+            if (request.enrollments() != null) {
+                studentEnrollmentService.syncEnrollments(
+                    updatedStudent.getId(), updatedStudent.getInstituteId(),
+                    request.enrollments(), RequestUtils.getCurrentUsername());
+            }
+            List<EnrollmentResponseDto> enrollments = studentEnrollmentService.getEnrollments(updatedStudent.getId());
+
+            StudentResponseDto response = StudentResponseDto.fromEntity(updatedStudent, studentDetails, enrollments);
+
             return ResponseEntity.ok(ApiResponseDto.success("Student updated successfully", response));
         } catch (Exception e) {
             log.error("Error updating student", e);
@@ -292,10 +315,10 @@ public class StudentController {
             }
 
             // Apply additional filters
-            List<StudentResponseDto> studentDtos = studentDetailsList.stream()
+            List<com.testpire.testpire.entity.StudentDetails> filtered = studentDetailsList.stream()
                 .filter(details -> currentClass == null || currentClass.equals(details.getCurrentClass()))
-                .map(details -> StudentResponseDto.fromEntity(details.getUser(), details))
                 .toList();
+            List<StudentResponseDto> studentDtos = studentDetailsService.toResponsesWithEnrollments(filtered);
 
             StudentListResponseDto response = StudentListResponseDto.success(
                 studentDtos,
@@ -332,9 +355,7 @@ public class StudentController {
 
             List<com.testpire.testpire.entity.StudentDetails> studentDetailsList = studentDetailsService.getStudentsByInstitute(instituteId);
             
-            List<StudentResponseDto> studentDtos = studentDetailsList.stream()
-                .map(details -> StudentResponseDto.fromEntity(details.getUser(), details))
-                .toList();
+            List<StudentResponseDto> studentDtos = studentDetailsService.toResponsesWithEnrollments(studentDetailsList);
 
             StudentListResponseDto response = StudentListResponseDto.success(
                 studentDtos, 
@@ -373,9 +394,7 @@ public class StudentController {
 
             List<com.testpire.testpire.entity.StudentDetails> studentDetailsList = studentDetailsService.getStudentsByInstituteAndCourse(instituteId, course);
             
-            List<StudentResponseDto> studentDtos = studentDetailsList.stream()
-                .map(details -> StudentResponseDto.fromEntity(details.getUser(), details))
-                .toList();
+            List<StudentResponseDto> studentDtos = studentDetailsService.toResponsesWithEnrollments(studentDetailsList);
 
             StudentListResponseDto response = StudentListResponseDto.success(
                 studentDtos, 
@@ -387,6 +406,29 @@ public class StudentController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error fetching students by institute and course", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(StudentListResponseDto.error("Failed to fetch students: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/batch/{batchId}")
+    @RequirePermission(Permission.STUDENT_LIST)
+    @Operation(summary = "Get students in a batch", description = "List all students enrolled in a given batch")
+    public ResponseEntity<StudentListResponseDto> getStudentsByBatch(@PathVariable Long batchId) {
+        try {
+            // Tenancy: resolves the batch scoped to the caller's institute (throws if not visible),
+            // so a non-SUPER_ADMIN cannot list students of another tenant's batch.
+            batchService.getBatchById(batchId);
+
+            List<com.testpire.testpire.entity.StudentDetails> studentDetailsList =
+                studentDetailsService.getStudentsByBatch(batchId);
+
+            List<StudentResponseDto> studentDtos = studentDetailsService.toResponsesWithEnrollments(studentDetailsList);
+
+            return ResponseEntity.ok(StudentListResponseDto.success(
+                studentDtos, studentDtos.size(), 0, studentDtos.size()));
+        } catch (Exception e) {
+            log.error("Error fetching students by batch", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(StudentListResponseDto.error("Failed to fetch students: " + e.getMessage()));
         }
@@ -431,8 +473,12 @@ public class StudentController {
             @RequestParam(required = false) String email,
             @Parameter(description = "Phone (optional)", example = "1234567890")
             @RequestParam(required = false) String phone,
-            @Parameter(description = "Course (optional)", example = "Computer Science")
+            @Parameter(description = "Course name, legacy free-text (optional)", example = "Computer Science")
             @RequestParam(required = false) String course,
+            @Parameter(description = "Enrolled course ID — filters by student_enrollments (optional)", example = "5")
+            @RequestParam(required = false) Long courseId,
+            @Parameter(description = "Enrolled batch ID — filters by student_enrollments (optional)", example = "12")
+            @RequestParam(required = false) Long batchId,
             @Parameter(description = "Minimum class (optional)", example = "1")
             @RequestParam(required = false) Integer minCurrentClass,
             @Parameter(description = "Maximum class (optional)", example = "14")
@@ -500,6 +546,8 @@ public class StudentController {
                     .email(email)
                     .phone(phone)
                     .course(course)
+                    .courseId(courseId)
+                    .batchId(batchId)
                     .minCurrentClass(minCurrentClass)
                     .maxCurrentClass(maxCurrentClass)
                     .rollNumber(rollNumber)
@@ -563,7 +611,8 @@ public class StudentController {
             // Get student details
             com.testpire.testpire.entity.StudentDetails studentDetails = studentDetailsService.getStudentDetailsByUser(student).orElse(null);
             
-            StudentResponseDto response = StudentResponseDto.fromEntity(student, studentDetails);
+            List<EnrollmentResponseDto> enrollments = studentEnrollmentService.getEnrollments(student.getId());
+            StudentResponseDto response = StudentResponseDto.fromEntity(student, studentDetails, enrollments);
             return ResponseEntity.ok(ApiResponseDto.success("Student profile retrieved successfully", response));
         } catch (Exception e) {
             log.error("Error fetching student profile", e);
@@ -607,6 +656,7 @@ public class StudentController {
                 request.phone(),
                 request.course(),
                 request.currentClass(),
+                request.gender(),
                 request.rollNumber(),
                 request.parentName(),
                 request.parentPhone(),
@@ -617,8 +667,11 @@ public class StudentController {
                 request.emergencyContact()
             );
             
-            StudentResponseDto response = StudentResponseDto.fromEntity(updatedStudent, studentDetails);
-            
+            // Enrollment assignment is an admin action (STUDENT_UPDATE), not part of self-service
+            // profile update — request.enrollments() is intentionally ignored here.
+            List<EnrollmentResponseDto> enrollments = studentEnrollmentService.getEnrollments(updatedStudent.getId());
+            StudentResponseDto response = StudentResponseDto.fromEntity(updatedStudent, studentDetails, enrollments);
+
             return ResponseEntity.ok(ApiResponseDto.success("Student profile updated successfully", response));
         } catch (Exception e) {
             log.error("Error updating student profile", e);

@@ -72,7 +72,15 @@ public class StudentSearchRequestDto {
     public String getCourse() {
         return criteria != null ? criteria.getCourse() : null;
     }
-    
+
+    public Long getCourseId() {
+        return criteria != null ? criteria.getCourseId() : null;
+    }
+
+    public Long getBatchId() {
+        return criteria != null ? criteria.getBatchId() : null;
+    }
+
     public Integer getMinCurrentClass() {
         return criteria != null ? criteria.getMinCurrentClass() : null;
     }

@@ -44,6 +44,7 @@ public class LeadService {
     private final CognitoService cognitoService;
     private final UserService userService;
     private final StudentDetailsService studentDetailsService;
+    private final StudentEnrollmentService studentEnrollmentService;
 
     public Lead createLead(CreateLeadRequestDto request, Long instituteId, String actor) {
         log.info("Creating lead for institute {}: {} {}", instituteId, request.firstName(), request.lastName());
@@ -60,6 +61,14 @@ public class LeadService {
             .lastName(request.lastName())
             .email(request.email())
             .phone(request.phone())
+            .gender(request.gender())
+            .school(request.school())
+            .currentClass(request.currentClass())
+            .board(request.board())
+            .courseFeeCommitted(request.courseFeeCommitted())
+            .parentName(request.parentName())
+            .parentPhone(request.parentPhone())
+            .parentEmail(request.parentEmail())
             .status(LeadStatus.NEW)
             .source(request.source())
             .interestedCourseId(request.interestedCourseId())
@@ -99,6 +108,14 @@ public class LeadService {
         if (request.lastName() != null) lead.setLastName(request.lastName());
         if (request.email() != null) lead.setEmail(request.email());
         if (request.phone() != null) lead.setPhone(request.phone());
+        if (request.gender() != null) lead.setGender(request.gender());
+        if (request.school() != null) lead.setSchool(request.school());
+        if (request.currentClass() != null) lead.setCurrentClass(request.currentClass());
+        if (request.board() != null) lead.setBoard(request.board());
+        if (request.courseFeeCommitted() != null) lead.setCourseFeeCommitted(request.courseFeeCommitted());
+        if (request.parentName() != null) lead.setParentName(request.parentName());
+        if (request.parentPhone() != null) lead.setParentPhone(request.parentPhone());
+        if (request.parentEmail() != null) lead.setParentEmail(request.parentEmail());
         if (request.status() != null) lead.setStatus(request.status());
         if (request.source() != null) lead.setSource(request.source());
         if (request.interestedCourseId() != null) lead.setInterestedCourseId(request.interestedCourseId());
@@ -155,20 +172,28 @@ public class LeadService {
             email, lead.getFirstName(), lastName,
             UserRole.STUDENT, lead.getInstituteId(), cognitoUserId, actor);
 
-        // 3. Student details.
+        // 3. Student details. Academic/demographic fields and parent contact are carried over
+        //    from the lead (captured at enquiry time); the rest come from the convert request.
         studentDetailsService.createStudentDetails(
             user,
             lead.getPhone(),
             course.getName(),
-            null,
+            lead.getCurrentClass(),
+            lead.getGender(),
             request.rollNumber(),
-            request.parentName(),
-            request.parentPhone(),
-            request.parentEmail(),
+            lead.getParentName(),
+            lead.getParentPhone(),
+            lead.getParentEmail(),
             request.address(),
             request.dateOfBirth(),
             request.bloodGroup(),
             request.emergencyContact());
+
+        // 3b. If a batch was chosen, create the course+batch enrollment for the new student.
+        if (request.enrolledBatchId() != null) {
+            studentEnrollmentService.addEnrollment(
+                user.getId(), lead.getInstituteId(), course.getId(), request.enrolledBatchId(), actor);
+        }
 
         // 4. Close the lead and link it to the provisioned student.
         lead.setStatus(LeadStatus.ENROLLED);

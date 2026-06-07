@@ -1,10 +1,13 @@
 package com.testpire.testpire.dto.request;
 
+import com.testpire.testpire.enums.Gender;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Email;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public record UpdateStudentRequestDto(
     String firstName,
@@ -14,6 +17,7 @@ public record UpdateStudentRequestDto(
     @Min(value = 1, message = "Class must be at least 1")
     @Max(value = 14, message = "Class must be at most 14")
     Integer currentClass,
+    Gender gender,
     String rollNumber,
     String parentName,
     String parentPhone,
@@ -24,5 +28,12 @@ public record UpdateStudentRequestDto(
     String bloodGroup,
     String emergencyContact,
     Long instituteId,
-    Boolean enabled
+    Boolean enabled,
+
+    /**
+     * When non-null, REPLACES the student's full enrollment set to match this list (an empty list
+     * clears all enrollments). When null, enrollments are left unchanged.
+     */
+    @Valid
+    List<EnrollmentRequestDto> enrollments
 ) {}

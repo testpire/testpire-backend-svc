@@ -1,6 +1,7 @@
 package com.testpire.testpire.repository.specification;
 
 import com.testpire.testpire.entity.StudentDetails;
+import com.testpire.testpire.entity.StudentEnrollment;
 import com.testpire.testpire.entity.User;
 import com.testpire.testpire.enums.UserRole;
 import jakarta.persistence.criteria.*;
@@ -232,6 +233,34 @@ public class StudentSpecification {
         };
     }
     
+    /**
+     * Matches students who have an enrollment in the given course. {@link StudentEnrollment} has no
+     * JPA association to {@link StudentDetails}, so this correlates via a subquery on
+     * {@code student_user_id} = the student's user id (mirrors {@code StudentDetailsRepository.findByBatchId}).
+     */
+    public static Specification<StudentDetails> hasEnrollmentInCourse(Long courseId) {
+        return (root, query, criteriaBuilder) -> {
+            if (courseId == null) return null;
+            Subquery<Long> subquery = query.subquery(Long.class);
+            Root<StudentEnrollment> enrollment = subquery.from(StudentEnrollment.class);
+            subquery.select(enrollment.get("studentUserId"))
+                    .where(criteriaBuilder.equal(enrollment.get("courseId"), courseId));
+            return root.get("user").get("id").in(subquery);
+        };
+    }
+
+    /** Matches students who have an enrollment in the given batch. See {@link #hasEnrollmentInCourse}. */
+    public static Specification<StudentDetails> hasEnrollmentInBatch(Long batchId) {
+        return (root, query, criteriaBuilder) -> {
+            if (batchId == null) return null;
+            Subquery<Long> subquery = query.subquery(Long.class);
+            Root<StudentEnrollment> enrollment = subquery.from(StudentEnrollment.class);
+            subquery.select(enrollment.get("studentUserId"))
+                    .where(criteriaBuilder.equal(enrollment.get("batchId"), batchId));
+            return root.get("user").get("id").in(subquery);
+        };
+    }
+
     public static Specification<StudentDetails> isStudent() {
         return (root, query, criteriaBuilder) -> {
             Join<StudentDetails, User> userJoin = root.join("user");

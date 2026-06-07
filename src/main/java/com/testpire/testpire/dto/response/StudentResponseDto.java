@@ -1,9 +1,11 @@
 package com.testpire.testpire.dto.response;
 
 import com.testpire.testpire.entity.User;
+import com.testpire.testpire.enums.Gender;
 import com.testpire.testpire.enums.UserRole;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record StudentResponseDto(
     Long id,
@@ -17,6 +19,7 @@ public record StudentResponseDto(
     String phone,
     String course,
     Integer currentClass,
+    Gender gender,
     String rollNumber,
     String parentName,
     String parentPhone,
@@ -26,7 +29,8 @@ public record StudentResponseDto(
     String bloodGroup,
     String emergencyContact,
     LocalDateTime createdAt,
-    LocalDateTime updatedAt
+    LocalDateTime updatedAt,
+    List<EnrollmentResponseDto> enrollments
 ) {
     /**
      * Minimal projection for peer listings (one student viewing classmates). Excludes PII —
@@ -46,6 +50,7 @@ public record StudentResponseDto(
             null,                 // phone
             studentDetails != null ? studentDetails.getCourse() : null,
             studentDetails != null ? studentDetails.getCurrentClass() : null,
+            null,                 // gender (PII — excluded from peer view)
             studentDetails != null ? studentDetails.getRollNumber() : null,
             null,                 // parentName
             null,                 // parentPhone
@@ -55,11 +60,17 @@ public record StudentResponseDto(
             null,                 // bloodGroup
             null,                 // emergencyContact
             null,                 // createdAt
-            null                  // updatedAt
+            null,                 // updatedAt
+            List.of()             // enrollments (excluded from peer view)
         );
     }
 
     public static StudentResponseDto fromEntity(User user, com.testpire.testpire.entity.StudentDetails studentDetails) {
+        return fromEntity(user, studentDetails, List.of());
+    }
+
+    public static StudentResponseDto fromEntity(User user, com.testpire.testpire.entity.StudentDetails studentDetails,
+                                                List<EnrollmentResponseDto> enrollments) {
         return new StudentResponseDto(
             user.getId(),
             user.getUsername(),
@@ -72,6 +83,7 @@ public record StudentResponseDto(
             studentDetails != null ? studentDetails.getPhone() : null,
             studentDetails != null ? studentDetails.getCourse() : null,
             studentDetails != null ? studentDetails.getCurrentClass() : null,
+            studentDetails != null ? studentDetails.getGender() : null,
             studentDetails != null ? studentDetails.getRollNumber() : null,
             studentDetails != null ? studentDetails.getParentName() : null,
             studentDetails != null ? studentDetails.getParentPhone() : null,
@@ -81,7 +93,8 @@ public record StudentResponseDto(
             studentDetails != null ? studentDetails.getBloodGroup() : null,
             studentDetails != null ? studentDetails.getEmergencyContact() : null,
             user.getCreatedAt(),
-            user.getUpdatedAt()
+            user.getUpdatedAt(),
+            enrollments != null ? enrollments : List.of()
         );
     }
 }

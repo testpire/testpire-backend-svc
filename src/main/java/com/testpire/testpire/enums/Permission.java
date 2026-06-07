@@ -37,6 +37,12 @@ public enum Permission {
     COURSE_DELETE("Delete a course"),
     COURSE_READ("View/search courses"),
 
+    // --- Batch ---
+    BATCH_CREATE("Create a batch"),
+    BATCH_UPDATE("Update a batch"),
+    BATCH_DELETE("Delete a batch"),
+    BATCH_READ("View/search batches"),
+
     // --- Subject ---
     SUBJECT_CREATE("Create a subject"),
     SUBJECT_UPDATE("Update a subject"),
