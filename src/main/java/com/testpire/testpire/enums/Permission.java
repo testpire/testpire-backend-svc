@@ -102,6 +102,17 @@ public enum Permission {
     TEACHER_PROFILE_READ("View teacher self profile"),
     TEACHER_PROFILE_UPDATE("Update teacher self profile"),
 
+    // --- Test / exam engine ---
+    TEST_CREATE("Create a test"),
+    TEST_UPDATE("Update a test / manage its questions"),
+    TEST_DELETE("Delete a test"),
+    TEST_READ("View/list tests (staff)"),
+    TEST_PUBLISH("Publish a test"),
+    TEST_ASSIGN("Assign a test to a course/batch/student"),
+    TEST_RESULTS_READ("View every student's marks for a test"),
+    TEST_TAKE("Take a test (start/answer/submit)"),
+    TEST_ATTEMPT_READ("View own test attempts/results"),
+
     // --- Generic user management ---
     USER_CREATE("Register a user"),
     USER_READ("View/search users by role"),

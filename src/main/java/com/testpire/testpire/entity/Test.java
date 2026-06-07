@@ -1,65 +1,118 @@
 package com.testpire.testpire.entity;
 
+import com.testpire.testpire.constants.ApplicationConstants;
+import com.testpire.testpire.enums.TestStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import lombok.*;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
+/**
+ * A curated collection of {@link Question}s taken by students as a timed exam. Questions are joined
+ * via {@link TestQuestion} (with optional per-test mark overrides). Assignment to a course/batch/student
+ * lives in {@link TestAssignment}; a student's run lives in {@link TestAttempt}.
+ *
+ * <p>Multi-tenancy is enforced by filtering on {@link #instituteId} in the service layer. Soft-deleted
+ * (mirrors {@link Question}/{@link Course}).</p>
+ */
 @Entity
-@Table(name = "tests")
+@Table(name = ApplicationConstants.Database.TESTS_TABLE)
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@SQLDelete(sql = "UPDATE " + ApplicationConstants.Database.TESTS_TABLE + " SET deleted = true WHERE id=?")
+@SQLRestriction("deleted = false")
 public class Test {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
 
-  @Column(nullable = false)
-  private String title;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-  @Column(columnDefinition = "TEXT")
-  private String description;
+    @Column(nullable = false)
+    private String title;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "created_by", nullable = false)
-  private User createdBy;
+    @Column(columnDefinition = "TEXT")
+    private String description;
 
-  @Column(name = "is_published")
-  private Boolean isPublished = false;
+    @Column(name = "institute_id", nullable = false)
+    private Long instituteId;
 
-  @Column(name = "time_limit")
-  private Integer timeLimit;
+    /** Derived sum of effective per-question marks; recomputed whenever questions change. */
+    @Builder.Default
+    @Column(name = "total_marks", precision = 8, scale = 2)
+    private BigDecimal totalMarks = BigDecimal.ZERO;
 
-  @Column(name = "max_attempts")
-  private Integer maxAttempts = 1;
+    /** Pass mark; {@code null} = no pass/fail threshold. */
+    @Column(name = "passing_marks", precision = 8, scale = 2)
+    private BigDecimal passingMarks;
 
-  @Column(name = "show_answers")
-  private Boolean showAnswers = false;
+    /** Time limit in minutes; {@code null} = untimed. */
+    @Column(name = "duration_minutes")
+    private Integer durationMinutes;
 
-  @Column(name = "shuffle_questions")
-  private Boolean shuffleQuestions = false;
+    @Builder.Default
+    @Column(name = "max_attempts", nullable = false)
+    private Integer maxAttempts = 1;
 
-  @Column(name = "passing_score")
-  private Double passingScore;
+    @Builder.Default
+    @Column(name = "negative_marking", nullable = false)
+    private boolean negativeMarking = false;
 
-  @CreationTimestamp
-  @Column(name = "created_at", updatable = false)
-  private LocalDateTime createdAt;
+    @Builder.Default
+    @Column(name = "shuffle_questions", nullable = false)
+    private boolean shuffleQuestions = false;
 
-  @UpdateTimestamp
-  @Column(name = "updated_at")
-  private LocalDateTime updatedAt;
+    @Builder.Default
+    @Column(name = "show_answers", nullable = false)
+    private boolean showAnswers = false;
 
-  @OneToMany(mappedBy = "test", cascade = CascadeType.ALL, orphanRemoval = true)
-  @OrderBy("sortOrder ASC")
-  private List<TestQuestion> testQuestions = new ArrayList<>();
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private TestStatus status = TestStatus.DRAFT;
+
+    /** Test-level availability window start; {@code null} = always open once published. */
+    @Column(name = "available_from")
+    private LocalDateTime availableFrom;
+
+    /** Test-level expiry; {@code null} = no expiry. An assignment may narrow but not widen this. */
+    @Column(name = "available_until")
+    private LocalDateTime availableUntil;
+
+    @Builder.Default
+    private boolean active = true;
+
+    @Builder.Default
+    private boolean deleted = false;
+
+    @Builder.Default
+    @Column(name = ApplicationConstants.Database.CREATED_AT_COLUMN)
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Builder.Default
+    @Column(name = ApplicationConstants.Database.UPDATED_AT_COLUMN)
+    private LocalDateTime updatedAt = LocalDateTime.now();
+
+    @Column(name = ApplicationConstants.Database.CREATED_BY_COLUMN)
+    private String createdBy;
+
+    @Column(name = "updated_by")
+    private String updatedBy;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "test", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("sortOrder ASC")
+    private List<TestQuestion> testQuestions = new ArrayList<>();
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

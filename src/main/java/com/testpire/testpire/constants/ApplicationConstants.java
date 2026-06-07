@@ -123,6 +123,11 @@ public final class ApplicationConstants {
     public static final String COURSE_SUBJECTS_TABLE = "course_subjects";
     public static final String CHAPTERS_TABLE = "chapters";
     public static final String TOPICS_TABLE = "topics";
+    public static final String TESTS_TABLE = "tests";
+    public static final String TEST_QUESTIONS_TABLE = "test_questions";
+    public static final String TEST_ASSIGNMENTS_TABLE = "test_assignments";
+    public static final String TEST_ATTEMPTS_TABLE = "test_attempts";
+    public static final String TEST_ATTEMPT_ANSWERS_TABLE = "test_attempt_answers";
     public static final String CREATED_AT_COLUMN = "created_at";
     public static final String UPDATED_AT_COLUMN = "updated_at";
     public static final String CREATED_BY_COLUMN = "created_by";

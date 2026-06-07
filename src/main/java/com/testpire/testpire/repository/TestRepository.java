@@ -1,11 +1,17 @@
-/*
 package com.testpire.testpire.repository;
 
+import com.testpire.testpire.entity.Test;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.stereotype.Repository;
 
-import com.testpire.testpire.mongoDomain.Test;
-import org.springframework.data.repository.CrudRepository;
+import java.util.List;
+import java.util.Optional;
 
-public interface TestRepository extends CrudRepository<Test, String> {
-  
+@Repository
+public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificationExecutor<Test> {
+
+    Optional<Test> findByIdAndInstituteId(Long id, Long instituteId);
+
+    List<Test> findByInstituteId(Long instituteId);
 }
-*/
