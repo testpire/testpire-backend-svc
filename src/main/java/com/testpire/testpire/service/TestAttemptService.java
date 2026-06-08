@@ -2,6 +2,7 @@ package com.testpire.testpire.service;
 
 import com.testpire.testpire.dto.request.SubmitAnswerRequestDto;
 import com.testpire.testpire.dto.response.AttemptQuestionResponseDto;
+import com.testpire.testpire.dto.response.AttemptSummaryResponseDto;
 import com.testpire.testpire.dto.response.TestAttemptResponseDto;
 import com.testpire.testpire.dto.response.TestResultResponseDto;
 import com.testpire.testpire.entity.Option;
@@ -155,6 +156,57 @@ public class TestAttemptService {
     }
 
     /**
+     * Staff drill-down into one student's attempt (institute-scoped via {@link TestService#findScoped},
+     * which honours the JWT institute and SUPER_ADMIN's {@code X-Institute-Id}). Unlike the student's
+     * own view, correct answers and per-question marks are always revealed, independent of the test's
+     * {@code showAnswers} flag (that flag only governs what the student sees). The attempt must belong
+     * to {@code testId} — and the test to the staff member's institute — or it reads as not-found.
+     */
+    @Transactional
+    public TestAttemptResponseDto getAttemptForStaff(Long testId, Long attemptId) {
+        Test test = testService.findScoped(testId); // staff institute scoping + existence
+        TestAttempt attempt = attemptRepository.findById(attemptId)
+                .filter(a -> a.getTestId().equals(testId))
+                .orElseThrow(() -> new IllegalArgumentException("Attempt not found with ID: " + attemptId));
+        finalizeIfExpired(attempt, test);
+        return buildAttemptResponse(attempt, test, true);
+    }
+
+    /**
+     * The calling student's own attempt history (most recent first), backing the "Results" tab.
+     * Includes completed/graded attempts regardless of whether the test's assignment window is still
+     * open — unlike {@code available}, which only lists currently-open tests. Stale in-progress
+     * attempts whose deadline has passed are finalized lazily so their scores are accurate. Attempts
+     * are resolved by the JWT student id, so a student only ever sees their own.
+     */
+    @Transactional
+    public List<AttemptSummaryResponseDto> listOwnAttempts(Long studentUserId) {
+        List<TestAttempt> attempts = attemptRepository.findByStudentUserId(studentUserId);
+        if (attempts.isEmpty()) {
+            return List.of();
+        }
+        Set<Long> testIds = attempts.stream().map(TestAttempt::getTestId).collect(Collectors.toSet());
+        Map<Long, Test> tests = testRepository.findAllById(testIds).stream()
+                .collect(Collectors.toMap(Test::getId, t -> t));
+
+        // Most recent first; startedAt is always set, so it orders cleanly across all statuses.
+        attempts.sort((x, y) -> y.getStartedAt().compareTo(x.getStartedAt()));
+
+        List<AttemptSummaryResponseDto> rows = new ArrayList<>();
+        for (TestAttempt a : attempts) {
+            Test test = tests.get(a.getTestId());
+            if (test == null) {
+                continue; // test hard-deleted out from under the attempt — skip rather than 500
+            }
+            finalizeIfExpired(a, test);
+            rows.add(new AttemptSummaryResponseDto(
+                    a.getId(), test.getId(), test.getTitle(), a.getStatus(),
+                    a.getAttemptNumber(), a.getScore(), a.getMaxScore(), a.getPassed(), a.getSubmittedAt()));
+        }
+        return rows;
+    }
+
+    /**
      * Staff view of every student's marks for a test (institute-scoped via {@link TestService}). One
      * row per attempt (so multi-attempt tests list each try), ordered by student then attempt number.
      * Stale in-progress attempts are finalized lazily so their scores are accurate.
@@ -300,8 +352,17 @@ public class TestAttemptService {
     }
 
     private TestAttemptResponseDto buildAttemptResponse(TestAttempt attempt, Test test) {
+        return buildAttemptResponse(attempt, test, false);
+    }
+
+    /**
+     * Builds the attempt view. {@code alwaysReveal} forces the grading fields (correctness, marks
+     * awarded, correct option ids) on for a graded attempt regardless of the test's {@code showAnswers}
+     * flag — used for the staff drill-down, which must always show the correct answers.
+     */
+    private TestAttemptResponseDto buildAttemptResponse(TestAttempt attempt, Test test, boolean alwaysReveal) {
         boolean graded = attempt.getStatus() != AttemptStatus.IN_PROGRESS;
-        boolean reveal = graded && test.isShowAnswers();
+        boolean reveal = graded && (alwaysReveal || test.isShowAnswers());
 
         Map<Long, TestAttemptAnswer> answerByQuestion = answerRepository.findByAttemptId(attempt.getId()).stream()
                 .collect(Collectors.toMap(TestAttemptAnswer::getQuestionId, a -> a, (a, b) -> a));

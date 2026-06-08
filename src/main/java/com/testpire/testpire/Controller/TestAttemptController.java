@@ -4,6 +4,7 @@ import com.testpire.testpire.annotation.RequirePermission;
 import com.testpire.testpire.dto.request.SubmitAnswerRequestDto;
 import com.testpire.testpire.dto.request.SubmitAttemptRequestDto;
 import com.testpire.testpire.dto.response.ApiResponseDto;
+import com.testpire.testpire.dto.response.AttemptSummaryResponseDto;
 import com.testpire.testpire.dto.response.AvailableTestResponseDto;
 import com.testpire.testpire.dto.response.TestAttemptResponseDto;
 import com.testpire.testpire.entity.User;
@@ -102,6 +103,21 @@ public class TestAttemptController {
         } catch (Exception e) {
             log.error("Error submitting attempt", e);
             return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to submit attempt: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/attempts")
+    @RequirePermission(Permission.TEST_ATTEMPT_READ)
+    @Operation(summary = "List my attempts",
+            description = "The calling student's own attempt history (backs the Results tab); includes graded attempts even after the assignment window closes")
+    public ResponseEntity<ApiResponseDto> getMyAttempts() {
+        try {
+            User student = currentStudent();
+            List<AttemptSummaryResponseDto> attempts = attemptService.listOwnAttempts(student.getId());
+            return ResponseEntity.ok(ApiResponseDto.success("Attempts retrieved", attempts));
+        } catch (Exception e) {
+            log.error("Error listing attempts", e);
+            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to list attempts: " + e.getMessage()));
         }
     }
 

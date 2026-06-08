@@ -5,6 +5,7 @@ import com.testpire.testpire.dto.request.AddTestQuestionsRequestDto;
 import com.testpire.testpire.dto.request.CreateTestRequestDto;
 import com.testpire.testpire.dto.request.UpdateTestRequestDto;
 import com.testpire.testpire.dto.response.ApiResponseDto;
+import com.testpire.testpire.dto.response.TestAttemptResponseDto;
 import com.testpire.testpire.dto.response.TestResponseDto;
 import com.testpire.testpire.dto.response.TestResultResponseDto;
 import com.testpire.testpire.enums.Permission;
@@ -157,6 +158,22 @@ public class TestController {
         } catch (Exception e) {
             log.error("Error getting test results", e);
             return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to get results: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/{testId}/attempts/{attemptId}")
+    @RequirePermission(Permission.TEST_RESULTS_READ)
+    @Operation(summary = "View a student's attempt",
+            description = "Staff drill-down into one student's full attempt — their answers vs. the correct answers, per-question marks")
+    public ResponseEntity<ApiResponseDto> getStudentAttempt(
+            @Parameter(description = "Test ID", required = true) @PathVariable Long testId,
+            @Parameter(description = "Attempt ID", required = true) @PathVariable Long attemptId) {
+        try {
+            TestAttemptResponseDto attempt = testAttemptService.getAttemptForStaff(testId, attemptId);
+            return ResponseEntity.ok(ApiResponseDto.success("Attempt retrieved", attempt));
+        } catch (Exception e) {
+            log.error("Error getting student attempt", e);
+            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to get attempt: " + e.getMessage()));
         }
     }
 }
