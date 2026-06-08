@@ -46,6 +46,9 @@ public class TestService {
         if (instituteId == null) {
             throw new IllegalArgumentException("Institute ID is required");
         }
+        log.debug("Creating test '{}' for institute {} (duration={}m, maxAttempts={}, negativeMarking={}, window=[{}, {}])",
+                request.title(), instituteId, request.durationMinutes(), request.maxAttempts(),
+                request.negativeMarking(), request.availableFrom(), request.availableUntil());
         validateWindow(request.availableFrom(), request.availableUntil());
 
         Test test = Test.builder()
@@ -72,7 +75,9 @@ public class TestService {
 
     @Transactional
     public TestResponseDto updateTest(Long id, UpdateTestRequestDto request) {
+        log.debug("Updating test {}", id);
         Test test = findScoped(id);
+        log.debug("Test {} found: title='{}', status={}, active={}", id, test.getTitle(), test.getStatus(), test.isActive());
 
         Optional.ofNullable(request.title()).ifPresent(test::setTitle);
         Optional.ofNullable(request.description()).ifPresent(test::setDescription);
@@ -108,9 +113,11 @@ public class TestService {
     @Transactional(readOnly = true)
     public List<TestResponseDto> listTests() {
         Long instituteId = RequestUtils.getCurrentUserInstituteId();
+        log.debug("Listing tests for institute {} (null = all)", instituteId);
         List<Test> tests = instituteId != null
                 ? testRepository.findByInstituteId(instituteId)
                 : testRepository.findAll();
+        log.debug("Found {} test(s) for institute {}", tests.size(), instituteId);
         return tests.stream()
                 .map(t -> TestResponseDto.summary(t, t.getTestQuestions().size()))
                 .toList();
@@ -171,13 +178,17 @@ public class TestService {
 
     @Transactional
     public TestResponseDto publish(Long testId) {
+        log.debug("Publish requested for test {}", testId);
         Test test = findScoped(testId);
         if (test.getStatus() == TestStatus.PUBLISHED) {
+            log.debug("Test {} already published — no-op", testId);
             return toDetail(test);
         }
-        if (testQuestionRepository.findByTestIdOrderBySortOrderAsc(testId).isEmpty()) {
+        List<TestQuestion> questions = testQuestionRepository.findByTestIdOrderBySortOrderAsc(testId);
+        if (questions.isEmpty()) {
             throw new IllegalStateException("Cannot publish a test with no questions");
         }
+        log.debug("Publishing test {}: {} questions, totalMarks before recompute={}", testId, questions.size(), test.getTotalMarks());
         recomputeTotalMarks(test);
         test.setStatus(TestStatus.PUBLISHED);
         test.setUpdatedBy(RequestUtils.getCurrentUsername());

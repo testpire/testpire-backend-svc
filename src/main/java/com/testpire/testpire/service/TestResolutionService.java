@@ -54,14 +54,17 @@ public class TestResolutionService {
      */
     @Transactional(readOnly = true)
     public Map<Long, TestAssignment> resolveAssignmentsForStudent(Long studentUserId, Long instituteId) {
+        log.debug("resolveAssignments: student={}, institute={}", studentUserId, instituteId);
         List<StudentEnrollment> enrollments = enrollmentRepository.findByStudentUserId(studentUserId);
         Set<Long> courseIds = enrollments.stream().map(StudentEnrollment::getCourseId).collect(Collectors.toSet());
         Set<Long> batchIds = enrollments.stream().map(StudentEnrollment::getBatchId).collect(Collectors.toSet());
+        log.debug("Student {} enrollments: courses={}, batches={}", studentUserId, courseIds, batchIds);
         if (courseIds.isEmpty()) courseIds = Set.of(NO_MATCH);
         if (batchIds.isEmpty()) batchIds = Set.of(NO_MATCH);
 
         List<TestAssignment> assignments = assignmentRepository.findActiveForStudentTargets(
                 instituteId, courseIds, batchIds, studentUserId);
+        log.debug("Found {} raw active assignment(s) for student {} in institute {}", assignments.size(), studentUserId, instituteId);
 
         Map<Long, TestAssignment> byTest = new LinkedHashMap<>();
         for (TestAssignment a : assignments) {
@@ -69,27 +72,38 @@ public class TestResolutionService {
                     // Prefer the assignment with the later (or absent) expiry for display purposes.
                     isWiderUntil(candidate.getAvailableUntil(), existing.getAvailableUntil()) ? candidate : existing);
         }
+        log.debug("Resolved to {} distinct test(s) for student {}", byTest.size(), studentUserId);
         return byTest;
     }
 
     /** Builds the student's list of currently-takeable tests. */
     @Transactional(readOnly = true)
     public List<AvailableTestResponseDto> getAvailableTestsForStudent(Long studentUserId, Long instituteId) {
+        log.debug("getAvailableTests: student={}, institute={}", studentUserId, instituteId);
         Map<Long, TestAssignment> byTest = resolveAssignmentsForStudent(studentUserId, instituteId);
         if (byTest.isEmpty()) {
+            log.debug("Student {} has no assigned tests", studentUserId);
             return List.of();
         }
         LocalDateTime now = LocalDateTime.now();
+        log.debug("Evaluating {} candidate test(s) for student {} at {}", byTest.size(), studentUserId, now);
         List<AvailableTestResponseDto> result = new ArrayList<>();
         for (Test test : testRepository.findAllById(byTest.keySet())) {
             if (test.getStatus() != TestStatus.PUBLISHED || !test.isActive()) {
+                log.debug("  test {} skipped: status={}, active={}", test.getId(), test.getStatus(), test.isActive());
                 continue;
             }
             TestAssignment assignment = byTest.get(test.getId());
             LocalDateTime from = laterOf(test.getAvailableFrom(), assignment.getAvailableFrom());
             LocalDateTime until = earlierOf(test.getAvailableUntil(), assignment.getAvailableUntil());
-            if (from != null && now.isBefore(from)) continue;   // not open yet
-            if (until != null && now.isAfter(until)) continue;   // expired
+            if (from != null && now.isBefore(from)) {
+                log.debug("  test {} skipped: not open yet (opens {})", test.getId(), from);
+                continue;   // not open yet
+            }
+            if (until != null && now.isAfter(until)) {
+                log.debug("  test {} skipped: window expired (was {})", test.getId(), until);
+                continue;   // expired
+            }
 
             List<TestAttempt> attempts = attemptRepository.findByTestIdAndStudentUserId(test.getId(), studentUserId);
             TestAttempt inProgress = attempts.stream()
@@ -98,13 +112,17 @@ public class TestResolutionService {
             int used = attempts.size();
             boolean hasAttemptsLeft = used < test.getMaxAttempts();
             if (inProgress == null && !hasAttemptsLeft) {
+                log.debug("  test {} skipped: attempts exhausted ({}/{})", test.getId(), used, test.getMaxAttempts());
                 continue; // exhausted, nothing to resume
             }
+            log.debug("  test {} included: attemptsUsed={}/{}, inProgressAttempt={}",
+                    test.getId(), used, test.getMaxAttempts(), inProgress != null ? inProgress.getId() : "none");
             result.add(new AvailableTestResponseDto(
                     test.getId(), test.getTitle(), test.getDescription(), test.getTotalMarks(),
                     test.getDurationMinutes(), test.getMaxAttempts(), used, from, until,
                     inProgress != null ? inProgress.getId() : null));
         }
+        log.debug("getAvailableTests result for student {}: {} test(s)", studentUserId, result.size());
         return result;
     }
 
@@ -114,19 +132,24 @@ public class TestResolutionService {
      */
     @Transactional(readOnly = true)
     public TestAssignment requireEligibility(Test test, Long studentUserId) {
+        log.debug("requireEligibility: student={}, test={}, institute={}", studentUserId, test.getId(), test.getInstituteId());
         TestAssignment assignment = resolveAssignmentsForStudent(studentUserId, test.getInstituteId()).get(test.getId());
         if (assignment == null) {
+            log.debug("Student {} has no qualifying assignment for test {}", studentUserId, test.getId());
             throw new IllegalStateException("You are not assigned this test");
         }
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime from = laterOf(test.getAvailableFrom(), assignment.getAvailableFrom());
         LocalDateTime until = earlierOf(test.getAvailableUntil(), assignment.getAvailableUntil());
+        log.debug("Eligibility window for student {} on test {}: from={}, until={}, now={}", studentUserId, test.getId(), from, until, now);
         if (from != null && now.isBefore(from)) {
             throw new IllegalStateException("This test is not open yet");
         }
         if (until != null && now.isAfter(until)) {
             throw new IllegalStateException("This test has expired");
         }
+        log.debug("Student {} is eligible for test {} via assignment {} (targetType={}, targetId={})",
+                studentUserId, test.getId(), assignment.getId(), assignment.getTargetType(), assignment.getTargetId());
         return assignment;
     }
 

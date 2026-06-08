@@ -40,13 +40,17 @@ public class TestAssignmentService {
 
     @Transactional
     public TestAssignmentResponseDto assign(Long testId, AssignTestRequestDto request) {
+        log.debug("Assigning test {} to {} {} (availableFrom={}, availableUntil={})",
+                testId, request.targetType(), request.targetId(), request.availableFrom(), request.availableUntil());
         Test test = testService.findScoped(testId);
+        log.debug("Test {} status={}", testId, test.getStatus());
         if (test.getStatus() != TestStatus.PUBLISHED) {
             throw new IllegalStateException("Only a PUBLISHED test can be assigned (current: " + test.getStatus() + ")");
         }
         validateWindow(request.availableFrom(), request.availableUntil());
 
         String targetName = validateTargetAndGetName(request.targetType(), request.targetId(), test.getInstituteId());
+        log.debug("Assignment target validated: {} {} = '{}'", request.targetType(), request.targetId(), targetName);
 
         if (assignmentRepository.existsByTestIdAndTargetTypeAndTargetId(
                 testId, request.targetType(), request.targetId())) {
@@ -71,19 +75,24 @@ public class TestAssignmentService {
 
     @Transactional(readOnly = true)
     public List<TestAssignmentResponseDto> listAssignments(Long testId) {
+        log.debug("Listing assignments for test {}", testId);
         Test test = testService.findScoped(testId); // institute scoping + existence check
-        return assignmentRepository.findByTestId(test.getId()).stream()
+        List<TestAssignment> assignments = assignmentRepository.findByTestId(test.getId());
+        log.debug("Test {} has {} assignment(s)", testId, assignments.size());
+        return assignments.stream()
                 .map(a -> TestAssignmentResponseDto.fromEntity(a, resolveTargetName(a.getTargetType(), a.getTargetId())))
                 .toList();
     }
 
     @Transactional
     public void unassign(Long testId, Long assignmentId) {
+        log.debug("Unassigning assignment {} from test {}", assignmentId, testId);
         Test test = testService.findScoped(testId); // institute scoping
         TestAssignment assignment = assignmentRepository.findById(assignmentId)
                 .filter(a -> a.getTestId().equals(test.getId()))
                 .filter(a -> a.getInstituteId().equals(test.getInstituteId()))
                 .orElseThrow(() -> new IllegalArgumentException("Assignment not found with ID: " + assignmentId));
+        log.debug("Found assignment {}: {} {} for test {}", assignmentId, assignment.getTargetType(), assignment.getTargetId(), testId);
         assignmentRepository.delete(assignment);
         log.info("Assignment {} removed from test {}", assignmentId, testId);
     }

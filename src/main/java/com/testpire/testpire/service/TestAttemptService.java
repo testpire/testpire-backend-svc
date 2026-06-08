@@ -63,13 +63,18 @@ public class TestAttemptService {
 
     @Transactional
     public TestAttemptResponseDto startAttempt(Long testId, Long studentUserId, Long instituteId) {
+        log.debug("startAttempt: student={}, test={}, institute={}", studentUserId, testId, instituteId);
         Test test = loadStudentTest(testId, instituteId);
+        log.debug("Test {} status={}, active={}, maxAttempts={}", testId, test.getStatus(), test.isActive(), test.getMaxAttempts());
         if (test.getStatus() != TestStatus.PUBLISHED || !test.isActive()) {
             throw new IllegalStateException("This test is not open for attempts");
         }
         TestAssignment assignment = resolutionService.requireEligibility(test, studentUserId);
+        log.debug("Student {} eligible via assignment {} (targetType={}, targetId={})",
+                studentUserId, assignment.getId(), assignment.getTargetType(), assignment.getTargetId());
 
         List<TestAttempt> existing = attemptRepository.findByTestIdAndStudentUserId(testId, studentUserId);
+        log.debug("Student {} has {} existing attempt(s) on test {}", studentUserId, existing.size(), testId);
         // Finalize any stale in-progress attempt first so attempt accounting is accurate.
         for (TestAttempt a : existing) {
             finalizeIfExpired(a, test);
@@ -78,11 +83,14 @@ public class TestAttemptService {
                 .filter(a -> a.getStatus() == AttemptStatus.IN_PROGRESS)
                 .findFirst().orElse(null);
         if (inProgress != null) {
+            log.debug("Resuming in-progress attempt {} for student {} on test {}", inProgress.getId(), studentUserId, testId);
             return buildAttemptResponse(inProgress, test); // resume
         }
         if (existing.size() >= test.getMaxAttempts()) {
             throw new IllegalStateException("No attempts remaining for this test");
         }
+        log.debug("Creating new attempt for student {} on test {} (attempt #{} of {})",
+                studentUserId, testId, existing.size() + 1, test.getMaxAttempts());
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime durationDeadline = test.getDurationMinutes() != null
@@ -110,6 +118,8 @@ public class TestAttemptService {
 
     @Transactional
     public void saveAnswer(Long attemptId, Long studentUserId, SubmitAnswerRequestDto dto) {
+        log.debug("saveAnswer: attempt={}, student={}, question={}, options={}",
+                attemptId, studentUserId, dto.questionId(), dto.selectedOptionIds());
         TestAttempt attempt = loadOwnAttempt(attemptId, studentUserId);
         Test test = loadStudentTest(attempt.getTestId(), attempt.getInstituteId());
         if (finalizeIfExpired(attempt, test)) {
@@ -119,22 +129,28 @@ public class TestAttemptService {
             throw new IllegalStateException("This attempt is no longer in progress");
         }
         upsertAnswer(attempt, test, dto);
+        log.debug("Answer saved: attempt={}, question={}", attemptId, dto.questionId());
     }
 
     // --- Submit (+ grade) --------------------------------------------------
 
     @Transactional
     public TestAttemptResponseDto submit(Long attemptId, Long studentUserId, List<SubmitAnswerRequestDto> answers) {
+        log.debug("submit: attempt={}, student={}, batched answers={}", attemptId, studentUserId,
+                answers == null ? 0 : answers.size());
         TestAttempt attempt = loadOwnAttempt(attemptId, studentUserId);
         Test test = loadStudentTest(attempt.getTestId(), attempt.getInstituteId());
 
         if (attempt.getStatus() != AttemptStatus.IN_PROGRESS) {
+            log.debug("Attempt {} already finalized (status={}) — returning idempotent response", attemptId, attempt.getStatus());
             return buildAttemptResponse(attempt, test); // already finalized — idempotent
         }
         if (finalizeIfExpired(attempt, test)) {
+            log.debug("Attempt {} expired before explicit submit — returning auto-submitted response", attemptId);
             return buildAttemptResponse(attempt, test); // deadline passed; graded as auto-submitted
         }
         if (answers != null) {
+            log.debug("Processing {} batched answer(s) for attempt {}", answers.size(), attemptId);
             for (SubmitAnswerRequestDto ans : answers) {
                 upsertAnswer(attempt, test, ans);
             }
@@ -181,7 +197,9 @@ public class TestAttemptService {
      */
     @Transactional
     public List<AttemptSummaryResponseDto> listOwnAttempts(Long studentUserId) {
+        log.debug("listOwnAttempts: student={}", studentUserId);
         List<TestAttempt> attempts = attemptRepository.findByStudentUserId(studentUserId);
+        log.debug("Student {} has {} total attempt(s) across all tests", studentUserId, attempts.size());
         if (attempts.isEmpty()) {
             return List.of();
         }
@@ -213,8 +231,10 @@ public class TestAttemptService {
      */
     @Transactional
     public TestResultResponseDto getResults(Long testId) {
+        log.debug("getResults: test={}", testId);
         Test test = testService.findScoped(testId); // staff institute scoping + existence
         List<TestAttempt> attempts = attemptRepository.findByTestId(testId);
+        log.debug("Test {} has {} attempt(s) total", testId, attempts.size());
         for (TestAttempt a : attempts) {
             finalizeIfExpired(a, test);
         }
@@ -263,6 +283,8 @@ public class TestAttemptService {
     private void grade(TestAttempt attempt, Test test, AttemptStatus finalStatus, LocalDateTime submittedAt) {
         List<TestQuestion> testQuestions = testQuestionRepository.findByTestIdOrderBySortOrderAsc(test.getId());
         List<TestAttemptAnswer> answers = answerRepository.findByAttemptId(attempt.getId());
+        log.debug("Grading attempt {}: {} questions, {} saved answer(s), negativeMarking={}, status->{}",
+                attempt.getId(), testQuestions.size(), answers.size(), test.isNegativeMarking(), finalStatus);
         Map<Long, TestAttemptAnswer> answerByQuestion = answers.stream()
                 .collect(Collectors.toMap(TestAttemptAnswer::getQuestionId, a -> a, (a, b) -> a));
 
@@ -278,6 +300,8 @@ public class TestAttemptService {
                     .map(Option::getId).collect(Collectors.toSet());
 
             GradedAnswer graded = gradeAnswer(selected, correct, marks, negative, test.isNegativeMarking());
+            log.debug("  question={}: selected={}, correct={}, awarded={}, isCorrect={}",
+                    questionId, selected, correct, graded.awarded(), graded.isCorrect());
             total = total.add(graded.awarded());
 
             if (answer != null) {
@@ -288,6 +312,7 @@ public class TestAttemptService {
         }
         // Floor the attempt score at zero (negative marking cannot drive the total below 0).
         if (total.signum() < 0) {
+            log.debug("Attempt {} raw score {} floored to 0", attempt.getId(), total);
             total = BigDecimal.ZERO;
         }
         attempt.setScore(total);
@@ -296,6 +321,8 @@ public class TestAttemptService {
         attempt.setStatus(finalStatus);
         attempt.setSubmittedAt(submittedAt);
         attemptRepository.save(attempt);
+        log.debug("Attempt {} graded: score={}/{}, passed={}, status={}",
+                attempt.getId(), total, test.getTotalMarks(), attempt.getPassed(), finalStatus);
     }
 
     /** Result of grading a single answer: correctness (null = unanswered) and marks awarded. */
@@ -320,6 +347,7 @@ public class TestAttemptService {
     // --- helpers -----------------------------------------------------------
 
     private void upsertAnswer(TestAttempt attempt, Test test, SubmitAnswerRequestDto dto) {
+        log.debug("upsertAnswer: attempt={}, question={}, options={}", attempt.getId(), dto.questionId(), dto.selectedOptionIds());
         // The question must belong to this test.
         TestQuestion tq = testQuestionRepository.findByTestIdAndQuestionId(test.getId(), dto.questionId())
                 .orElseThrow(() -> new IllegalArgumentException(
