@@ -7,6 +7,7 @@ import com.testpire.testpire.dto.response.QuestionResponseDto;
 import com.testpire.testpire.entity.Institute;
 import com.testpire.testpire.enums.DifficultyLevel;
 import com.testpire.testpire.repository.InstituteRepository;
+import com.testpire.testpire.repository.TopicRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -40,6 +41,7 @@ public class CsvUploadService {
     private final QuestionService questionService;
     private final QuestionImageService questionImageService;
     private final InstituteRepository instituteRepository;
+    private final TopicRepository topicRepository;
 
     public BulkUploadResponseDto processBulkUpload(MultipartFile csvFile, Long instituteId, String createdBy) {
         List<String> errors = new ArrayList<>();
@@ -246,9 +248,24 @@ public class CsvUploadService {
             rowErrors.add("Topic ID is required.");
         } else {
             try {
-                topicIdLong = Long.parseLong(topicIdStr);
+                long parsedId = Long.parseLong(topicIdStr);
+                // Verify the numeric id belongs to this institute.
+                topicIdLong = topicRepository.findByIdAndInstituteId(parsedId, instituteId)
+                        .map(t -> t.getId())
+                        .orElse(null);
+                if (topicIdLong == null) {
+                    log.error("topic id :{} does not belong to this institute {} ", topicIdStr, instituteId);
+                    rowErrors.add("Topic ID " + topicIdStr + " does not exist.");
+                }
             } catch (NumberFormatException e) {
-                rowErrors.add("Topic ID must be a number, found \"" + topicIdStr + "\".");
+                // Not a number — treat as a topic code and resolve to an id.
+                topicIdLong = topicRepository.findByCodeAndInstituteId(topicIdStr, instituteId)
+                        .map(t -> t.getId())
+                        .orElse(null);
+                if (topicIdLong == null) {
+                    log.error("topic code :{} does not belong to this institute {} ", topicIdStr, instituteId);
+                    rowErrors.add("Topic code \"" + topicIdStr + "\" does not exist.");
+                }
             }
         }
 
