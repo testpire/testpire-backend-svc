@@ -6,7 +6,7 @@ import lombok.Builder;
 @Builder
 public record CreateOptionRequestDto(
     @NotBlank(message = "Option text is required")
-    @Size(max = 1000, message = "Option text cannot exceed 1000 characters")
+    @Size(max = 2000, message = "Option text cannot exceed 2000 characters")
     String text,
     
     String optionImagePath,

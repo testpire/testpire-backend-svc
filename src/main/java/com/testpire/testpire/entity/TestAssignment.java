@@ -5,7 +5,7 @@ import com.testpire.testpire.enums.AssignmentTargetType;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * Logical assignment of a {@link Test} to a course, batch, or individual student. This is NOT
@@ -46,18 +46,18 @@ public class TestAssignment {
 
     /** Optional per-assignment window start; effective start is the later of this and the test's. */
     @Column(name = "available_from")
-    private LocalDateTime availableFrom;
+    private Instant availableFrom;
 
     /** Optional per-assignment expiry; effective expiry is the earlier of this and the test's. */
     @Column(name = "available_until")
-    private LocalDateTime availableUntil;
+    private Instant availableUntil;
 
     @Builder.Default
     private boolean active = true;
 
     @Builder.Default
     @Column(name = "assigned_at", updatable = false)
-    private LocalDateTime assignedAt = LocalDateTime.now();
+    private Instant assignedAt = Instant.now();
 
     @Column(name = "assigned_by")
     private String assignedBy;

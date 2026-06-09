@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.NoArgsConstructor;
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Data
 @Builder
@@ -121,11 +121,11 @@ public class StudentSearchRequestDto {
         return criteria != null ? criteria.getEnabled() : null;
     }
     
-    public LocalDateTime getCreatedAfter() {
+    public Instant getCreatedAfter() {
         return criteria != null ? criteria.getCreatedAfter() : null;
     }
     
-    public LocalDateTime getCreatedBefore() {
+    public Instant getCreatedBefore() {
         return criteria != null ? criteria.getCreatedBefore() : null;
     }
     

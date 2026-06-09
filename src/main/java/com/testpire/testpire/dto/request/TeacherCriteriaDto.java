@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.NoArgsConstructor;
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Data
 @Builder
@@ -28,7 +28,7 @@ public class TeacherCriteriaDto {
     private String specialization;
     private String bio;
     private Boolean enabled;
-    private LocalDateTime createdAfter;
-    private LocalDateTime createdBefore;
+    private Instant createdAfter;
+    private Instant createdBefore;
     private String createdBy;
 }

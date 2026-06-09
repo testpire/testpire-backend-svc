@@ -7,7 +7,7 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = ApplicationConstants.Database.OPTION_TABLE)
@@ -43,11 +43,11 @@ public class Option implements Serializable {
 
     @Builder.Default
     @Column(name = ApplicationConstants.Database.CREATED_AT_COLUMN)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private Instant createdAt = Instant.now();
 
     @Builder.Default
     @Column(name = ApplicationConstants.Database.UPDATED_AT_COLUMN)
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    private Instant updatedAt = Instant.now();
 
     @Column(name = ApplicationConstants.Database.CREATED_BY_COLUMN)
     private String createdBy;
@@ -63,6 +63,6 @@ public class Option implements Serializable {
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = Instant.now();
     }
 }

@@ -3,7 +3,7 @@ package com.testpire.testpire.dto.request;
 import com.testpire.testpire.enums.AssignmentTargetType;
 import jakarta.validation.constraints.NotNull;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * Assigns a published test to a target. {@code targetId} is a course id, batch id, or student user
@@ -17,7 +17,7 @@ public record AssignTestRequestDto(
         @NotNull(message = "targetId is required")
         Long targetId,
 
-        LocalDateTime availableFrom,
+        Instant availableFrom,
 
-        LocalDateTime availableUntil
+        Instant availableUntil
 ) {}

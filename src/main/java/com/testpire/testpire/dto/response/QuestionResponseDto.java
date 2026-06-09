@@ -1,7 +1,8 @@
 package com.testpire.testpire.dto.response;
 
 import com.testpire.testpire.enums.DifficultyLevel;
-import java.time.LocalDateTime;
+import com.testpire.testpire.enums.TextFormat;
+import java.time.Instant;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -23,9 +24,10 @@ public class QuestionResponseDto {
   Integer marks;
   Integer negativeMarks;
   String explanation;
+  TextFormat textFormat;
   List<OptionResponseDto> options;
-  LocalDateTime createdAt;
-  LocalDateTime updatedAt;
+  Instant createdAt;
+  Instant updatedAt;
   String createdBy;
   String updatedBy;
   Boolean active;

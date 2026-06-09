@@ -5,7 +5,7 @@ import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -191,7 +191,7 @@ public class TopicSpecification {
             criteriaBuilder.equal(root.get("deleted"), false);
     }
 
-    public static Specification<Topic> createdAfter(LocalDateTime createdAfter) {
+    public static Specification<Topic> createdAfter(Instant createdAfter) {
         return (root, query, criteriaBuilder) -> {
             if (createdAfter == null) {
                 return criteriaBuilder.conjunction();
@@ -200,7 +200,7 @@ public class TopicSpecification {
         };
     }
 
-    public static Specification<Topic> createdBefore(LocalDateTime createdBefore) {
+    public static Specification<Topic> createdBefore(Instant createdBefore) {
         return (root, query, criteriaBuilder) -> {
             if (createdBefore == null) {
                 return criteriaBuilder.conjunction();

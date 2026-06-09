@@ -240,7 +240,7 @@ public class TestService {
         return TestResponseDto.detail(test, questions);
     }
 
-    private void validateWindow(java.time.LocalDateTime from, java.time.LocalDateTime until) {
+    private void validateWindow(java.time.Instant from, java.time.Instant until) {
         if (from != null && until != null && until.isBefore(from)) {
             throw new IllegalArgumentException("availableUntil cannot be before availableFrom");
         }

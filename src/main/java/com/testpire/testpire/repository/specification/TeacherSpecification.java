@@ -6,7 +6,7 @@ import com.testpire.testpire.enums.UserRole;
 import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public class TeacherSpecification {
     
@@ -181,14 +181,14 @@ public class TeacherSpecification {
         };
     }
     
-    public static Specification<TeacherDetails> createdAfter(LocalDateTime createdAfter) {
+    public static Specification<TeacherDetails> createdAfter(Instant createdAfter) {
         return (root, query, criteriaBuilder) -> {
             if (createdAfter == null) return null;
             return criteriaBuilder.greaterThanOrEqualTo(root.get("createdAt"), createdAfter);
         };
     }
     
-    public static Specification<TeacherDetails> createdBefore(LocalDateTime createdBefore) {
+    public static Specification<TeacherDetails> createdBefore(Instant createdBefore) {
         return (root, query, criteriaBuilder) -> {
             if (createdBefore == null) return null;
             return criteriaBuilder.lessThanOrEqualTo(root.get("createdAt"), createdBefore);

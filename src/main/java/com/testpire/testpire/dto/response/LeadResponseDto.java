@@ -8,7 +8,7 @@ import com.testpire.testpire.enums.LeadStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record LeadResponseDto(
     Long id,
@@ -33,8 +33,8 @@ public record LeadResponseDto(
     String notes,
     Long convertedUserId,
     Long enrolledCourseId,
-    LocalDateTime createdAt,
-    LocalDateTime updatedAt,
+    Instant createdAt,
+    Instant updatedAt,
     String createdBy,
     String updatedBy
 ) {

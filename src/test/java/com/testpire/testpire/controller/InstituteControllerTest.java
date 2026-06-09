@@ -16,7 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -45,7 +45,7 @@ class InstituteControllerTest extends BaseControllerTest {
                 .id(1L).name("Test Academy").code("TEST01")
                 .email("test@academy.com").phone("+911234567890")
                 .address("123 Main St").active(true)
-                .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now())
+                .createdAt(Instant.now()).updatedAt(Instant.now())
                 .build();
     }
 

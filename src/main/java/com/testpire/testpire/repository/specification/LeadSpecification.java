@@ -7,7 +7,7 @@ import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public class LeadSpecification {
 
@@ -86,12 +86,12 @@ public class LeadSpecification {
             to == null ? null : cb.lessThanOrEqualTo(root.get("nextFollowUpDate"), to);
     }
 
-    public static Specification<Lead> createdAfter(LocalDateTime createdAfter) {
+    public static Specification<Lead> createdAfter(Instant createdAfter) {
         return (root, query, cb) ->
             createdAfter == null ? null : cb.greaterThanOrEqualTo(root.get("createdAt"), createdAfter);
     }
 
-    public static Specification<Lead> createdBefore(LocalDateTime createdBefore) {
+    public static Specification<Lead> createdBefore(Instant createdBefore) {
         return (root, query, cb) ->
             createdBefore == null ? null : cb.lessThanOrEqualTo(root.get("createdAt"), createdBefore);
     }

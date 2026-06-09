@@ -2,7 +2,7 @@ package com.testpire.testpire.dto.response;
 
 import com.testpire.testpire.entity.Subject;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 public record SubjectResponseDto(
@@ -15,8 +15,8 @@ public record SubjectResponseDto(
         String duration,
         Integer credits,
         String prerequisites,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt,
+        Instant createdAt,
+        Instant updatedAt,
         String createdBy,
         String updatedBy,
         boolean active,

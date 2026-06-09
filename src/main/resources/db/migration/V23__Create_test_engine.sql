@@ -13,7 +13,7 @@
 -- ---------------------------------------------------------------------------
 -- tests
 -- ---------------------------------------------------------------------------
-CREATE TABLE tests (
+CREATE TABLE IF NOT EXISTS tests (
     id                BIGSERIAL PRIMARY KEY,
     title             VARCHAR(255) NOT NULL,
     description       TEXT,
@@ -38,8 +38,8 @@ CREATE TABLE tests (
     CONSTRAINT fk_tests_institute FOREIGN KEY (institute_id) REFERENCES institutes (id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_tests_institute_id ON tests (institute_id);
-CREATE INDEX idx_tests_status       ON tests (status);
+CREATE INDEX IF NOT EXISTS idx_tests_institute_id ON tests (institute_id);
+CREATE INDEX IF NOT EXISTS idx_tests_status       ON tests (status);
 
 COMMENT ON TABLE  tests                 IS 'A curated collection of questions taken by students as a timed exam';
 COMMENT ON COLUMN tests.total_marks     IS 'Derived sum of effective per-question marks; recomputed on question changes';
@@ -48,7 +48,7 @@ COMMENT ON COLUMN tests.available_until IS 'Test-level expiry; an assignment may
 -- ---------------------------------------------------------------------------
 -- test_questions  (questions belonging to a test, with per-test mark overrides)
 -- ---------------------------------------------------------------------------
-CREATE TABLE test_questions (
+CREATE TABLE IF NOT EXISTS test_questions (
     id             BIGSERIAL PRIMARY KEY,
     test_id        BIGINT NOT NULL,
     question_id    BIGINT NOT NULL,
@@ -63,13 +63,13 @@ CREATE TABLE test_questions (
     CONSTRAINT uq_test_question UNIQUE (test_id, question_id)
 );
 
-CREATE INDEX idx_test_questions_test_id     ON test_questions (test_id);
-CREATE INDEX idx_test_questions_question_id ON test_questions (question_id);
+CREATE INDEX IF NOT EXISTS idx_test_questions_test_id     ON test_questions (test_id);
+CREATE INDEX IF NOT EXISTS idx_test_questions_question_id ON test_questions (question_id);
 
 -- ---------------------------------------------------------------------------
 -- test_assignments  (logical assignment of a test to a course / batch / student)
 -- ---------------------------------------------------------------------------
-CREATE TABLE test_assignments (
+CREATE TABLE IF NOT EXISTS test_assignments (
     id              BIGSERIAL PRIMARY KEY,
     test_id         BIGINT NOT NULL,
     institute_id    BIGINT NOT NULL,
@@ -86,8 +86,8 @@ CREATE TABLE test_assignments (
     CONSTRAINT uq_test_assignment UNIQUE (test_id, target_type, target_id)
 );
 
-CREATE INDEX idx_test_assignments_test_id ON test_assignments (test_id);
-CREATE INDEX idx_test_assignments_target  ON test_assignments (target_type, target_id);
+CREATE INDEX IF NOT EXISTS idx_test_assignments_test_id ON test_assignments (test_id);
+CREATE INDEX IF NOT EXISTS idx_test_assignments_target  ON test_assignments (target_type, target_id);
 
 COMMENT ON TABLE  test_assignments        IS 'Logical (non-materialized) assignment of a test to a course/batch/student';
 COMMENT ON COLUMN test_assignments.target_id IS 'Resolves against courses.id / batches.id / users.id per target_type';
@@ -95,7 +95,7 @@ COMMENT ON COLUMN test_assignments.target_id IS 'Resolves against courses.id / b
 -- ---------------------------------------------------------------------------
 -- test_attempts  (a student's attempt at a test)
 -- ---------------------------------------------------------------------------
-CREATE TABLE test_attempts (
+CREATE TABLE IF NOT EXISTS test_attempts (
     id              BIGSERIAL PRIMARY KEY,
     test_id         BIGINT NOT NULL,
     assignment_id   BIGINT,                -- the assignment the student qualified through (informational; nullable)
@@ -117,8 +117,8 @@ CREATE TABLE test_attempts (
     CONSTRAINT uq_test_attempt UNIQUE (test_id, student_user_id, attempt_number)
 );
 
-CREATE INDEX idx_test_attempts_student_user_id ON test_attempts (student_user_id);
-CREATE INDEX idx_test_attempts_test_id         ON test_attempts (test_id);
+CREATE INDEX IF NOT EXISTS idx_test_attempts_student_user_id ON test_attempts (student_user_id);
+CREATE INDEX IF NOT EXISTS idx_test_attempts_test_id         ON test_attempts (test_id);
 
 COMMENT ON TABLE  test_attempts            IS 'One row per student attempt at a test; holds the final score';
 COMMENT ON COLUMN test_attempts.expires_at IS 'Hard deadline: min(started_at + duration, effective available_until)';
@@ -126,7 +126,7 @@ COMMENT ON COLUMN test_attempts.expires_at IS 'Hard deadline: min(started_at + d
 -- ---------------------------------------------------------------------------
 -- test_attempt_answers  (a student's answer to one question within an attempt)
 -- ---------------------------------------------------------------------------
-CREATE TABLE test_attempt_answers (
+CREATE TABLE IF NOT EXISTS test_attempt_answers (
     id                 BIGSERIAL PRIMARY KEY,
     attempt_id         BIGINT NOT NULL,
     question_id        BIGINT NOT NULL,
@@ -140,7 +140,7 @@ CREATE TABLE test_attempt_answers (
     CONSTRAINT uq_attempt_answer UNIQUE (attempt_id, question_id)
 );
 
-CREATE INDEX idx_attempt_answers_attempt_id ON test_attempt_answers (attempt_id);
+CREATE INDEX IF NOT EXISTS idx_attempt_answers_attempt_id ON test_attempt_answers (attempt_id);
 
 -- ---------------------------------------------------------------------------
 -- Permission catalog rows (must stay in sync with the Permission enum)
@@ -154,7 +154,8 @@ INSERT INTO permissions (code, description, resource, action) VALUES
     ('TEST_ASSIGN',       'Assign a test to a course/batch/student', 'TEST', 'ASSIGN'),
     ('TEST_RESULTS_READ', 'View every student''s marks for a test',  'TEST', 'RESULTS_READ'),
     ('TEST_TAKE',         'Take a test (start/answer/submit)',   'TEST', 'TAKE'),
-    ('TEST_ATTEMPT_READ', 'View own test attempts/results',      'TEST', 'ATTEMPT_READ');
+    ('TEST_ATTEMPT_READ', 'View own test attempts/results',      'TEST', 'ATTEMPT_READ')
+ON CONFLICT (code) DO NOTHING;
 
 -- Staff management permissions -> TEACHER and above (STAFF_TIER), mirroring QUESTION_*/BATCH_* create/update.
 INSERT INTO role_permissions (role, permission_code)
@@ -163,10 +164,12 @@ FROM (VALUES ('TEACHER'), ('INST_ADMIN'), ('SUPER_ADMIN')) AS r(role)
 CROSS JOIN (VALUES
     ('TEST_CREATE'), ('TEST_UPDATE'), ('TEST_DELETE'), ('TEST_READ'),
     ('TEST_PUBLISH'), ('TEST_ASSIGN'), ('TEST_RESULTS_READ')
-) AS p(code);
+) AS p(code)
+ON CONFLICT (role, permission_code) DO NOTHING;
 
 -- Test-taking permissions -> every role incl. STUDENT (ALL_TIER), mirroring BATCH_READ.
 INSERT INTO role_permissions (role, permission_code)
 SELECT r.role, p.code
 FROM (VALUES ('STUDENT'), ('TEACHER'), ('INST_ADMIN'), ('SUPER_ADMIN')) AS r(role)
-CROSS JOIN (VALUES ('TEST_TAKE'), ('TEST_ATTEMPT_READ')) AS p(code);
+CROSS JOIN (VALUES ('TEST_TAKE'), ('TEST_ATTEMPT_READ')) AS p(code)
+ON CONFLICT (role, permission_code) DO NOTHING;

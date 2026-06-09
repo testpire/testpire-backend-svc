@@ -2,7 +2,7 @@ package com.testpire.testpire.dto.response;
 
 import lombok.Builder;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Builder
 public record OptionResponseDto(
@@ -12,8 +12,8 @@ public record OptionResponseDto(
     Long questionId,
     Integer optionOrder,
     Boolean isCorrect,
-    LocalDateTime createdAt,
-    LocalDateTime updatedAt,
+    Instant createdAt,
+    Instant updatedAt,
     String createdBy,
     String updatedBy,
     Boolean active

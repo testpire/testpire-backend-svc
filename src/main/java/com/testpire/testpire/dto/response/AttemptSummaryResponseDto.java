@@ -3,7 +3,7 @@ package com.testpire.testpire.dto.response;
 import com.testpire.testpire.enums.AttemptStatus;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * One row in a student's attempt history (the "Results" tab list). A trimmed-down sibling of
@@ -20,5 +20,5 @@ public record AttemptSummaryResponseDto(
         BigDecimal score,
         BigDecimal maxScore,
         Boolean passed,
-        LocalDateTime submittedAt
+        Instant submittedAt
 ) {}

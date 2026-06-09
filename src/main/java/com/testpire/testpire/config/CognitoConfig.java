@@ -22,13 +22,13 @@ public class CognitoConfig {
   @Value("${aws.cognito.clientId}")
   private String clientId;
 
-  /*@Bean
+  @Bean
   public FlywayMigrationStrategy flywayMigrationStrategy() {
     return flyway -> {
       flyway.repair();   // realign stored checksums with the files
       flyway.migrate();
     };
-  }*/
+  }
 
   @Bean
   public CognitoIdentityProviderClient cognitoClient(AwsCredentialsProvider awsCredentialsProvider) {

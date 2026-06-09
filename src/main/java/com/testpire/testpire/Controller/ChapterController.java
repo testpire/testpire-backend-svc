@@ -8,7 +8,9 @@ import com.testpire.testpire.dto.request.CreateChapterRequestDto;
 import com.testpire.testpire.dto.request.PaginationRequestDto;
 import com.testpire.testpire.dto.request.SortingRequestDto;
 import com.testpire.testpire.dto.request.UpdateChapterRequestDto;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import com.testpire.testpire.dto.response.ApiResponseDto;
 import com.testpire.testpire.dto.response.ChapterListResponseDto;
@@ -441,13 +443,13 @@ public class ChapterController {
             log.info("Advanced search for chapters with GET parameters");
             
             // Parse date strings to LocalDateTime
-            LocalDateTime parsedCreatedAfter = null;
-            LocalDateTime parsedCreatedBefore = null;
+            Instant parsedCreatedAfter = null;
+            Instant parsedCreatedBefore = null;
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             
             if (createdAfter != null && !createdAfter.trim().isEmpty()) {
                 try {
-                    parsedCreatedAfter = LocalDateTime.parse(createdAfter + " 00:00:00", formatter);
+                    parsedCreatedAfter = LocalDateTime.parse(createdAfter + " 00:00:00", formatter).toInstant(ZoneOffset.UTC);
                 } catch (Exception e) {
                     log.warn("Invalid createdAfter date format: {}", createdAfter);
                 }
@@ -455,7 +457,7 @@ public class ChapterController {
             
             if (createdBefore != null && !createdBefore.trim().isEmpty()) {
                 try {
-                    parsedCreatedBefore = LocalDateTime.parse(createdBefore + " 23:59:59", formatter);
+                    parsedCreatedBefore = LocalDateTime.parse(createdBefore + " 23:59:59", formatter).toInstant(ZoneOffset.UTC);
                 } catch (Exception e) {
                     log.warn("Invalid createdBefore date format: {}", createdBefore);
                 }

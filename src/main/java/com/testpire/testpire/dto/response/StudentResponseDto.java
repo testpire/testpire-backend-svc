@@ -4,7 +4,7 @@ import com.testpire.testpire.entity.User;
 import com.testpire.testpire.enums.Gender;
 import com.testpire.testpire.enums.UserRole;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 public record StudentResponseDto(
@@ -28,8 +28,8 @@ public record StudentResponseDto(
     LocalDate dateOfBirth,
     String bloodGroup,
     String emergencyContact,
-    LocalDateTime createdAt,
-    LocalDateTime updatedAt,
+    Instant createdAt,
+    Instant updatedAt,
     List<EnrollmentResponseDto> enrollments
 ) {
     /**

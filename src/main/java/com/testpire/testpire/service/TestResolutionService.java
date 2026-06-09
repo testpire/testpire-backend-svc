@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -85,7 +85,7 @@ public class TestResolutionService {
             log.debug("Student {} has no assigned tests", studentUserId);
             return List.of();
         }
-        LocalDateTime now = LocalDateTime.now();
+        Instant now = Instant.now();
         log.debug("Evaluating {} candidate test(s) for student {} at {}", byTest.size(), studentUserId, now);
         List<AvailableTestResponseDto> result = new ArrayList<>();
         for (Test test : testRepository.findAllById(byTest.keySet())) {
@@ -94,8 +94,8 @@ public class TestResolutionService {
                 continue;
             }
             TestAssignment assignment = byTest.get(test.getId());
-            LocalDateTime from = laterOf(test.getAvailableFrom(), assignment.getAvailableFrom());
-            LocalDateTime until = earlierOf(test.getAvailableUntil(), assignment.getAvailableUntil());
+            Instant from = laterOf(test.getAvailableFrom(), assignment.getAvailableFrom());
+            Instant until = earlierOf(test.getAvailableUntil(), assignment.getAvailableUntil());
             if (from != null && now.isBefore(from)) {
                 log.debug("  test {} skipped: not open yet (opens {})", test.getId(), from);
                 continue;   // not open yet
@@ -138,9 +138,9 @@ public class TestResolutionService {
             log.debug("Student {} has no qualifying assignment for test {}", studentUserId, test.getId());
             throw new IllegalStateException("You are not assigned this test");
         }
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime from = laterOf(test.getAvailableFrom(), assignment.getAvailableFrom());
-        LocalDateTime until = earlierOf(test.getAvailableUntil(), assignment.getAvailableUntil());
+        Instant now = Instant.now();
+        Instant from = laterOf(test.getAvailableFrom(), assignment.getAvailableFrom());
+        Instant until = earlierOf(test.getAvailableUntil(), assignment.getAvailableUntil());
         log.debug("Eligibility window for student {} on test {}: from={}, until={}, now={}", studentUserId, test.getId(), from, until, now);
         if (from != null && now.isBefore(from)) {
             throw new IllegalStateException("This test is not open yet");
@@ -154,23 +154,23 @@ public class TestResolutionService {
     }
 
     /** Effective expiry of the test for this student (test window narrowed by assignment window). */
-    public LocalDateTime effectiveUntil(Test test, TestAssignment assignment) {
+    public Instant effectiveUntil(Test test, TestAssignment assignment) {
         return earlierOf(test.getAvailableUntil(), assignment == null ? null : assignment.getAvailableUntil());
     }
 
-    private static boolean isWiderUntil(LocalDateTime candidate, LocalDateTime current) {
+    private static boolean isWiderUntil(Instant candidate, Instant current) {
         if (candidate == null) return true;          // null = no expiry = widest
         if (current == null) return false;
         return candidate.isAfter(current);
     }
 
-    private static LocalDateTime laterOf(LocalDateTime a, LocalDateTime b) {
+    private static Instant laterOf(Instant a, Instant b) {
         if (a == null) return b;
         if (b == null) return a;
         return a.isAfter(b) ? a : b;
     }
 
-    private static LocalDateTime earlierOf(LocalDateTime a, LocalDateTime b) {
+    private static Instant earlierOf(Instant a, Instant b) {
         if (a == null) return b;
         if (b == null) return a;
         return a.isBefore(b) ? a : b;

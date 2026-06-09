@@ -3,7 +3,7 @@ package com.testpire.testpire.dto.response;
 import com.testpire.testpire.entity.TestAssignment;
 import com.testpire.testpire.enums.AssignmentTargetType;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record TestAssignmentResponseDto(
         Long id,
@@ -12,10 +12,10 @@ public record TestAssignmentResponseDto(
         Long targetId,
         // Human-friendly name of the target (course/batch name or student username); may be null.
         String targetName,
-        LocalDateTime availableFrom,
-        LocalDateTime availableUntil,
+        Instant availableFrom,
+        Instant availableUntil,
         boolean active,
-        LocalDateTime assignedAt,
+        Instant assignedAt,
         String assignedBy
 ) {
     public static TestAssignmentResponseDto fromEntity(TestAssignment a, String targetName) {

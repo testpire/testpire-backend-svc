@@ -8,7 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Data
 @Builder
@@ -29,7 +29,7 @@ public class LeadCriteriaDto {
     private Boolean converted;
     private LocalDate followUpFrom;
     private LocalDate followUpTo;
-    private LocalDateTime createdAfter;
-    private LocalDateTime createdBefore;
+    private Instant createdAfter;
+    private Instant createdBefore;
     private String createdBy;
 }

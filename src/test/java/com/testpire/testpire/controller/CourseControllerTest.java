@@ -15,7 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -45,7 +45,7 @@ class CourseControllerTest extends BaseControllerTest {
     private static CourseResponseDto sampleCourse() {
         return new CourseResponseDto(1L, "Physics 101", "Intro to Physics", "PHY101",
                 2L, "60 hours", "BEGINNER", null, new BigDecimal("25000.00"),
-                LocalDateTime.now(), LocalDateTime.now(), "admin@test.com", null, true, List.of());
+                Instant.now(), Instant.now(), "admin@test.com", null, true, List.of());
     }
 
     // ── CREATE ───────────────────────────────────────────────────────────────
@@ -139,7 +139,7 @@ class CourseControllerTest extends BaseControllerTest {
     void updateCourse_validRequest_returns200() throws Exception {
         CourseResponseDto updated = new CourseResponseDto(1L, "Physics Updated", "Updated",
                 "PHY101", 2L, "60 hours", "INTERMEDIATE", null, new BigDecimal("30000.00"),
-                LocalDateTime.now(), LocalDateTime.now(), "admin@test.com", "admin@test.com", true, List.of());
+                Instant.now(), Instant.now(), "admin@test.com", "admin@test.com", true, List.of());
         when(courseService.updateCourse(eq(1L), any())).thenReturn(updated);
 
         mockMvc.perform(put("/api/courses/1")

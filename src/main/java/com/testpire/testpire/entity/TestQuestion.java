@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * Join row placing a {@link Question} into a {@link Test}, with optional per-test mark overrides.
@@ -48,7 +48,7 @@ public class TestQuestion {
 
     @Builder.Default
     @Column(name = "added_at", updatable = false)
-    private LocalDateTime addedAt = LocalDateTime.now();
+    private Instant addedAt = Instant.now();
 
     @Column(name = "added_by")
     private String addedBy;

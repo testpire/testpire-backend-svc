@@ -6,6 +6,7 @@ import com.testpire.testpire.dto.response.BulkUploadResponseDto;
 import com.testpire.testpire.dto.response.QuestionResponseDto;
 import com.testpire.testpire.entity.Institute;
 import com.testpire.testpire.enums.DifficultyLevel;
+import com.testpire.testpire.enums.TextFormat;
 import com.testpire.testpire.repository.InstituteRepository;
 import com.testpire.testpire.repository.TopicRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,8 +32,8 @@ public class CsvUploadService {
     /** Fixed (non-option) columns, in order, that every CSV must start with. */
     static final List<String> FIXED_HEADERS = List.of(
             "Question Id", "Question Text", "Question Image URL", "Difficulty Level", "Question Type",
-            "Marks", "Negative Marks", "Explanation", "Topic ID");
-    private static final int FIXED_COLUMN_COUNT = FIXED_HEADERS.size(); // 9
+            "Marks", "Negative Marks", "Explanation", "Topic ID", "Text Format");
+    private static final int FIXED_COLUMN_COUNT = FIXED_HEADERS.size(); // 10
     private static final int OPTION_GROUP_SIZE = 3; // Text, Image URL, IsCorrect
 
     private static final Set<String> TRUE_VALUES = Set.of("true", "1", "yes");
@@ -218,6 +219,7 @@ public class CsvUploadService {
         String difficultyStr = unquote(columns[3]);
         String questionType = unquote(columns[4]);
         String explanation = unquote(columns[7]);
+        String textFormatStr = unquote(columns[9]);
 
         if (questionText.isEmpty()) {
             rowErrors.add("Question Text is required.");
@@ -237,6 +239,15 @@ public class CsvUploadService {
 
         if (questionType.isEmpty()) {
             rowErrors.add("Question Type is required.");
+        }
+
+        TextFormat textFormat = TextFormat.PLAIN;
+        if (!textFormatStr.isEmpty()) {
+            try {
+                textFormat = TextFormat.valueOf(textFormatStr.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                rowErrors.add("Invalid Text Format \"" + textFormatStr + "\". Allowed: PLAIN, LATEX.");
+            }
         }
 
         Integer marks = parseIntField(unquote(columns[5]), "Marks", 1, rowErrors);
@@ -351,6 +362,7 @@ public class CsvUploadService {
                 .topicId(topicIdLong)
                 .negativeMarks(negativeMarks)
                 .explanation(explanation)
+                .textFormat(textFormat)
                 .options(options)
                 .build();
     }
@@ -358,6 +370,7 @@ public class CsvUploadService {
     private String unquote(String value) {
         return value == null ? "" : value.replace("\"", "").trim();
     }
+
 
     /** Empty -> default; present-but-invalid -> records an error and returns the default. */
     private Integer parseIntField(String value, String fieldName, int defaultValue, List<String> rowErrors) {

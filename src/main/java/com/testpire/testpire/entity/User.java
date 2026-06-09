@@ -12,7 +12,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = ApplicationConstants.Database.USERS_TABLE)
@@ -62,11 +62,11 @@ public class User {
     
     @Builder.Default
     @Column(name = ApplicationConstants.Database.CREATED_AT_COLUMN)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private Instant createdAt = Instant.now();
     
     @Builder.Default
     @Column(name = ApplicationConstants.Database.UPDATED_AT_COLUMN)
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    private Instant updatedAt = Instant.now();
     
     @Column(name = ApplicationConstants.Database.CREATED_BY_COLUMN)
     private String createdBy;
@@ -76,6 +76,6 @@ public class User {
     
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = Instant.now();
     }
 } 

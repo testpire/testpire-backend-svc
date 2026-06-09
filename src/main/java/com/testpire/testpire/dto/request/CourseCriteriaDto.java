@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.NoArgsConstructor;
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Data
 @Builder
@@ -26,7 +26,7 @@ public class CourseCriteriaDto {
     private Boolean hasSubjects;
     private Integer minSubjects;
     private Integer maxSubjects;
-    private LocalDateTime createdAfter;
-    private LocalDateTime createdBefore;
+    private Instant createdAfter;
+    private Instant createdBefore;
     private String createdBy;
 }

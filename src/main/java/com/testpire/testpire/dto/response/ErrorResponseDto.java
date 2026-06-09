@@ -1,13 +1,13 @@
 package com.testpire.testpire.dto.response;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 public record ErrorResponseDto(
     String message,
     String error,
     int status,
-    LocalDateTime timestamp,
+    Instant timestamp,
     String path,
     List<String> details
 ) {
@@ -16,7 +16,7 @@ public record ErrorResponseDto(
             message,
             error,
             status,
-            LocalDateTime.now(),
+            Instant.now(),
             path,
             List.of()
         );
@@ -27,7 +27,7 @@ public record ErrorResponseDto(
             message,
             error,
             status,
-            LocalDateTime.now(),
+            Instant.now(),
             path,
             details
         );

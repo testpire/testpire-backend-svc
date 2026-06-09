@@ -31,7 +31,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 import java.util.List;
@@ -519,19 +521,19 @@ public class StudentController {
             log.info("Advanced search for students with GET parameters");
             
             // Parse date parameters
-            LocalDateTime parsedCreatedAfter = null;
+            Instant parsedCreatedAfter = null;
             if (createdAfter != null && !createdAfter.isEmpty()) {
                 try {
-                    parsedCreatedAfter = LocalDateTime.parse(createdAfter, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                    parsedCreatedAfter = LocalDateTime.parse(createdAfter, DateTimeFormatter.ISO_LOCAL_DATE_TIME).toInstant(ZoneOffset.UTC);
                 } catch (Exception e) {
                     log.warn("Invalid createdAfter date format: {}", createdAfter);
                 }
             }
             
-            LocalDateTime parsedCreatedBefore = null;
+            Instant parsedCreatedBefore = null;
             if (createdBefore != null && !createdBefore.isEmpty()) {
                 try {
-                    parsedCreatedBefore = LocalDateTime.parse(createdBefore, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                    parsedCreatedBefore = LocalDateTime.parse(createdBefore, DateTimeFormatter.ISO_LOCAL_DATE_TIME).toInstant(ZoneOffset.UTC);
                 } catch (Exception e) {
                     log.warn("Invalid createdBefore date format: {}", createdBefore);
                 }

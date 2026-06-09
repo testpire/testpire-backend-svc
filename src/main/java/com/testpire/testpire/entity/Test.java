@@ -8,7 +8,7 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -80,11 +80,11 @@ public class Test {
 
     /** Test-level availability window start; {@code null} = always open once published. */
     @Column(name = "available_from")
-    private LocalDateTime availableFrom;
+    private Instant availableFrom;
 
     /** Test-level expiry; {@code null} = no expiry. An assignment may narrow but not widen this. */
     @Column(name = "available_until")
-    private LocalDateTime availableUntil;
+    private Instant availableUntil;
 
     @Builder.Default
     private boolean active = true;
@@ -94,11 +94,11 @@ public class Test {
 
     @Builder.Default
     @Column(name = ApplicationConstants.Database.CREATED_AT_COLUMN)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private Instant createdAt = Instant.now();
 
     @Builder.Default
     @Column(name = ApplicationConstants.Database.UPDATED_AT_COLUMN)
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    private Instant updatedAt = Instant.now();
 
     @Column(name = ApplicationConstants.Database.CREATED_BY_COLUMN)
     private String createdBy;
@@ -113,6 +113,6 @@ public class Test {
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = Instant.now();
     }
 }

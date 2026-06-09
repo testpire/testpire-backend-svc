@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * A student's answer to one {@link Question} within a {@link TestAttempt}. {@link #selectedOptionIds}
@@ -47,5 +47,5 @@ public class TestAttemptAnswer {
 
     @Builder.Default
     @Column(name = "answered_at")
-    private LocalDateTime answeredAt = LocalDateTime.now();
+    private Instant answeredAt = Instant.now();
 }

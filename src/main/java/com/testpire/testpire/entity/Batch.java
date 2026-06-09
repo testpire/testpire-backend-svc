@@ -8,7 +8,7 @@ import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * A batch/cohort under a {@link Course} (e.g. course "IIT" -> batches "IIT-B01", "IIT-B02"). A course
@@ -68,11 +68,11 @@ public class Batch {
 
     @Builder.Default
     @Column(name = ApplicationConstants.Database.CREATED_AT_COLUMN)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private Instant createdAt = Instant.now();
 
     @Builder.Default
     @Column(name = ApplicationConstants.Database.UPDATED_AT_COLUMN)
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    private Instant updatedAt = Instant.now();
 
     @Column(name = ApplicationConstants.Database.CREATED_BY_COLUMN)
     private String createdBy;
@@ -82,6 +82,6 @@ public class Batch {
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = Instant.now();
     }
 }

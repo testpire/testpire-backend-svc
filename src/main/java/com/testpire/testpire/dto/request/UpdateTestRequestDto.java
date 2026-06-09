@@ -4,7 +4,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * Partial update of a test's metadata. All fields are optional; null = leave unchanged. Questions,
@@ -33,7 +33,7 @@ public record UpdateTestRequestDto(
 
         Boolean active,
 
-        LocalDateTime availableFrom,
+        Instant availableFrom,
 
-        LocalDateTime availableUntil
+        Instant availableUntil
 ) {}

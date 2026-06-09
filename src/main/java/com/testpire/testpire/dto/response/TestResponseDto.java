@@ -4,7 +4,7 @@ import com.testpire.testpire.entity.Test;
 import com.testpire.testpire.enums.TestStatus;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -24,12 +24,12 @@ public record TestResponseDto(
         boolean shuffleQuestions,
         boolean showAnswers,
         TestStatus status,
-        LocalDateTime availableFrom,
-        LocalDateTime availableUntil,
+        Instant availableFrom,
+        Instant availableUntil,
         boolean active,
         int questionCount,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt,
+        Instant createdAt,
+        Instant updatedAt,
         String createdBy,
         String updatedBy,
         List<TestQuestionResponseDto> questions

@@ -11,7 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -31,7 +31,7 @@ class CourseServiceTest {
         return Course.builder()
                 .id(id).name("Physics 101").code(code)
                 .instituteId(2L).duration("60 hours").level("BEGINNER")
-                .active(true).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now())
+                .active(true).createdAt(Instant.now()).updatedAt(Instant.now())
                 .build();
     }
 

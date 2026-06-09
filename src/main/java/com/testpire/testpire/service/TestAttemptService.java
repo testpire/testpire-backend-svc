@@ -27,7 +27,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -92,10 +93,10 @@ public class TestAttemptService {
         log.debug("Creating new attempt for student {} on test {} (attempt #{} of {})",
                 studentUserId, testId, existing.size() + 1, test.getMaxAttempts());
 
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime durationDeadline = test.getDurationMinutes() != null
-                ? now.plusMinutes(test.getDurationMinutes()) : null;
-        LocalDateTime expiresAt = earlierOf(durationDeadline, resolutionService.effectiveUntil(test, assignment));
+        Instant now = Instant.now();
+        Instant durationDeadline = test.getDurationMinutes() != null
+                ? now.plus(test.getDurationMinutes(), ChronoUnit.MINUTES) : null;
+        Instant expiresAt = earlierOf(durationDeadline, resolutionService.effectiveUntil(test, assignment));
 
         TestAttempt attempt = TestAttempt.builder()
                 .testId(testId)
@@ -155,7 +156,7 @@ public class TestAttemptService {
                 upsertAnswer(attempt, test, ans);
             }
         }
-        grade(attempt, test, AttemptStatus.GRADED, LocalDateTime.now());
+        grade(attempt, test, AttemptStatus.GRADED, Instant.now());
         log.info("Student {} submitted attempt {} (score {}/{})",
                 studentUserId, attemptId, attempt.getScore(), attempt.getMaxScore());
         return buildAttemptResponse(attempt, test);
@@ -272,7 +273,7 @@ public class TestAttemptService {
     private boolean finalizeIfExpired(TestAttempt attempt, Test test) {
         if (attempt.getStatus() == AttemptStatus.IN_PROGRESS
                 && attempt.getExpiresAt() != null
-                && LocalDateTime.now().isAfter(attempt.getExpiresAt())) {
+                && Instant.now().isAfter(attempt.getExpiresAt())) {
             grade(attempt, test, AttemptStatus.AUTO_SUBMITTED, attempt.getExpiresAt());
             log.info("Attempt {} auto-submitted (deadline {})", attempt.getId(), attempt.getExpiresAt());
             return true;
@@ -280,7 +281,7 @@ public class TestAttemptService {
         return false;
     }
 
-    private void grade(TestAttempt attempt, Test test, AttemptStatus finalStatus, LocalDateTime submittedAt) {
+    private void grade(TestAttempt attempt, Test test, AttemptStatus finalStatus, Instant submittedAt) {
         List<TestQuestion> testQuestions = testQuestionRepository.findByTestIdOrderBySortOrderAsc(test.getId());
         List<TestAttemptAnswer> answers = answerRepository.findByAttemptId(attempt.getId());
         log.debug("Grading attempt {}: {} questions, {} saved answer(s), negativeMarking={}, status->{}",
@@ -375,7 +376,7 @@ public class TestAttemptService {
                         .questionId(dto.questionId())
                         .build());
         answer.setSelectedOptionIds(csv);
-        answer.setAnsweredAt(LocalDateTime.now());
+        answer.setAnsweredAt(Instant.now());
         answerRepository.save(answer);
     }
 
@@ -455,7 +456,7 @@ public class TestAttemptService {
         return ids;
     }
 
-    private static LocalDateTime earlierOf(LocalDateTime a, LocalDateTime b) {
+    private static Instant earlierOf(Instant a, Instant b) {
         if (a == null) return b;
         if (b == null) return a;
         return a.isBefore(b) ? a : b;

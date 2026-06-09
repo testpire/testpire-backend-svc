@@ -4,7 +4,7 @@ import com.testpire.testpire.entity.Batch;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record BatchResponseDto(
         Long id,
@@ -23,8 +23,8 @@ public record BatchResponseDto(
         // true when this batch has no override and is following the course fee.
         boolean feeInherited,
         boolean active,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt,
+        Instant createdAt,
+        Instant updatedAt,
         String createdBy,
         String updatedBy
 ) {

@@ -11,6 +11,7 @@ import com.testpire.testpire.entity.Option;
 import com.testpire.testpire.entity.Question;
 import com.testpire.testpire.entity.Topic;
 import com.testpire.testpire.enums.DifficultyLevel;
+import com.testpire.testpire.enums.TextFormat;
 import com.testpire.testpire.repository.InstituteRepository;
 import com.testpire.testpire.repository.OptionRepository;
 import com.testpire.testpire.repository.QuestionRepository;
@@ -70,6 +71,7 @@ public class QuestionService {
                 .marks(request.marks())
                 .negativeMarks(request.negativeMarks())
                 .explanation(request.explanation())
+                .textFormat(request.textFormat() != null ? request.textFormat() : TextFormat.PLAIN)
                 .createdBy(getCurrentUsername())
                 .build();
 
@@ -113,6 +115,7 @@ public class QuestionService {
         question.setMarks(request.marks());
         question.setNegativeMarks(request.negativeMarks());
         question.setExplanation(request.explanation());
+        question.setTextFormat(request.textFormat() != null ? request.textFormat() : TextFormat.PLAIN);
         question.setUpdatedBy(getCurrentUsername());
         question = questionRepository.save(question);
 
@@ -204,6 +207,7 @@ public class QuestionService {
                 .marks(question.getMarks())
                 .negativeMarks(question.getNegativeMarks())
                 .explanation(question.getExplanation())
+                .textFormat(question.getTextFormat())
                 .options(options.stream()
                         .map(this::convertOptionToResponseDto)
                         .toList())
@@ -245,6 +249,7 @@ public class QuestionService {
         question.setMarks(request.marks());
         question.setNegativeMarks(request.negativeMarks());
         question.setExplanation(request.explanation());
+        question.setTextFormat(request.textFormat() != null ? request.textFormat() : TextFormat.PLAIN);
         question.setUpdatedBy(getCurrentUsername());
 
         if (request.active() != null) {

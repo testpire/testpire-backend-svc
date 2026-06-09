@@ -10,7 +10,7 @@
 -- ---------------------------------------------------------------------------
 -- batches
 -- ---------------------------------------------------------------------------
-CREATE TABLE batches (
+CREATE TABLE IF NOT EXISTS batches (
     id           BIGSERIAL PRIMARY KEY,
     name         VARCHAR(100) NOT NULL,
     code         VARCHAR(20),
@@ -31,12 +31,12 @@ CREATE TABLE batches (
     CONSTRAINT fk_batches_institute FOREIGN KEY (institute_id) REFERENCES institutes (id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_batches_course_id    ON batches (course_id);
-CREATE INDEX idx_batches_institute_id ON batches (institute_id);
+CREATE INDEX IF NOT EXISTS idx_batches_course_id    ON batches (course_id);
+CREATE INDEX IF NOT EXISTS idx_batches_institute_id ON batches (institute_id);
 
 -- Batch name is unique within a course (ignoring soft-deleted rows); code is unique within a course when present.
-CREATE UNIQUE INDEX idx_batches_course_name ON batches (course_id, LOWER(name)) WHERE deleted = FALSE;
-CREATE UNIQUE INDEX idx_batches_course_code ON batches (course_id, code)        WHERE code IS NOT NULL AND deleted = FALSE;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_batches_course_name ON batches (course_id, LOWER(name)) WHERE deleted = FALSE;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_batches_course_code ON batches (course_id, code)        WHERE code IS NOT NULL AND deleted = FALSE;
 
 COMMENT ON TABLE  batches             IS 'Cohorts/sections under a course (e.g. IIT-B01, IIT-B02)';
 COMMENT ON COLUMN batches.course_id   IS 'Parent course (1 course : N batches)';
@@ -45,7 +45,7 @@ COMMENT ON COLUMN batches.capacity    IS 'Optional maximum number of students in
 -- ---------------------------------------------------------------------------
 -- student_enrollments
 -- ---------------------------------------------------------------------------
-CREATE TABLE student_enrollments (
+CREATE TABLE IF NOT EXISTS student_enrollments (
     id              BIGSERIAL PRIMARY KEY,
     student_user_id BIGINT NOT NULL,
     course_id       BIGINT NOT NULL,
@@ -65,9 +65,9 @@ CREATE TABLE student_enrollments (
     CONSTRAINT uq_enrollment_student_course UNIQUE (student_user_id, course_id)
 );
 
-CREATE INDEX idx_enrollments_student_user_id ON student_enrollments (student_user_id);
-CREATE INDEX idx_enrollments_course_id        ON student_enrollments (course_id);
-CREATE INDEX idx_enrollments_batch_id         ON student_enrollments (batch_id);
+CREATE INDEX IF NOT EXISTS idx_enrollments_student_user_id ON student_enrollments (student_user_id);
+CREATE INDEX IF NOT EXISTS idx_enrollments_course_id        ON student_enrollments (course_id);
+CREATE INDEX IF NOT EXISTS idx_enrollments_batch_id         ON student_enrollments (batch_id);
 
 COMMENT ON TABLE  student_enrollments IS 'Links a student to a course + batch; at most one batch per course per student';
 
@@ -78,13 +78,15 @@ INSERT INTO permissions (code, description, resource, action) VALUES
     ('BATCH_CREATE', 'Create a batch',         'BATCH', 'CREATE'),
     ('BATCH_UPDATE', 'Update a batch',         'BATCH', 'UPDATE'),
     ('BATCH_DELETE', 'Delete a batch',         'BATCH', 'DELETE'),
-    ('BATCH_READ',   'View/search batches',    'BATCH', 'READ');
+    ('BATCH_READ',   'View/search batches',    'BATCH', 'READ')
+ON CONFLICT (code) DO NOTHING;
 
 -- BATCH_READ -> every role (ALL_TIER), mirroring COURSE_READ.
 INSERT INTO role_permissions (role, permission_code)
 SELECT r.role, p.code
 FROM (VALUES ('STUDENT'), ('TEACHER'), ('INST_ADMIN'), ('SUPER_ADMIN')) AS r(role)
-CROSS JOIN (VALUES ('BATCH_READ')) AS p(code);
+CROSS JOIN (VALUES ('BATCH_READ')) AS p(code)
+ON CONFLICT (role, permission_code) DO NOTHING;
 
 -- BATCH_CREATE/UPDATE/DELETE -> TEACHER and above (STAFF_TIER), mirroring COURSE create/update/delete.
 INSERT INTO role_permissions (role, permission_code)
@@ -92,4 +94,5 @@ SELECT r.role, p.code
 FROM (VALUES ('TEACHER'), ('INST_ADMIN'), ('SUPER_ADMIN')) AS r(role)
 CROSS JOIN (VALUES
     ('BATCH_CREATE'), ('BATCH_UPDATE'), ('BATCH_DELETE')
-) AS p(code);
+) AS p(code)
+ON CONFLICT (role, permission_code) DO NOTHING;

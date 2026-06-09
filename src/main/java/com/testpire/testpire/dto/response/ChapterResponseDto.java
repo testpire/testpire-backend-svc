@@ -2,7 +2,7 @@ package com.testpire.testpire.dto.response;
 
 import com.testpire.testpire.entity.Chapter;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 public record ChapterResponseDto(
@@ -15,8 +15,8 @@ public record ChapterResponseDto(
         Integer orderIndex,
         String duration,
         String objectives,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt,
+        Instant createdAt,
+        Instant updatedAt,
         String createdBy,
         String updatedBy,
         boolean active,

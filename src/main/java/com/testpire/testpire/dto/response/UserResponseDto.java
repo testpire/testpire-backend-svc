@@ -2,7 +2,7 @@ package com.testpire.testpire.dto.response;
 
 import com.testpire.testpire.entity.User;
 import com.testpire.testpire.enums.UserRole;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record UserResponseDto(
     Long id,
@@ -13,8 +13,8 @@ public record UserResponseDto(
     UserRole role,
     Boolean enabled,
     Long instituteId,
-    LocalDateTime createdAt,
-    LocalDateTime updatedAt
+    Instant createdAt,
+    Instant updatedAt
 ) {
     public static UserResponseDto fromEntity(User user) {
         return new UserResponseDto(

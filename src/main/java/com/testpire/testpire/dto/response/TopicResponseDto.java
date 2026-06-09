@@ -2,7 +2,7 @@ package com.testpire.testpire.dto.response;
 
 import com.testpire.testpire.entity.Topic;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record TopicResponseDto(
         Long id,
@@ -15,8 +15,8 @@ public record TopicResponseDto(
         String duration,
         String content,
         String learningOutcomes,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt,
+        Instant createdAt,
+        Instant updatedAt,
         String createdBy,
         String updatedBy,
         boolean active

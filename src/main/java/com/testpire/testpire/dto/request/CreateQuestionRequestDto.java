@@ -1,6 +1,7 @@
 package com.testpire.testpire.dto.request;
 
 import com.testpire.testpire.enums.DifficultyLevel;
+import com.testpire.testpire.enums.TextFormat;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.Builder;
@@ -10,7 +11,7 @@ import java.util.List;
 @Builder
 public record CreateQuestionRequestDto(
     @NotBlank(message = "Question text is required")
-    @Size(max = 2000, message = "Question text cannot exceed 2000 characters")
+    @Size(max = 5000, message = "Question text cannot exceed 5000 characters")
     String text,
     
     String questionImagePath,
@@ -37,8 +38,10 @@ public record CreateQuestionRequestDto(
     @Max(value = 50, message = "Negative marks cannot exceed 50")
     Integer negativeMarks,
     
-    @Size(max = 2000, message = "Explanation cannot exceed 2000 characters")
+    @Size(max = 5000, message = "Explanation cannot exceed 5000 characters")
     String explanation,
+
+    TextFormat textFormat,
     
     @NotEmpty(message = "At least one option is required")
     @Size(min = 2, max = 6, message = "Question must have between 2 and 6 options")
@@ -58,6 +61,7 @@ public record CreateQuestionRequestDto(
                 .marks(marks)
                 .negativeMarks(negativeMarks)
                 .explanation(explanation)
+                .textFormat(textFormat)
                 .options(options)
                 .build();
     }

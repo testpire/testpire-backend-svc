@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,14 +54,14 @@ public class TestAttempt {
 
     @Builder.Default
     @Column(name = "started_at")
-    private LocalDateTime startedAt = LocalDateTime.now();
+    private Instant startedAt = Instant.now();
 
     @Column(name = "submitted_at")
-    private LocalDateTime submittedAt;
+    private Instant submittedAt;
 
     /** Hard deadline: min(startedAt + duration, effective availableUntil). Null = untimed/no expiry. */
     @Column(name = "expires_at")
-    private LocalDateTime expiresAt;
+    private Instant expiresAt;
 
     @Column(precision = 8, scale = 2)
     private BigDecimal score;

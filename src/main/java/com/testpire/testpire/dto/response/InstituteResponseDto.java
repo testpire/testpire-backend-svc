@@ -1,7 +1,7 @@
 package com.testpire.testpire.dto.response;
 
 import com.testpire.testpire.entity.Institute;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record InstituteResponseDto(
     Long id,
@@ -17,8 +17,8 @@ public record InstituteResponseDto(
     String country,
     String postalCode,
     Boolean active,
-    LocalDateTime createdAt,
-    LocalDateTime updatedAt,
+    Instant createdAt,
+    Instant updatedAt,
     String createdBy,
     String updatedBy
 ) {

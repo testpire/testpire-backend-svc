@@ -9,7 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Data
 @Builder
@@ -94,11 +94,11 @@ public class LeadSearchRequestDto {
         return criteria != null ? criteria.getFollowUpTo() : null;
     }
 
-    public LocalDateTime getCreatedAfter() {
+    public Instant getCreatedAfter() {
         return criteria != null ? criteria.getCreatedAfter() : null;
     }
 
-    public LocalDateTime getCreatedBefore() {
+    public Instant getCreatedBefore() {
         return criteria != null ? criteria.getCreatedBefore() : null;
     }
 

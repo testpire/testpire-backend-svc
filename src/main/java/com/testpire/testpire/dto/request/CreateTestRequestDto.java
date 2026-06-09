@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * Creates a test (in DRAFT). Questions are added separately via the questions endpoints, and
@@ -34,9 +34,9 @@ public record CreateTestRequestDto(
 
         Boolean showAnswers,
 
-        LocalDateTime availableFrom,
+        Instant availableFrom,
 
-        LocalDateTime availableUntil,
+        Instant availableUntil,
 
         Long instituteId
 ) {}

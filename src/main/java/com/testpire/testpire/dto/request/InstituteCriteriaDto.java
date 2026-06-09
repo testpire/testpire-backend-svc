@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.NoArgsConstructor;
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Data
 @Builder
@@ -27,8 +27,8 @@ public class InstituteCriteriaDto {
     private String website;
     private String description;
     private Boolean active;
-    private LocalDateTime createdAfter;
-    private LocalDateTime createdBefore;
+    private Instant createdAfter;
+    private Instant createdBefore;
     private String createdBy;
     private String updatedBy;
 }

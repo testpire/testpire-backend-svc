@@ -2,7 +2,7 @@ package com.testpire.testpire.dto.response;
 
 import com.testpire.testpire.entity.User;
 import com.testpire.testpire.enums.UserRole;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record TeacherResponseDto(
     Long id,
@@ -20,8 +20,8 @@ public record TeacherResponseDto(
     Integer experienceYears,
     String specialization,
     String bio,
-    LocalDateTime createdAt,
-    LocalDateTime updatedAt
+    Instant createdAt,
+    Instant updatedAt
 ) {
     public static TeacherResponseDto fromEntity(User user, com.testpire.testpire.entity.TeacherDetails teacherDetails) {
         return new TeacherResponseDto(

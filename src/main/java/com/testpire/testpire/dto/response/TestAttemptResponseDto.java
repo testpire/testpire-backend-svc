@@ -3,7 +3,7 @@ package com.testpire.testpire.dto.response;
 import com.testpire.testpire.enums.AttemptStatus;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -17,9 +17,9 @@ public record TestAttemptResponseDto(
         String testTitle,
         AttemptStatus status,
         Integer attemptNumber,
-        LocalDateTime startedAt,
-        LocalDateTime submittedAt,
-        LocalDateTime expiresAt,
+        Instant startedAt,
+        Instant submittedAt,
+        Instant expiresAt,
         BigDecimal score,
         BigDecimal maxScore,
         Boolean passed,

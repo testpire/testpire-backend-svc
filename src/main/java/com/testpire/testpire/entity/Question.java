@@ -2,12 +2,13 @@ package com.testpire.testpire.entity;
 
 import com.testpire.testpire.constants.ApplicationConstants;
 import com.testpire.testpire.enums.DifficultyLevel;
+import com.testpire.testpire.enums.TextFormat;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Entity
@@ -68,12 +69,17 @@ public class Question {
     private String explanation;
 
     @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "text_format", nullable = false)
+    private TextFormat textFormat = TextFormat.PLAIN;
+
+    @Builder.Default
     @Column(name = ApplicationConstants.Database.CREATED_AT_COLUMN)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private Instant createdAt = Instant.now();
 
     @Builder.Default
     @Column(name = ApplicationConstants.Database.UPDATED_AT_COLUMN)
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    private Instant updatedAt = Instant.now();
 
     @Column(name = ApplicationConstants.Database.CREATED_BY_COLUMN)
     private String createdBy;
@@ -89,6 +95,6 @@ public class Question {
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = Instant.now();
     }
 }
