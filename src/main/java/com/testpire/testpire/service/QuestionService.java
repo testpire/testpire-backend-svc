@@ -15,6 +15,8 @@ import com.testpire.testpire.enums.TextFormat;
 import com.testpire.testpire.repository.InstituteRepository;
 import com.testpire.testpire.repository.OptionRepository;
 import com.testpire.testpire.repository.QuestionRepository;
+import com.testpire.testpire.repository.TestAttemptAnswerRepository;
+import com.testpire.testpire.repository.TestQuestionRepository;
 import com.testpire.testpire.repository.TopicRepository;
 import com.testpire.testpire.repository.specification.QuestionSpecification;
 import com.testpire.testpire.util.RequestUtils;
@@ -41,6 +43,8 @@ public class QuestionService {
     private final TopicRepository topicRepository;
     private final InstituteRepository instituteRepository;
     private final QuestionImageService questionImageService;
+    private final TestQuestionRepository testQuestionRepository;
+    private final TestAttemptAnswerRepository testAttemptAnswerRepository;
 
     @Transactional
     public QuestionResponseDto createQuestion(CreateQuestionRequestDto request) {
@@ -283,6 +287,19 @@ public class QuestionService {
         log.info("Deleting question with ID: {}", id);
 
         Question question = findQuestionScoped(id);
+
+        // A question must not be hard-deleted while it is still referenced by a test or a recorded
+        // answer: removing it would strip it out of (possibly published) tests and corrupt the
+        // results of already-graded attempts. The DB enforces this too (FK ON DELETE RESTRICT, V27);
+        // these pre-checks just turn the would-be FK violation into a clear, actionable message.
+        if (testAttemptAnswerRepository.existsByQuestionId(id)) {
+            throw new IllegalStateException("Cannot delete question " + id
+                    + ": it has recorded answers in completed test attempts and must be preserved.");
+        }
+        if (testQuestionRepository.existsByQuestionId(id)) {
+            throw new IllegalStateException("Cannot delete question " + id
+                    + ": it is used in one or more tests. Remove it from those tests first.");
+        }
 
         // Hard delete question (options are cascade-deleted via orphanRemoval / FK ON DELETE CASCADE)
         questionRepository.delete(question);

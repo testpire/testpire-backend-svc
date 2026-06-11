@@ -4,6 +4,7 @@ import com.testpire.testpire.entity.Question;
 import com.testpire.testpire.enums.DifficultyLevel;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -18,6 +19,11 @@ public interface QuestionRepository extends JpaRepository<Question, Long>, JpaSp
     List<Question> findByTopicIdAndInstituteId(@Param("topicId") Long topicId, @Param("instituteId") Long instituteId);
 
     List<Question> findByInstituteId(Long instituteId);
+
+    /** Bulk-delete every question (and, via DB cascade, its options) for an institute. Used by institute teardown. */
+    @Modifying
+    @Query("DELETE FROM Question q WHERE q.instituteId = :instituteId")
+    void deleteByInstituteId(@Param("instituteId") Long instituteId);
 
     @Query("SELECT q FROM Question q WHERE q.topic.id = :topicId AND q.instituteId = :instituteId AND q.difficultyLevel = :difficultyLevel")
     List<Question> findByTopicIdAndInstituteIdAndDifficultyLevel(

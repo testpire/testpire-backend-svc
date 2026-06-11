@@ -15,4 +15,6 @@ public interface TestQuestionRepository extends JpaRepository<TestQuestion, Long
     Optional<TestQuestion> findByTestIdAndQuestionId(Long testId, Long questionId);
 
     boolean existsByTestIdAndQuestionId(Long testId, Long questionId);
+
+    boolean existsByQuestionId(Long questionId);
 }

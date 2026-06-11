@@ -6,7 +6,13 @@ import com.testpire.testpire.dto.request.InstituteSearchRequestDto;
 import com.testpire.testpire.dto.response.InstituteListResponseDto;
 import com.testpire.testpire.dto.response.InstituteResponseDto;
 import com.testpire.testpire.entity.Institute;
+import com.testpire.testpire.entity.User;
 import com.testpire.testpire.repository.InstituteRepository;
+import com.testpire.testpire.repository.LeadRepository;
+import com.testpire.testpire.repository.QuestionRepository;
+import com.testpire.testpire.repository.TestAttemptRepository;
+import com.testpire.testpire.repository.TestRepository;
+import com.testpire.testpire.repository.UserRepository;
 import com.testpire.testpire.repository.specification.InstituteSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +33,12 @@ import java.util.List;
 public class InstituteService {
 
     private final InstituteRepository instituteRepository;
+    private final UserRepository userRepository;
+    private final TestAttemptRepository testAttemptRepository;
+    private final TestRepository testRepository;
+    private final LeadRepository leadRepository;
+    private final QuestionRepository questionRepository;
+    private final CognitoService cognitoService;
 
     public Institute createInstitute(InstituteDto instituteDto, String createdBy) {
         log.info("Creating institute: {}", instituteDto.name());
@@ -97,12 +109,57 @@ public class InstituteService {
         return updatedInstitute;
     }
 
+    /**
+     * Hard-deletes an institute and <em>everything</em> belonging to it. This is a full teardown,
+     * not a simple {@code DELETE FROM institutes}, because:
+     * <ul>
+     *   <li>{@code leads.institute_id} has no {@code ON DELETE} rule, so it would block the delete;</li>
+     *   <li>{@code users} has no FK to {@code institutes} (and the accounts also live in Cognito), so
+     *       they would be silently orphaned;</li>
+     *   <li>question references in {@code test_questions}/{@code test_attempt_answers} are
+     *       {@code ON DELETE RESTRICT} (V27), so a single institute cascade would race the
+     *       institute&rarr;questions and institute&rarr;tests cascades nondeterministically.</li>
+     * </ul>
+     * We therefore delete children in an explicit, FK-safe order — results and test-question links
+     * <strong>before</strong> questions — keeping the V27 protection intact for the question-bank
+     * delete path. The remaining clean hierarchy (courses/subjects/chapters/topics/batches/
+     * enrollments/test_assignments) is dropped by the institute row's own {@code ON DELETE CASCADE}.
+     *
+     * <p>The whole operation runs in one transaction (class-level {@code @Transactional}). Cognito
+     * account deletion is best-effort per user and is <em>not</em> transactional: if a later DB step
+     * fails and rolls back, already-removed Cognito accounts stay removed.</p>
+     */
     public void deleteInstitute(Long id) {
-        log.info("Deleting institute with ID: {}", id);
-        
+        log.info("Deleting institute with ID: {} (full teardown)", id);
+
         Institute institute = instituteRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Institute not found with ID: " + id));
 
+        // 1. Attempts + answers (DB cascade) — clears RESTRICT refs from test_attempt_answers -> questions.
+        testAttemptRepository.deleteByInstituteId(id);
+        // 2. Tests + test_questions (DB cascade) — clears RESTRICT refs from test_questions -> questions.
+        testRepository.deleteByInstituteId(id);
+        // 3. Leads — the original blocker (no ON DELETE rule on leads.institute_id).
+        leadRepository.deleteByInstituteId(id);
+        // 4. Questions + options (DB cascade) — now safe, no surviving RESTRICT references.
+        questionRepository.deleteByInstituteId(id);
+
+        // 5. Users: remove from Cognito (best-effort), then from the DB (DB cascade removes
+        //    teacher_details / student_details / student_enrollments and any leftover attempts).
+        List<User> users = userRepository.findByInstituteId(id);
+        for (User user : users) {
+            try {
+                cognitoService.deleteUser(user.getUsername());
+            } catch (Exception e) {
+                log.warn("Failed to delete Cognito user '{}' during institute {} teardown; continuing. Reason: {}",
+                        user.getUsername(), id, e.getMessage());
+            }
+        }
+        userRepository.deleteAll(users);
+        log.info("Removed {} user(s) for institute {}", users.size(), id);
+
+        // 6. Institute — cascades the remaining hierarchy (courses, subjects, chapters, topics,
+        //    batches, student_enrollments, test_assignments).
         instituteRepository.delete(institute);
         log.info("Institute deleted successfully with ID: {}", id);
     }

@@ -13,4 +13,6 @@ public interface TestAttemptAnswerRepository extends JpaRepository<TestAttemptAn
     List<TestAttemptAnswer> findByAttemptId(Long attemptId);
 
     Optional<TestAttemptAnswer> findByAttemptIdAndQuestionId(Long attemptId, Long questionId);
+
+    boolean existsByQuestionId(Long questionId);
 }
