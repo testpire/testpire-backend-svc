@@ -114,10 +114,6 @@ public class QuestionSearchRequestDto {
         return criteria != null ? criteria.getMaxOptions() : null;
     }
     
-    public Boolean getActive() {
-        return criteria != null ? criteria.getActive() : null;
-    }
-    
     public Instant getCreatedAfter() {
         return criteria != null ? criteria.getCreatedAfter() : null;
     }

@@ -3,8 +3,6 @@ package com.testpire.testpire.entity;
 import com.testpire.testpire.constants.ApplicationConstants;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -13,7 +11,7 @@ import java.time.Instant;
 /**
  * A batch/cohort under a {@link Course} (e.g. course "IIT" -> batches "IIT-B01", "IIT-B02"). A course
  * has many batches; a batch belongs to exactly one course. Multi-tenancy is enforced by filtering on
- * {@link #instituteId} in the service layer. Soft-deleted (mirrors {@link Course}).
+ * {@link #instituteId} in the service layer.
  */
 @Entity
 @Table(name = ApplicationConstants.Database.BATCHES_TABLE)
@@ -22,8 +20,6 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@SQLDelete(sql = "UPDATE " + ApplicationConstants.Database.BATCHES_TABLE + " SET deleted = true WHERE id=?")
-@SQLRestriction("deleted = false")
 public class Batch {
 
     @Id
@@ -59,12 +55,6 @@ public class Batch {
      */
     @Column(precision = 12, scale = 2)
     private BigDecimal fee;
-
-    @Builder.Default
-    private boolean active = true;
-
-    @Builder.Default
-    private boolean deleted = false;
 
     @Builder.Default
     @Column(name = ApplicationConstants.Database.CREATED_AT_COLUMN)

@@ -77,7 +77,7 @@ public class TestService {
     public TestResponseDto updateTest(Long id, UpdateTestRequestDto request) {
         log.debug("Updating test {}", id);
         Test test = findScoped(id);
-        log.debug("Test {} found: title='{}', status={}, active={}", id, test.getTitle(), test.getStatus(), test.isActive());
+        log.debug("Test {} found: title='{}', status={}", id, test.getTitle(), test.getStatus());
 
         Optional.ofNullable(request.title()).ifPresent(test::setTitle);
         Optional.ofNullable(request.description()).ifPresent(test::setDescription);
@@ -87,7 +87,6 @@ public class TestService {
         Optional.ofNullable(request.negativeMarking()).ifPresent(test::setNegativeMarking);
         Optional.ofNullable(request.shuffleQuestions()).ifPresent(test::setShuffleQuestions);
         Optional.ofNullable(request.showAnswers()).ifPresent(test::setShowAnswers);
-        Optional.ofNullable(request.active()).ifPresent(test::setActive);
         Optional.ofNullable(request.availableFrom()).ifPresent(test::setAvailableFrom);
         Optional.ofNullable(request.availableUntil()).ifPresent(test::setAvailableUntil);
         validateWindow(test.getAvailableFrom(), test.getAvailableUntil());
@@ -101,8 +100,8 @@ public class TestService {
     @Transactional
     public void deleteTest(Long id) {
         Test test = findScoped(id);
-        testRepository.delete(test); // soft delete via @SQLDelete
-        log.info("Test soft-deleted with ID: {}", id);
+        testRepository.delete(test);
+        log.info("Test deleted with ID: {}", id);
     }
 
     @Transactional(readOnly = true)
@@ -136,7 +135,7 @@ public class TestService {
 
         for (AddTestQuestionsRequestDto.TestQuestionItem item : request.questions()) {
             Question question = questionRepository
-                    .findByIdAndInstituteIdAndActiveTrueAndDeletedFalse(item.questionId(), test.getInstituteId())
+                    .findByIdAndInstituteId(item.questionId(), test.getInstituteId())
                     .orElseThrow(() -> new IllegalArgumentException(
                             "Question not found in this institute with ID: " + item.questionId()));
 

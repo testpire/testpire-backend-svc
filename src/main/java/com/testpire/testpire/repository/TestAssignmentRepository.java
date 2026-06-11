@@ -21,20 +21,20 @@ public interface TestAssignmentRepository extends JpaRepository<TestAssignment, 
     boolean existsByTestIdAndTargetTypeAndTargetId(Long testId, AssignmentTargetType targetType, Long targetId);
 
     /**
-     * Active assignments in an institute matching any of the given (type, id) targets — the core of
+     * Assignments in an institute matching any of the given (type, id) targets — the core of
      * dynamic resolution. The caller passes the student's course ids, batch ids, and own user id as
      * separate target sets; an empty set for a type simply matches nothing.
      */
     @Query("""
             SELECT a FROM TestAssignment a
-            WHERE a.instituteId = :instituteId AND a.active = true AND (
+            WHERE a.instituteId = :instituteId AND (
                 (a.targetType = com.testpire.testpire.enums.AssignmentTargetType.COURSE  AND a.targetId IN :courseIds) OR
                 (a.targetType = com.testpire.testpire.enums.AssignmentTargetType.BATCH   AND a.targetId IN :batchIds) OR
                 (a.targetType = com.testpire.testpire.enums.AssignmentTargetType.STUDENT AND a.targetId = :studentUserId)
             )
             """)
-    List<TestAssignment> findActiveForStudentTargets(@Param("instituteId") Long instituteId,
-                                                      @Param("courseIds") Collection<Long> courseIds,
-                                                      @Param("batchIds") Collection<Long> batchIds,
-                                                      @Param("studentUserId") Long studentUserId);
+    List<TestAssignment> findForStudentTargets(@Param("instituteId") Long instituteId,
+                                               @Param("courseIds") Collection<Long> courseIds,
+                                               @Param("batchIds") Collection<Long> batchIds,
+                                               @Param("studentUserId") Long studentUserId);
 }

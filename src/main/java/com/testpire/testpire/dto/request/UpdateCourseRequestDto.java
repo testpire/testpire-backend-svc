@@ -19,7 +19,6 @@ public record UpdateCourseRequestDto(
         String duration,
         String level,
         String prerequisites,
-        Boolean active,
 
         // null = leave unchanged. Setting a value updates the course fee; non-overridden batches follow it.
         @DecimalMin(value = "0", message = "Fee must not be negative")

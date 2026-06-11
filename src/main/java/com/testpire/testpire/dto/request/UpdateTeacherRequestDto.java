@@ -12,6 +12,5 @@ public record UpdateTeacherRequestDto(
     Integer experienceYears,
     String specialization,
     String bio,
-    Long instituteId,
-    Boolean enabled
+    Long instituteId
 ) {}

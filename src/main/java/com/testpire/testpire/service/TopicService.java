@@ -87,7 +87,6 @@ public class TopicService {
         Optional.ofNullable(request.duration()).ifPresent(existingTopic::setDuration);
         Optional.ofNullable(request.content()).ifPresent(existingTopic::setContent);
         Optional.ofNullable(request.learningOutcomes()).ifPresent(existingTopic::setLearningOutcomes);
-        Optional.ofNullable(request.active()).ifPresent(existingTopic::setActive);
         existingTopic.setUpdatedBy(RequestUtils.getCurrentUsername());
 
         Topic updatedTopic = topicRepository.save(existingTopic);
@@ -101,10 +100,8 @@ public class TopicService {
 
         Topic topic = findTopicScoped(id);
 
-        topic.setActive(false);
-        topic.setUpdatedBy(RequestUtils.getCurrentUsername());
-        topicRepository.save(topic);
-        log.info("Topic deactivated successfully with ID: {}", id);
+        topicRepository.delete(topic);
+        log.info("Topic deleted successfully with ID: {}", id);
     }
 
     @Transactional(readOnly = true)
@@ -136,17 +133,16 @@ public class TopicService {
 
     @Transactional(readOnly = true)
     public TopicListResponseDto searchTopicsWithFilters(TopicSearchRequestDto request) {
-        log.info("Searching topics with filters: instituteId={}, courseId={}, subjectId={}, chapterId={}, searchText={}, active={}", 
-                request.getInstituteId(), request.getCourseId(), request.getSubjectId(), request.getChapterId(), 
-                request.getSearchText(), request.getActive());
+        log.info("Searching topics with filters: instituteId={}, courseId={}, subjectId={}, chapterId={}, searchText={}",
+                request.getInstituteId(), request.getCourseId(), request.getSubjectId(), request.getChapterId(),
+                request.getSearchText());
 
         List<Topic> topics = topicRepository.findTopicsWithFilters(
                 request.getInstituteId(),
                 request.getCourseId(),
                 request.getSubjectId(),
                 request.getChapterId(),
-                request.getSearchText(),
-                request.getActive()
+                request.getSearchText()
         );
 
         List<TopicResponseDto> topicDtos = topics.stream()
@@ -158,8 +154,7 @@ public class TopicService {
                 request.getCourseId(),
                 request.getSubjectId(),
                 request.getChapterId(),
-                request.getSearchText(),
-                request.getActive()
+                request.getSearchText()
         );
 
         return new TopicListResponseDto(topicDtos, totalCount.intValue());
@@ -199,9 +194,7 @@ public class TopicService {
                 .and(TopicSpecification.hasLearningOutcomesContaining(request.getLearningOutcomes()))
                 .and(TopicSpecification.hasOrderIndexRange(request.getMinOrderIndex(), request.getMaxOrderIndex()))
                 .and(TopicSpecification.hasDurationRange(request.getMinDuration(), request.getMaxDuration()))
-                .and(TopicSpecification.isActive(request.getActive()))
-                .and(TopicSpecification.isNotDeleted())
-                .and(request.getHasQuestions() != null && request.getHasQuestions() ? 
+                .and(request.getHasQuestions() != null && request.getHasQuestions() ?
                      TopicSpecification.hasQuestions() : (root, query, cb) -> cb.conjunction())
                 .and(TopicSpecification.hasMinimumQuestions(request.getMinQuestions()))
                 .and(TopicSpecification.hasMaximumQuestions(request.getMaxQuestions()))

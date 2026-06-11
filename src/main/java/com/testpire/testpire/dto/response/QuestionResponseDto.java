@@ -30,7 +30,6 @@ public class QuestionResponseDto {
   Instant updatedAt;
   String createdBy;
   String updatedBy;
-  Boolean active;
 }
 
 

@@ -134,19 +134,6 @@ public class SubjectSpecification {
         };
     }
 
-    public static Specification<Subject> isActive(Boolean active) {
-        return (root, query, criteriaBuilder) -> {
-            if (active == null) {
-                return criteriaBuilder.conjunction();
-            }
-            return criteriaBuilder.equal(root.get("active"), active);
-        };
-    }
-
-    public static Specification<Subject> isNotDeleted() {
-        return (root, query, criteriaBuilder) -> 
-            criteriaBuilder.equal(root.get("deleted"), false);
-    }
 
     public static Specification<Subject> createdAfter(Instant createdAfter) {
         return (root, query, criteriaBuilder) -> {

@@ -3,8 +3,6 @@ package com.testpire.testpire.entity;
 import com.testpire.testpire.constants.ApplicationConstants;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
 
 import java.io.Serializable;
 import java.time.Instant;
@@ -16,8 +14,6 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@SQLDelete(sql = "UPDATE " + ApplicationConstants.Database.OPTION_TABLE + " SET deleted = true WHERE id=?")
-@SQLRestriction("deleted = false")
 public class Option implements Serializable {
 
     @Id
@@ -54,12 +50,6 @@ public class Option implements Serializable {
 
     @Column(name = "updated_by")
     private String updatedBy;
-
-    @Builder.Default
-    private boolean deleted = false;
-
-    @Builder.Default
-    private boolean active = true;
 
     @PreUpdate
     protected void onUpdate() {

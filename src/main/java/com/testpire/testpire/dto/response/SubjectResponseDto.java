@@ -19,7 +19,6 @@ public record SubjectResponseDto(
         Instant updatedAt,
         String createdBy,
         String updatedBy,
-        boolean active,
         List<ChapterResponseDto> chapters
 ) {
     public static SubjectResponseDto fromEntity(Subject subject) {
@@ -39,7 +38,6 @@ public record SubjectResponseDto(
                 subject.getUpdatedAt(),
                 subject.getCreatedBy(),
                 subject.getUpdatedBy(),
-                subject.isActive(),
                 subject.getChapters() != null ?
                     subject.getChapters().stream()
                         .map(ChapterResponseDto::fromEntity)

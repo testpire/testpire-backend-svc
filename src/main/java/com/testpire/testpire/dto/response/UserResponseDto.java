@@ -11,7 +11,6 @@ public record UserResponseDto(
     String firstName,
     String lastName,
     UserRole role,
-    Boolean enabled,
     Long instituteId,
     Instant createdAt,
     Instant updatedAt
@@ -24,7 +23,6 @@ public record UserResponseDto(
             user.getFirstName(),
             user.getLastName(),
             user.getRole(),
-            true,
             user.getInstituteId(),
             user.getCreatedAt(),
             user.getUpdatedAt()

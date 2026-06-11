@@ -31,7 +31,7 @@ class CourseServiceTest {
         return Course.builder()
                 .id(id).name("Physics 101").code(code)
                 .instituteId(2L).duration("60 hours").level("BEGINNER")
-                .active(true).createdAt(Instant.now()).updatedAt(Instant.now())
+                .createdAt(Instant.now()).updatedAt(Instant.now())
                 .build();
     }
 
@@ -116,7 +116,7 @@ class CourseServiceTest {
         when(courseRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> courseService.updateCourse(99L,
-                new UpdateCourseRequestDto(null, "Updated desc", null, null, null, null, null, null, null)))
+                new UpdateCourseRequestDto(null, "Updated desc", null, null, null, null, null, null)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("99");
     }
@@ -128,7 +128,7 @@ class CourseServiceTest {
         when(courseRepository.existsByCodeAndInstituteId("CHEM101", 2L)).thenReturn(true);
 
         assertThatThrownBy(() -> courseService.updateCourse(1L,
-                new UpdateCourseRequestDto(null, null, "CHEM101", null, null, null, null, null, null)))
+                new UpdateCourseRequestDto(null, null, "CHEM101", null, null, null, null, null)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("CHEM101");
     }
@@ -136,14 +136,12 @@ class CourseServiceTest {
     // ── DELETE ───────────────────────────────────────────────────────────────
 
     @Test
-    void deleteCourse_deactivatesCourse() {
+    void deleteCourse_hardDeletesCourse() {
         Course existing = entity(1L, "PHY101");
         when(courseRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(courseRepository.save(any())).thenReturn(existing);
 
         courseService.deleteCourse(1L);
 
-        assertThat(existing.isActive()).isFalse();
-        verify(courseRepository).save(existing);
+        verify(courseRepository).delete(existing);
     }
 }

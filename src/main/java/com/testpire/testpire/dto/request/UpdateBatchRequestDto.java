@@ -36,7 +36,5 @@ public record UpdateBatchRequestDto(
         BigDecimal fee,
 
         // true = clear any override so the batch inherits the course fee again. Cannot be combined with a fee.
-        Boolean inheritFee,
-
-        Boolean active
+        Boolean inheritFee
 ) {}

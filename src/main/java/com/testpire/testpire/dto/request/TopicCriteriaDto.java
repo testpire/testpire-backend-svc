@@ -27,7 +27,6 @@ public class TopicCriteriaDto {
     private Integer maxOrderIndex;
     private Integer minDuration;
     private Integer maxDuration;
-    private Boolean active;
     private Boolean hasQuestions;
     private Integer minQuestions;
     private Integer maxQuestions;

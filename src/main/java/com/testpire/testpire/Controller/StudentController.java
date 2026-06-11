@@ -200,9 +200,6 @@ public class StudentController {
                 }
                 student.setInstituteId(request.instituteId());
             }
-            if (request.enabled() != null) {
-                student.setEnabled(request.enabled());
-            }
 
             User updatedStudent = userService.updateUser(student);
             
@@ -499,8 +496,6 @@ public class StudentController {
             @RequestParam(required = false) String bloodGroup,
             @Parameter(description = "Emergency contact (optional)", example = "9876543210")
             @RequestParam(required = false) String emergencyContact,
-            @Parameter(description = "Enabled status (optional)", example = "true")
-            @RequestParam(required = false) Boolean enabled,
             @Parameter(description = "Created after (optional)", example = "2024-01-01T00:00:00")
             @RequestParam(required = false) String createdAfter,
             @Parameter(description = "Created before (optional)", example = "2024-12-31T23:59:59")
@@ -559,7 +554,6 @@ public class StudentController {
                     .address(address)
                     .bloodGroup(bloodGroup)
                     .emergencyContact(emergencyContact)
-                    .enabled(enabled)
                     .createdAfter(parsedCreatedAfter)
                     .createdBefore(parsedCreatedBefore)
                     .createdBy(createdBy)

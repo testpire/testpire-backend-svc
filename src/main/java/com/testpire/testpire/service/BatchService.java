@@ -93,7 +93,6 @@ public class BatchService {
         Optional.ofNullable(request.startDate()).ifPresent(batch::setStartDate);
         Optional.ofNullable(request.endDate()).ifPresent(batch::setEndDate);
         Optional.ofNullable(request.capacity()).ifPresent(batch::setCapacity);
-        Optional.ofNullable(request.active()).ifPresent(batch::setActive);
         applyFeeChange(batch, request.fee(), request.inheritFee());
         validateDates(batch.getStartDate(), batch.getEndDate());
         batch.setUpdatedBy(RequestUtils.getCurrentUsername());
@@ -123,9 +122,8 @@ public class BatchService {
     @Transactional
     public void deleteBatch(Long id) {
         Batch batch = findScoped(id);
-        // Soft delete (mirrors Course): @SQLDelete flips the deleted flag.
         batchRepository.delete(batch);
-        log.info("Batch soft-deleted with ID: {}", id);
+        log.info("Batch deleted with ID: {}", id);
     }
 
     @Transactional(readOnly = true)

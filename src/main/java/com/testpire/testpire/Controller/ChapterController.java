@@ -157,7 +157,7 @@ public class ChapterController {
     @RequirePermission(Permission.CHAPTER_DELETE)
     @Operation(
         summary = "Delete a chapter",
-        description = "Soft deletes a chapter by ID (sets active to false). Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can delete chapters."
+        description = "Permanently deletes a chapter by ID. Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can delete chapters."
     )
     @ApiResponses(value = {
         @ApiResponse(
@@ -339,7 +339,6 @@ public class ChapterController {
                     .minDuration(request.getMinDuration())
                     .maxDuration(request.getMaxDuration())
                     .objectives(request.getObjectives())
-                    .active(request.getActive())
                     .hasTopics(request.getHasTopics())
                     .minTopics(request.getMinTopics())
                     .maxTopics(request.getMaxTopics())
@@ -415,8 +414,6 @@ public class ChapterController {
             @RequestParam(required = false) Integer maxDuration,
             @Parameter(description = "Objectives (optional)", example = "Learn arrays")
             @RequestParam(required = false) String objectives,
-            @Parameter(description = "Active status (optional)", example = "true")
-            @RequestParam(required = false) Boolean active,
             @Parameter(description = "Has topics (optional)", example = "true")
             @RequestParam(required = false) Boolean hasTopics,
             @Parameter(description = "Minimum topics (optional)", example = "1")
@@ -475,7 +472,6 @@ public class ChapterController {
                     .minDuration(minDuration)
                     .maxDuration(maxDuration)
                     .objectives(objectives)
-                    .active(active)
                     .hasTopics(hasTopics)
                     .minTopics(minTopics)
                     .maxTopics(maxTopics)

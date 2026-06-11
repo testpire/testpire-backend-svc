@@ -58,7 +58,7 @@ public class AuthController {
             User user = userService.getUserByUsername(request.username());
             UserDto userDto = new UserDto(
                     user.getUsername(), user.getEmail(), user.getFirstName(), user.getLastName(),
-                    user.getRole(), user.isEnabled(), user.getInstituteId());
+                    user.getRole(), user.getInstituteId());
 
             return ResponseEntity.ok(LoginResponseDto.success(result.get("token"), null, 3600L, userDto));
 
@@ -82,7 +82,7 @@ public class AuthController {
             User user = userService.getUserByUsername(request.username());
             UserDto userDto = new UserDto(
                     user.getUsername(), user.getEmail(), user.getFirstName(), user.getLastName(),
-                    user.getRole(), user.isEnabled(), user.getInstituteId());
+                    user.getRole(), user.getInstituteId());
 
             return ResponseEntity.ok(LoginResponseDto.success(token, null, 3600L, userDto));
 
@@ -155,7 +155,7 @@ public class AuthController {
             UserDto userDto = new UserDto(
                     currentUser.getUsername(), currentUser.getEmail(),
                     currentUser.getFirstName(), currentUser.getLastName(),
-                    currentUser.getRole(), currentUser.isEnabled(), currentUser.getInstituteId());
+                    currentUser.getRole(), currentUser.getInstituteId());
 
             return ResponseEntity.ok(ProfileResponseDto.success(userDto));
         } catch (Exception e) {

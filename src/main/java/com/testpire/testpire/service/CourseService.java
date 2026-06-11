@@ -81,7 +81,6 @@ public class CourseService {
         Optional.ofNullable(request.duration()).ifPresent(existingCourse::setDuration);
         Optional.ofNullable(request.level()).ifPresent(existingCourse::setLevel);
         Optional.ofNullable(request.prerequisites()).ifPresent(existingCourse::setPrerequisites);
-        Optional.ofNullable(request.active()).ifPresent(existingCourse::setActive);
         Optional.ofNullable(request.fee()).ifPresent(existingCourse::setFee);
         if (request.subjectCodes() != null) {
             existingCourse.setSubjects(resolveSubjectCodes(request.subjectCodes(), existingCourse.getInstituteId()));
@@ -99,10 +98,8 @@ public class CourseService {
 
         Course course = findCourseScoped(id);
 
-        course.setActive(false);
-        course.setUpdatedBy(RequestUtils.getCurrentUsername());
-        courseRepository.save(course);
-        log.info("Course deactivated successfully with ID: {}", id);
+        courseRepository.delete(course);
+        log.info("Course deleted successfully with ID: {}", id);
     }
 
     @Transactional(readOnly = true)
@@ -174,8 +171,6 @@ public class CourseService {
                 .and(CourseSpecification.hasDurationRange(request.getMinDuration(), request.getMaxDuration()))
                 .and(CourseSpecification.hasLevel(request.getLevel()))
                 .and(CourseSpecification.hasPrerequisitesContaining(request.getPrerequisites()))
-                .and(CourseSpecification.isActive(request.getActive()))
-                .and(CourseSpecification.isNotDeleted())
                 .and(request.getHasSubjects() != null && request.getHasSubjects() ?
                      CourseSpecification.hasSubjects() : (root, query, cb) -> cb.conjunction())
                 .and(CourseSpecification.hasMinimumSubjects(request.getMinSubjects()))

@@ -53,7 +53,6 @@ public class InstituteService {
                 .email(instituteDto.email())
                 .website(instituteDto.website())
                 .description(instituteDto.description())
-                .active(true)
                 .createdBy(createdBy)
                 .build();
 
@@ -103,10 +102,9 @@ public class InstituteService {
         
         Institute institute = instituteRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Institute not found with ID: " + id));
-        
-        institute.setActive(false);
-        instituteRepository.save(institute);
-        log.info("Institute deactivated successfully with ID: {}", id);
+
+        instituteRepository.delete(institute);
+        log.info("Institute deleted successfully with ID: {}", id);
     }
 
     public Institute getInstituteById(Long id) {
@@ -115,16 +113,16 @@ public class InstituteService {
     }
 
     public Institute getInstituteByCode(String code) {
-        return instituteRepository.findByCodeAndActiveTrue(code)
+        return instituteRepository.findByCode(code)
                 .orElseThrow(() -> new IllegalArgumentException("Institute not found with code: " + code));
     }
 
-    public List<Institute> getAllActiveInstitutes() {
-        return instituteRepository.findByActiveTrue();
+    public List<Institute> getAllInstitutes() {
+        return instituteRepository.findAll();
     }
 
     public List<Institute> searchInstitutes(String searchTerm) {
-        return instituteRepository.findByActiveTrueAndNameOrCodeContaining(searchTerm);
+        return instituteRepository.searchByNameOrCode(searchTerm);
     }
 
     public boolean instituteExistsByCode(String code) {
@@ -152,7 +150,6 @@ public class InstituteService {
                 .and(InstituteSpecification.hasEmailContaining(request.getCriteria().getEmail()))
                 .and(InstituteSpecification.hasWebsiteContaining(request.getCriteria().getWebsite()))
                 .and(InstituteSpecification.hasDescriptionContaining(request.getCriteria().getDescription()))
-                .and(InstituteSpecification.isActive(request.getCriteria().getActive()))
                 .and(InstituteSpecification.createdAfter(request.getCriteria().getCreatedAfter()))
                 .and(InstituteSpecification.createdBefore(request.getCriteria().getCreatedBefore()))
                 .and(InstituteSpecification.createdBy(request.getCriteria().getCreatedBy()))

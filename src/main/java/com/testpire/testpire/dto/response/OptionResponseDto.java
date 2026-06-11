@@ -15,8 +15,7 @@ public record OptionResponseDto(
     Instant createdAt,
     Instant updatedAt,
     String createdBy,
-    String updatedBy,
-    Boolean active
+    String updatedBy
 ) {}
 
 

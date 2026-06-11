@@ -181,7 +181,6 @@ public class StudentDetailsService {
                 .and(StudentSpecification.hasAddressContaining(request.getAddress()))
                 .and(StudentSpecification.hasBloodGroup(request.getBloodGroup()))
                 .and(StudentSpecification.hasEmergencyContactContaining(request.getEmergencyContact()))
-                .and(StudentSpecification.isEnabled(request.getEnabled()))
                 .and(StudentSpecification.createdAfter(request.getCreatedAfter()))
                 .and(StudentSpecification.createdBefore(request.getCreatedBefore()))
                 .and(StudentSpecification.createdBy(request.getCreatedBy()));

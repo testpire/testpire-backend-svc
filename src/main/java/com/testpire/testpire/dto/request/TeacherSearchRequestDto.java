@@ -97,10 +97,6 @@ public class TeacherSearchRequestDto {
         return criteria != null ? criteria.getBio() : null;
     }
     
-    public Boolean getEnabled() {
-        return criteria != null ? criteria.getEnabled() : null;
-    }
-    
     public Instant getCreatedAfter() {
         return criteria != null ? criteria.getCreatedAfter() : null;
     }

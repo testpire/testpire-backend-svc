@@ -15,8 +15,7 @@ public record UpdateTopicRequestDto(
         Integer orderIndex,
         String duration,
         String content,
-        String learningOutcomes,
-        Boolean active
+        String learningOutcomes
 ) {}
 
 

@@ -26,7 +26,5 @@ public record UpdateInstituteRequestDto(
     
     String country,
     
-    String postalCode,
-    
-    Boolean active
+    String postalCode
 ) {}

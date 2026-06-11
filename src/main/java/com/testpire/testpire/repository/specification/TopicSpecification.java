@@ -177,19 +177,6 @@ public class TopicSpecification {
         };
     }
 
-    public static Specification<Topic> isActive(Boolean active) {
-        return (root, query, criteriaBuilder) -> {
-            if (active == null) {
-                return criteriaBuilder.conjunction();
-            }
-            return criteriaBuilder.equal(root.get("active"), active);
-        };
-    }
-
-    public static Specification<Topic> isNotDeleted() {
-        return (root, query, criteriaBuilder) -> 
-            criteriaBuilder.equal(root.get("deleted"), false);
-    }
 
     public static Specification<Topic> createdAfter(Instant createdAfter) {
         return (root, query, criteriaBuilder) -> {

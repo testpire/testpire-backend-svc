@@ -24,7 +24,6 @@ public class SubjectCriteriaDto {
     private Integer minCredits;
     private Integer maxCredits;
     private String prerequisites;
-    private Boolean active;
     private Boolean hasChapters;
     private Integer minChapters;
     private Integer maxChapters;

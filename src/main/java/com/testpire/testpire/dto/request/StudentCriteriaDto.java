@@ -34,7 +34,6 @@ public class StudentCriteriaDto {
     private String address;
     private String bloodGroup;
     private String emergencyContact;
-    private Boolean enabled;
     private Instant createdAfter;
     private Instant createdBefore;
     private String createdBy;

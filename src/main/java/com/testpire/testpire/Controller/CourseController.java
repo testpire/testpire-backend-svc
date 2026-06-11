@@ -158,7 +158,7 @@ public class CourseController {
     @RequirePermission(Permission.COURSE_DELETE)
     @Operation(
         summary = "Delete a course",
-        description = "Soft deletes a course by ID (sets active to false). Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can delete courses."
+        description = "Permanently deletes a course by ID. Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can delete courses."
     )
     @ApiResponses(value = {
         @ApiResponse(
@@ -389,8 +389,6 @@ public class CourseController {
             @RequestParam(required = false) String level,
             @Parameter(description = "Prerequisites (optional)", example = "Basic math")
             @RequestParam(required = false) String prerequisites,
-            @Parameter(description = "Active status (optional)", example = "true")
-            @RequestParam(required = false) Boolean active,
             @Parameter(description = "Has subjects (optional)", example = "true")
             @RequestParam(required = false) Boolean hasSubjects,
             @Parameter(description = "Minimum subjects (optional)", example = "1")
@@ -447,7 +445,6 @@ public class CourseController {
                     .maxDuration(maxDuration)
                     .level(level)
                     .prerequisites(prerequisites)
-                    .active(active)
                     .hasSubjects(hasSubjects)
                     .minSubjects(minSubjects)
                     .maxSubjects(maxSubjects)

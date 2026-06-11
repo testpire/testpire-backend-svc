@@ -204,14 +204,14 @@ public class InstituteController {
 
     @GetMapping
     @RequirePermission(Permission.INSTITUTE_LIST)
-    @Operation(summary = "Get all institutes", description = "Get institutes. SUPER_ADMIN sees all active institutes; all other roles see only their own institute.")
+    @Operation(summary = "Get all institutes", description = "Get institutes. SUPER_ADMIN sees all institutes; all other roles see only their own institute.")
     public ResponseEntity<InstituteListResponseDto> getAllInstitutes() {
         try {
             // Institute isolation: non-SUPER_ADMIN may only see their own institute.
             // getCurrentUserInstituteId() is null for SUPER_ADMIN (sees all) and the real id otherwise.
             Long callerInstituteId = RequestUtils.getCurrentUserInstituteId();
             List<Institute> institutes = (callerInstituteId == null)
-                ? instituteService.getAllActiveInstitutes()
+                ? instituteService.getAllInstitutes()
                 : List.of(instituteService.getInstituteById(callerInstituteId));
 
             List<InstituteResponseDto> instituteDtos = institutes.stream()
@@ -312,8 +312,6 @@ public class InstituteController {
             @RequestParam(required = false) String website,
             @Parameter(description = "Description")
             @RequestParam(required = false) String description,
-            @Parameter(description = "Active status")
-            @RequestParam(required = false) Boolean active,
             @Parameter(description = "Created after date (yyyy-MM-dd HH:mm:ss)")
             @RequestParam(required = false) String createdAfter,
             @Parameter(description = "Created before date (yyyy-MM-dd HH:mm:ss)")
@@ -365,7 +363,6 @@ public class InstituteController {
                     .email(email)
                     .website(website)
                     .description(description)
-                    .active(active)
                     .createdAfter(parsedCreatedAfter)
                     .createdBefore(parsedCreatedBefore)
                     .createdBy(createdBy)

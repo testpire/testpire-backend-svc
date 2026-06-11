@@ -14,7 +14,6 @@ public record TestAssignmentResponseDto(
         String targetName,
         Instant availableFrom,
         Instant availableUntil,
-        boolean active,
         Instant assignedAt,
         String assignedBy
 ) {
@@ -27,7 +26,6 @@ public record TestAssignmentResponseDto(
                 targetName,
                 a.getAvailableFrom(),
                 a.getAvailableUntil(),
-                a.isActive(),
                 a.getAssignedAt(),
                 a.getAssignedBy()
         );

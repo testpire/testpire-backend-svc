@@ -14,8 +14,7 @@ public record UpdateChapterRequestDto(
 
         Integer orderIndex,
         String duration,
-        String objectives,
-        Boolean active
+        String objectives
 ) {}
 
 

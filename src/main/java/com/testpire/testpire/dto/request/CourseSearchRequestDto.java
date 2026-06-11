@@ -77,10 +77,6 @@ public class CourseSearchRequestDto {
         return criteria != null ? criteria.getPrerequisites() : null;
     }
     
-    public Boolean getActive() {
-        return criteria != null ? criteria.getActive() : null;
-    }
-    
     public Boolean getHasSubjects() {
         return criteria != null ? criteria.getHasSubjects() : null;
     }

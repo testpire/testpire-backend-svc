@@ -14,31 +14,29 @@ import java.util.Optional;
 @Repository
 public interface QuestionRepository extends JpaRepository<Question, Long>, JpaSpecificationExecutor<Question> {
     
-    @Query("SELECT q FROM Question q WHERE q.topic.id = :topicId AND q.instituteId = :instituteId AND q.active = true AND q.deleted = false")
-    List<Question> findByTopicIdAndInstituteIdAndActiveTrueAndDeletedFalse(@Param("topicId") Long topicId, @Param("instituteId") Long instituteId);
-    
-    List<Question> findByInstituteIdAndActiveTrueAndDeletedFalse(Long instituteId);
-    
-    @Query("SELECT q FROM Question q WHERE q.topic.id = :topicId AND q.instituteId = :instituteId AND q.difficultyLevel = :difficultyLevel AND q.active = true AND q.deleted = false")
-    List<Question> findByTopicIdAndInstituteIdAndDifficultyLevelAndActiveTrueAndDeletedFalse(
+    @Query("SELECT q FROM Question q WHERE q.topic.id = :topicId AND q.instituteId = :instituteId")
+    List<Question> findByTopicIdAndInstituteId(@Param("topicId") Long topicId, @Param("instituteId") Long instituteId);
+
+    List<Question> findByInstituteId(Long instituteId);
+
+    @Query("SELECT q FROM Question q WHERE q.topic.id = :topicId AND q.instituteId = :instituteId AND q.difficultyLevel = :difficultyLevel")
+    List<Question> findByTopicIdAndInstituteIdAndDifficultyLevel(
             @Param("topicId") Long topicId, @Param("instituteId") Long instituteId, @Param("difficultyLevel") DifficultyLevel difficultyLevel);
-    
-    
-    Optional<Question> findByIdAndInstituteIdAndActiveTrueAndDeletedFalse(Long id, Long instituteId);
 
-    Optional<Question> findByIdAndActiveTrueAndDeletedFalse(Long id);
 
-    Optional<Question> findByInstituteIdAndExternalIdAndActiveTrueAndDeletedFalse(Long instituteId, String externalId);
+    Optional<Question> findByIdAndInstituteId(Long id, Long instituteId);
 
-    @Query("SELECT q FROM Question q WHERE q.topic.id = :topicId AND q.active = true AND q.deleted = false")
-    List<Question> findByTopicIdAndActiveTrueAndDeletedFalse(@Param("topicId") Long topicId);
-    
-    @Query("SELECT COUNT(q) FROM Question q WHERE q.instituteId = :instituteId AND q.active = true AND q.deleted = false")
+    Optional<Question> findByInstituteIdAndExternalId(Long instituteId, String externalId);
+
+    @Query("SELECT q FROM Question q WHERE q.topic.id = :topicId")
+    List<Question> findByTopicId(@Param("topicId") Long topicId);
+
+    @Query("SELECT COUNT(q) FROM Question q WHERE q.instituteId = :instituteId")
     Long countByInstituteId(@Param("instituteId") Long instituteId);
-    
-    @Query("SELECT COUNT(q) FROM Question q WHERE q.topic.id = :topicId AND q.instituteId = :instituteId AND q.active = true AND q.deleted = false")
+
+    @Query("SELECT COUNT(q) FROM Question q WHERE q.topic.id = :topicId AND q.instituteId = :instituteId")
     Long countByTopicIdAndInstituteId(@Param("topicId") Long topicId, @Param("instituteId") Long instituteId);
-    
-    @Query("SELECT COUNT(q) FROM Question q WHERE q.topic.id = :topicId AND q.instituteId = :instituteId AND q.difficultyLevel = :difficultyLevel AND q.active = true AND q.deleted = false")
+
+    @Query("SELECT COUNT(q) FROM Question q WHERE q.topic.id = :topicId AND q.instituteId = :instituteId AND q.difficultyLevel = :difficultyLevel")
     Long countByTopicIdAndInstituteIdAndDifficultyLevel(@Param("topicId") Long topicId, @Param("instituteId") Long instituteId, @Param("difficultyLevel") DifficultyLevel difficultyLevel);
 }

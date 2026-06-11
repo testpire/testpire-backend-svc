@@ -14,14 +14,10 @@ import java.util.Optional;
 public interface InstituteRepository extends JpaRepository<Institute, Long>, JpaSpecificationExecutor<Institute> {
     
     Optional<Institute> findByCode(String code);
-    
-    Optional<Institute> findByCodeAndActiveTrue(String code);
-    
-    List<Institute> findByActiveTrue();
-    
-    @Query("SELECT i FROM Institute i WHERE i.active = true AND (i.name LIKE %:searchTerm% OR i.code LIKE %:searchTerm%)")
-    List<Institute> findByActiveTrueAndNameOrCodeContaining(@Param("searchTerm") String searchTerm);
-    
+
+    @Query("SELECT i FROM Institute i WHERE i.name LIKE %:searchTerm% OR i.code LIKE %:searchTerm%")
+    List<Institute> searchByNameOrCode(@Param("searchTerm") String searchTerm);
+
     boolean existsByCode(String code);
     
     boolean existsByEmail(String email);

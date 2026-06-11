@@ -146,7 +146,7 @@ public class QuestionController {
     @RequirePermission(Permission.QUESTION_DELETE)
     @Operation(
         summary = "Delete a question",
-        description = "Soft deletes a question by ID (sets active to false). All associated options are also deleted. Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can delete questions."
+        description = "Permanently deletes a question by ID. All associated options are also deleted. Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can delete questions."
     )
     @ApiResponses(value = {
         @ApiResponse(
@@ -236,7 +236,7 @@ public class QuestionController {
     @RequirePermission(Permission.QUESTION_READ)
     @Operation(
         summary = "Get questions by topic",
-        description = "Retrieves all active questions for a specific topic within an institute. All authenticated users can view questions."
+        description = "Retrieves all questions for a specific topic within an institute. All authenticated users can view questions."
     )
     @ApiResponses(value = {
         @ApiResponse(
@@ -274,7 +274,7 @@ public class QuestionController {
     @RequirePermission(Permission.QUESTION_READ)
     @Operation(
         summary = "Get questions by institute",
-        description = "Retrieves all active questions for a specific institute. All authenticated users can view questions."
+        description = "Retrieves all questions for a specific institute. All authenticated users can view questions."
     )
     @ApiResponses(value = {
         @ApiResponse(
@@ -505,8 +505,6 @@ public class QuestionController {
             @RequestParam(required = false) Integer minMarks,
             @Parameter(description = "Maximum marks (optional)", example = "10")
             @RequestParam(required = false) Integer maxMarks,
-            @Parameter(description = "Active status (optional)", example = "true")
-            @RequestParam(required = false) Boolean active,
             @Parameter(description = "Page number (optional)", example = "0")
             @RequestParam(required = false, defaultValue = "0") Integer page,
             @Parameter(description = "Page size (optional)", example = "20")
@@ -541,7 +539,6 @@ public class QuestionController {
                     .questionType(questionType)
                     .minMarks(minMarks)
                     .maxMarks(maxMarks)
-                    .active(active)
                     .build();
                     
             PaginationRequestDto pagination = PaginationRequestDto.builder()

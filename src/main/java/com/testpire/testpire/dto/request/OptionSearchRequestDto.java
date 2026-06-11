@@ -25,7 +25,6 @@ public class OptionSearchRequestDto {
     private Integer minOrder;
     private Integer maxOrder;
     private Boolean isCorrect;
-    private Boolean active;
     private String questionType;
     private String difficultyLevel;
     private Instant createdAfter;
@@ -45,7 +44,6 @@ public class OptionSearchRequestDto {
                 .size(20)
                 .sortBy("optionOrder")
                 .sortDirection("asc")
-                .active(true)
                 .build();
     }
 }

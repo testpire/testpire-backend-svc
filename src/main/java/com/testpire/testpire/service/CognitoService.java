@@ -195,6 +195,26 @@ public class CognitoService {
         }
     }
 
+    /**
+     * Permanently deletes the user from the Cognito user pool. Used by hard-delete flows so the
+     * Cognito account is removed alongside the DB row. A missing user is treated as already deleted.
+     */
+    public void deleteUser(String username) {
+        try {
+            AdminDeleteUserRequest request = AdminDeleteUserRequest.builder()
+                    .username(username)
+                    .userPoolId(cognitoConfig.getUserPoolId())
+                    .build();
+
+            cognitoClient.adminDeleteUser(request);
+        } catch (UserNotFoundException e) {
+            log.warn("Cognito user '{}' not found while deleting; treating as already removed", username);
+        } catch (Exception e) {
+            log.error("Cognito user deletion failed for '{}': {}", username, e.getMessage(), e);
+            throw new RuntimeException("Failed to delete Cognito user: " + e.getMessage(), e);
+        }
+    }
+
     public UserDto getUser(String username) {
         try {
             AdminGetUserRequest request = AdminGetUserRequest.builder()
@@ -234,6 +254,6 @@ public class CognitoService {
             }
         }
 
-        return new UserDto(username, email, firstName, lastName, role, enabled, instituteId);
+        return new UserDto(username, email, firstName, lastName, role, instituteId);
     }
 }

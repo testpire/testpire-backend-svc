@@ -4,8 +4,6 @@ import com.testpire.testpire.constants.ApplicationConstants;
 import com.testpire.testpire.enums.TestStatus;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -17,8 +15,7 @@ import java.util.List;
  * via {@link TestQuestion} (with optional per-test mark overrides). Assignment to a course/batch/student
  * lives in {@link TestAssignment}; a student's run lives in {@link TestAttempt}.
  *
- * <p>Multi-tenancy is enforced by filtering on {@link #instituteId} in the service layer. Soft-deleted
- * (mirrors {@link Question}/{@link Course}).</p>
+ * <p>Multi-tenancy is enforced by filtering on {@link #instituteId} in the service layer.</p>
  */
 @Entity
 @Table(name = ApplicationConstants.Database.TESTS_TABLE)
@@ -27,8 +24,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@SQLDelete(sql = "UPDATE " + ApplicationConstants.Database.TESTS_TABLE + " SET deleted = true WHERE id=?")
-@SQLRestriction("deleted = false")
 public class Test {
 
     @Id
@@ -85,12 +80,6 @@ public class Test {
     /** Test-level expiry; {@code null} = no expiry. An assignment may narrow but not widen this. */
     @Column(name = "available_until")
     private Instant availableUntil;
-
-    @Builder.Default
-    private boolean active = true;
-
-    @Builder.Default
-    private boolean deleted = false;
 
     @Builder.Default
     @Column(name = ApplicationConstants.Database.CREATED_AT_COLUMN)

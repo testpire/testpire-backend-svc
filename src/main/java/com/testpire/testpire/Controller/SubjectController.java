@@ -157,7 +157,7 @@ public class SubjectController {
     @RequirePermission(Permission.SUBJECT_DELETE)
     @Operation(
         summary = "Delete a subject",
-        description = "Soft deletes a subject by ID (sets active to false). Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can delete subjects."
+        description = "Permanently deletes a subject by ID. Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can delete subjects."
     )
     @ApiResponses(value = {
         @ApiResponse(
@@ -339,7 +339,6 @@ public class SubjectController {
                     .minCredits(request.getMinCredits())
                     .maxCredits(request.getMaxCredits())
                     .prerequisites(request.getPrerequisites())
-                    .active(request.getActive())
                     .hasChapters(request.getHasChapters())
                     .minChapters(request.getMinChapters())
                     .maxChapters(request.getMaxChapters())
@@ -415,8 +414,6 @@ public class SubjectController {
             @RequestParam(required = false) Integer maxCredits,
             @Parameter(description = "Prerequisites (optional)", example = "Basic programming")
             @RequestParam(required = false) String prerequisites,
-            @Parameter(description = "Active status (optional)", example = "true")
-            @RequestParam(required = false) Boolean active,
             @Parameter(description = "Has chapters (optional)", example = "true")
             @RequestParam(required = false) Boolean hasChapters,
             @Parameter(description = "Minimum chapters (optional)", example = "1")
@@ -475,7 +472,6 @@ public class SubjectController {
                     .minCredits(minCredits)
                     .maxCredits(maxCredits)
                     .prerequisites(prerequisites)
-                    .active(active)
                     .hasChapters(hasChapters)
                     .minChapters(minChapters)
                     .maxChapters(maxChapters)

@@ -62,9 +62,9 @@ public class TestResolutionService {
         if (courseIds.isEmpty()) courseIds = Set.of(NO_MATCH);
         if (batchIds.isEmpty()) batchIds = Set.of(NO_MATCH);
 
-        List<TestAssignment> assignments = assignmentRepository.findActiveForStudentTargets(
+        List<TestAssignment> assignments = assignmentRepository.findForStudentTargets(
                 instituteId, courseIds, batchIds, studentUserId);
-        log.debug("Found {} raw active assignment(s) for student {} in institute {}", assignments.size(), studentUserId, instituteId);
+        log.debug("Found {} raw assignment(s) for student {} in institute {}", assignments.size(), studentUserId, instituteId);
 
         Map<Long, TestAssignment> byTest = new LinkedHashMap<>();
         for (TestAssignment a : assignments) {
@@ -89,8 +89,8 @@ public class TestResolutionService {
         log.debug("Evaluating {} candidate test(s) for student {} at {}", byTest.size(), studentUserId, now);
         List<AvailableTestResponseDto> result = new ArrayList<>();
         for (Test test : testRepository.findAllById(byTest.keySet())) {
-            if (test.getStatus() != TestStatus.PUBLISHED || !test.isActive()) {
-                log.debug("  test {} skipped: status={}, active={}", test.getId(), test.getStatus(), test.isActive());
+            if (test.getStatus() != TestStatus.PUBLISHED) {
+                log.debug("  test {} skipped: status={}", test.getId(), test.getStatus());
                 continue;
             }
             TestAssignment assignment = byTest.get(test.getId());

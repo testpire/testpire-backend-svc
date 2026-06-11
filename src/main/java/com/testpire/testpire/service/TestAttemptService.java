@@ -66,8 +66,8 @@ public class TestAttemptService {
     public TestAttemptResponseDto startAttempt(Long testId, Long studentUserId, Long instituteId) {
         log.debug("startAttempt: student={}, test={}, institute={}", studentUserId, testId, instituteId);
         Test test = loadStudentTest(testId, instituteId);
-        log.debug("Test {} status={}, active={}, maxAttempts={}", testId, test.getStatus(), test.isActive(), test.getMaxAttempts());
-        if (test.getStatus() != TestStatus.PUBLISHED || !test.isActive()) {
+        log.debug("Test {} status={}, maxAttempts={}", testId, test.getStatus(), test.getMaxAttempts());
+        if (test.getStatus() != TestStatus.PUBLISHED) {
             throw new IllegalStateException("This test is not open for attempts");
         }
         TestAssignment assignment = resolutionService.requireEligibility(test, studentUserId);
@@ -357,7 +357,7 @@ public class TestAttemptService {
         String csv = null;
         if (dto.selectedOptionIds() != null && !dto.selectedOptionIds().isEmpty()) {
             Set<Long> validOptionIds = optionRepository
-                    .findByQuestionIdAndActiveTrueAndDeletedFalseOrderByOptionOrder(dto.questionId()).stream()
+                    .findByQuestionIdOrderByOptionOrder(dto.questionId()).stream()
                     .map(Option::getId).collect(Collectors.toSet());
             for (Long optId : dto.selectedOptionIds()) {
                 if (!validOptionIds.contains(optId)) {

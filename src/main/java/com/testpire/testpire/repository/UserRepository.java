@@ -24,28 +24,20 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByInstituteId(Long instituteId);
     
     List<User> findByRoleAndInstituteId(UserRole role, Long instituteId);
-    
-    List<User> findByEnabledTrue();
-    
-    List<User> findByRoleAndEnabledTrue(UserRole role);
-    
-    List<User> findByInstituteIdAndEnabledTrue(Long instituteId);
-    
-    List<User> findByRoleAndInstituteIdAndEnabledTrue(UserRole role, Long instituteId);
-    
-    @Query("SELECT u FROM User u WHERE u.enabled = true AND u.role = :role AND (u.firstName LIKE %:searchTerm% OR u.lastName LIKE %:searchTerm% OR u.email LIKE %:searchTerm%)")
-    List<User> findByRoleAndEnabledTrueAndNameOrEmailContaining(
-        @Param("role") UserRole role, 
+
+    @Query("SELECT u FROM User u WHERE u.role = :role AND (u.firstName LIKE %:searchTerm% OR u.lastName LIKE %:searchTerm% OR u.email LIKE %:searchTerm%)")
+    List<User> findByRoleAndNameOrEmailContaining(
+        @Param("role") UserRole role,
         @Param("searchTerm") String searchTerm
     );
-    
-    @Query("SELECT u FROM User u WHERE u.enabled = true AND u.role = :role AND u.instituteId = :instituteId AND (u.firstName LIKE %:searchTerm% OR u.lastName LIKE %:searchTerm% OR u.email LIKE %:searchTerm%)")
-    List<User> findByRoleAndInstituteIdAndEnabledTrueAndNameOrEmailContaining(
-        @Param("role") UserRole role, 
+
+    @Query("SELECT u FROM User u WHERE u.role = :role AND u.instituteId = :instituteId AND (u.firstName LIKE %:searchTerm% OR u.lastName LIKE %:searchTerm% OR u.email LIKE %:searchTerm%)")
+    List<User> findByRoleAndInstituteIdAndNameOrEmailContaining(
+        @Param("role") UserRole role,
         @Param("instituteId") Long instituteId,
         @Param("searchTerm") String searchTerm
     );
-    
+
     boolean existsByUsername(String username);
     
     boolean existsByEmail(String email);

@@ -37,7 +37,7 @@ public class SuperAdminController {
     @Operation(summary = "Get all users", description = "Get all users (SUPER_ADMIN only)")
     public ResponseEntity<?> getAllUsers() {
         try {
-            List<User> users = userService.getAllActiveUsers();
+            List<User> users = userService.getAllUsers();
             return ResponseEntity.ok(users);
         } catch (Exception e) {
             log.error("Error fetching users", e);
@@ -68,13 +68,13 @@ public class SuperAdminController {
     public ResponseEntity<?> getSystemDashboard() {
         try {
             // Get counts for different user types
-            long totalUsers = userService.getAllActiveUsers().size();
+            long totalUsers = userService.getAllUsers().size();
             long totalTeachers = userService.getUsersByRole(UserRole.TEACHER).size();
             long totalStudents = userService.getUsersByRole(UserRole.STUDENT).size();
             long totalInstAdmins = userService.getUsersByRole(UserRole.INST_ADMIN).size();
             
             // Get institute count
-            long totalInstitutes = instituteService.getAllActiveInstitutes().size();
+            long totalInstitutes = instituteService.getAllInstitutes().size();
 
             return ResponseEntity.ok(Map.of(
                 "totalUsers", totalUsers,

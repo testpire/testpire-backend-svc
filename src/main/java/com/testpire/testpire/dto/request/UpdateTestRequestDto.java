@@ -31,8 +31,6 @@ public record UpdateTestRequestDto(
 
         Boolean showAnswers,
 
-        Boolean active,
-
         Instant availableFrom,
 
         Instant availableUntil

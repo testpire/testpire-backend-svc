@@ -141,15 +141,6 @@ public class InstituteSpecification {
         };
     }
 
-    public static Specification<Institute> isActive(Boolean active) {
-        return (root, query, criteriaBuilder) -> {
-            if (active == null) {
-                return criteriaBuilder.conjunction();
-            }
-            return criteriaBuilder.equal(root.get("active"), active);
-        };
-    }
-
     public static Specification<Institute> createdAfter(Instant createdAfter) {
         return (root, query, criteriaBuilder) -> {
             if (createdAfter == null) {

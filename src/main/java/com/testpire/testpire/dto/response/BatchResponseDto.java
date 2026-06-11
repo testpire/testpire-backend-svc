@@ -22,7 +22,6 @@ public record BatchResponseDto(
         BigDecimal effectiveFee,
         // true when this batch has no override and is following the course fee.
         boolean feeInherited,
-        boolean active,
         Instant createdAt,
         Instant updatedAt,
         String createdBy,
@@ -48,7 +47,6 @@ public record BatchResponseDto(
                 override,
                 inherited ? courseFee : override,
                 inherited,
-                batch.isActive(),
                 batch.getCreatedAt(),
                 batch.getUpdatedAt(),
                 batch.getCreatedBy(),

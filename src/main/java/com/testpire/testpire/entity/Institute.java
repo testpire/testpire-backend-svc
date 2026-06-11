@@ -58,10 +58,7 @@ public class Institute {
     
     @Column(length = ApplicationConstants.Validation.DESCRIPTION_MAX_LENGTH)
     private String description;
-    
-    @Builder.Default
-    private boolean active = true;
-    
+
     @Builder.Default
     @Column(name = ApplicationConstants.Database.CREATED_AT_COLUMN)
     private Instant createdAt = Instant.now();

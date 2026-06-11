@@ -26,7 +26,6 @@ public class InstituteCriteriaDto {
     private String email;
     private String website;
     private String description;
-    private Boolean active;
     private Instant createdAfter;
     private Instant createdBefore;
     private String createdBy;

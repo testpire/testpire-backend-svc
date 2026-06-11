@@ -14,8 +14,7 @@ public record UpdateSubjectRequestDto(
 
         String duration,
         Integer credits,
-        String prerequisites,
-        Boolean active
+        String prerequisites
 ) {}
 
 

@@ -39,7 +39,5 @@ public record UpdateQuestionRequestDto(
     @NotEmpty(message = "At least one option is required")
     @Size(min = 2, max = 6, message = "Question must have between 2 and 6 options")
     @Valid
-    List<UpdateOptionRequestDto> options,
-    
-    Boolean active
+    List<UpdateOptionRequestDto> options
 ) {}

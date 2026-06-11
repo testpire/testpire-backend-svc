@@ -85,10 +85,6 @@ public class ChapterSearchRequestDto {
         return criteria != null ? criteria.getObjectives() : null;
     }
     
-    public Boolean getActive() {
-        return criteria != null ? criteria.getActive() : null;
-    }
-    
     public Boolean getHasTopics() {
         return criteria != null ? criteria.getHasTopics() : null;
     }

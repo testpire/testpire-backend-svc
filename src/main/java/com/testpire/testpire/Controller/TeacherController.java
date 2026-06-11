@@ -180,9 +180,6 @@ public class TeacherController {
                 }
                 teacher.setInstituteId(request.instituteId());
             }
-            if (request.enabled() != null) {
-                teacher.setEnabled(request.enabled());
-            }
 
             User updatedTeacher = userService.updateUser(teacher);
             
@@ -367,7 +364,6 @@ public class TeacherController {
                     .maxExperienceYears(request.getMaxExperienceYears())
                     .specialization(request.getSpecialization())
                     .bio(request.getBio())
-                    .enabled(request.getEnabled())
                     .createdAfter(request.getCreatedAfter())
                     .createdBefore(request.getCreatedBefore())
                     .createdBy(request.getCreatedBy())
@@ -417,8 +413,6 @@ public class TeacherController {
             @RequestParam(required = false) String specialization,
             @Parameter(description = "Bio (optional)", example = "Experienced teacher")
             @RequestParam(required = false) String bio,
-            @Parameter(description = "Enabled status (optional)", example = "true")
-            @RequestParam(required = false) Boolean enabled,
             @Parameter(description = "Created after (optional)", example = "2024-01-01T00:00:00")
             @RequestParam(required = false) String createdAfter,
             @Parameter(description = "Created before (optional)", example = "2024-12-31T23:59:59")
@@ -472,7 +466,6 @@ public class TeacherController {
                     .maxExperienceYears(maxExperienceYears)
                     .specialization(specialization)
                     .bio(bio)
-                    .enabled(enabled)
                     .createdAfter(parsedCreatedAfter)
                     .createdBefore(parsedCreatedBefore)
                     .createdBy(createdBy)

@@ -30,7 +30,6 @@ public interface TopicRepository extends JpaRepository<Topic, Long>, JpaSpecific
         "AND (:courseId IS NULL OR tc.id = :courseId) " +
         "AND (:subjectId IS NULL OR t.chapter.subject.id = :subjectId) " +
         "AND (:chapterId IS NULL OR t.chapter.id = :chapterId) " +
-        "AND (:active IS NULL OR COALESCE(t.active, true) = :active) " +
         "AND (:searchQuery IS NULL OR " +
         "     LOWER(t.name) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
         "     LOWER(t.code) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
@@ -40,8 +39,7 @@ public interface TopicRepository extends JpaRepository<Topic, Long>, JpaSpecific
         @Param("courseId") Long courseId,
         @Param("subjectId") Long subjectId,
         @Param("chapterId") Long chapterId,
-        @Param("searchQuery") String searchQuery,
-        @Param("active") Boolean active);
+        @Param("searchQuery") String searchQuery);
 
     // Count topics with filters
     @Query("SELECT COUNT(DISTINCT t) FROM Topic t " +
@@ -50,7 +48,6 @@ public interface TopicRepository extends JpaRepository<Topic, Long>, JpaSpecific
            "AND (:courseId IS NULL OR tc.id = :courseId) " +
            "AND (:subjectId IS NULL OR t.chapter.subject.id = :subjectId) " +
            "AND (:chapterId IS NULL OR t.chapter.id = :chapterId) " +
-           "AND (:active IS NULL OR t.active = :active) " +
            "AND (:searchQuery IS NULL OR " +
            "     LOWER(t.name) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
            "     LOWER(t.code) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
@@ -59,6 +56,5 @@ public interface TopicRepository extends JpaRepository<Topic, Long>, JpaSpecific
                               @Param("courseId") Long courseId,
                               @Param("subjectId") Long subjectId,
                               @Param("chapterId") Long chapterId,
-                              @Param("searchQuery") String searchQuery,
-                              @Param("active") Boolean active);
+                              @Param("searchQuery") String searchQuery);
 }

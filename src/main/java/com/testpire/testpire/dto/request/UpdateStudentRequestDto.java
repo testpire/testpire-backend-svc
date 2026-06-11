@@ -28,7 +28,6 @@ public record UpdateStudentRequestDto(
     String bloodGroup,
     String emergencyContact,
     Long instituteId,
-    Boolean enabled,
 
     /**
      * When non-null, REPLACES the student's full enrollment set to match this list (an empty list

@@ -117,10 +117,6 @@ public class StudentSearchRequestDto {
         return criteria != null ? criteria.getEmergencyContact() : null;
     }
     
-    public Boolean getEnabled() {
-        return criteria != null ? criteria.getEnabled() : null;
-    }
-    
     public Instant getCreatedAfter() {
         return criteria != null ? criteria.getCreatedAfter() : null;
     }

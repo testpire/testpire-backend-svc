@@ -13,18 +13,18 @@ import java.util.Optional;
 @Repository
 public interface OptionRepository extends JpaRepository<Option, Long>, JpaSpecificationExecutor<Option> {
     
-    @Query("SELECT o FROM Option o WHERE o.question.id = :questionId AND o.active = true AND o.deleted = false ORDER BY o.optionOrder")
-    List<Option> findByQuestionIdAndActiveTrueAndDeletedFalseOrderByOptionOrder(@Param("questionId") Long questionId);
-    
-    @Query("SELECT o FROM Option o WHERE o.id = :id AND o.question.id = :questionId AND o.active = true AND o.deleted = false")
-    Optional<Option> findByIdAndQuestionIdAndActiveTrueAndDeletedFalse(@Param("id") Long id, @Param("questionId") Long questionId);
-    
-    @Query("SELECT o FROM Option o WHERE o.question.id = :questionId AND o.isCorrect = true AND o.active = true AND o.deleted = false")
+    @Query("SELECT o FROM Option o WHERE o.question.id = :questionId ORDER BY o.optionOrder")
+    List<Option> findByQuestionIdOrderByOptionOrder(@Param("questionId") Long questionId);
+
+    @Query("SELECT o FROM Option o WHERE o.id = :id AND o.question.id = :questionId")
+    Optional<Option> findByIdAndQuestionId(@Param("id") Long id, @Param("questionId") Long questionId);
+
+    @Query("SELECT o FROM Option o WHERE o.question.id = :questionId AND o.isCorrect = true")
     List<Option> findCorrectOptionsByQuestionId(@Param("questionId") Long questionId);
-    
-    @Query("SELECT COUNT(o) FROM Option o WHERE o.question.id = :questionId AND o.active = true AND o.deleted = false")
+
+    @Query("SELECT COUNT(o) FROM Option o WHERE o.question.id = :questionId")
     Long countByQuestionId(@Param("questionId") Long questionId);
-    
-    @Query("SELECT COUNT(o) FROM Option o WHERE o.question.id = :questionId AND o.isCorrect = true AND o.active = true AND o.deleted = false")
+
+    @Query("SELECT COUNT(o) FROM Option o WHERE o.question.id = :questionId AND o.isCorrect = true")
     Long countCorrectOptionsByQuestionId(@Param("questionId") Long questionId);
 }

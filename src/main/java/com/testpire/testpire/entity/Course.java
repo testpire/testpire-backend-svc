@@ -3,8 +3,6 @@ package com.testpire.testpire.entity;
 import com.testpire.testpire.constants.ApplicationConstants;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -18,8 +16,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@SQLDelete(sql = "UPDATE " + ApplicationConstants.Database.COURSES_TABLE + " SET deleted = true WHERE id=?")
-@SQLRestriction("deleted = false")
 public class Course {
 
     @Id
@@ -59,12 +55,6 @@ public class Course {
 
     @Column(name = "updated_by")
     private String updatedBy;
-
-    @Builder.Default
-    private boolean deleted = false;
-
-    @Builder.Default
-    private boolean active = true;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

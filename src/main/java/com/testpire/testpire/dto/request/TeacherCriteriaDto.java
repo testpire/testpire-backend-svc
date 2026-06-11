@@ -27,7 +27,6 @@ public class TeacherCriteriaDto {
     private Integer maxExperienceYears;
     private String specialization;
     private String bio;
-    private Boolean enabled;
     private Instant createdAfter;
     private Instant createdBefore;
     private String createdBy;

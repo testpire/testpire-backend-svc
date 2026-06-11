@@ -85,7 +85,6 @@ public class ChapterService {
         Optional.ofNullable(request.orderIndex()).ifPresent(existingChapter::setOrderIndex);
         Optional.ofNullable(request.duration()).ifPresent(existingChapter::setDuration);
         Optional.ofNullable(request.objectives()).ifPresent(existingChapter::setObjectives);
-        Optional.ofNullable(request.active()).ifPresent(existingChapter::setActive);
         existingChapter.setUpdatedBy(RequestUtils.getCurrentUsername());
 
         Chapter updatedChapter = chapterRepository.save(existingChapter);
@@ -99,10 +98,8 @@ public class ChapterService {
 
         Chapter chapter = findChapterScoped(id);
 
-        chapter.setActive(false);
-        chapter.setUpdatedBy(RequestUtils.getCurrentUsername());
-        chapterRepository.save(chapter);
-        log.info("Chapter deactivated successfully with ID: {}", id);
+        chapterRepository.delete(chapter);
+        log.info("Chapter deleted successfully with ID: {}", id);
     }
 
     @Transactional(readOnly = true)
@@ -162,9 +159,7 @@ public class ChapterService {
                 .and(ChapterSpecification.hasOrderIndexRange(request.getMinOrderIndex(), request.getMaxOrderIndex()))
                 .and(ChapterSpecification.hasDurationRange(request.getMinDuration(), request.getMaxDuration()))
                 .and(ChapterSpecification.hasObjectivesContaining(request.getObjectives()))
-                .and(ChapterSpecification.isActive(request.getActive()))
-                .and(ChapterSpecification.isNotDeleted())
-                .and(request.getHasTopics() != null && request.getHasTopics() ? 
+                .and(request.getHasTopics() != null && request.getHasTopics() ?
                      ChapterSpecification.hasTopics() : (root, query, cb) -> cb.conjunction())
                 .and(ChapterSpecification.hasMinimumTopics(request.getMinTopics()))
                 .and(ChapterSpecification.hasMaximumTopics(request.getMaxTopics()))

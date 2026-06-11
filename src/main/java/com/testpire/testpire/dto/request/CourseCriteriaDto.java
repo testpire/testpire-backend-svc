@@ -22,7 +22,6 @@ public class CourseCriteriaDto {
     private Integer maxDuration;
     private String level;
     private String prerequisites;
-    private Boolean active;
     private Boolean hasSubjects;
     private Integer minSubjects;
     private Integer maxSubjects;

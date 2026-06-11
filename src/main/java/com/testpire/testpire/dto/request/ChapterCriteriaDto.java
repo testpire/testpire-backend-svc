@@ -24,7 +24,6 @@ public class ChapterCriteriaDto {
     private Integer minDuration;
     private Integer maxDuration;
     private String objectives;
-    private Boolean active;
     private Boolean hasTopics;
     private Integer minTopics;
     private Integer maxTopics;

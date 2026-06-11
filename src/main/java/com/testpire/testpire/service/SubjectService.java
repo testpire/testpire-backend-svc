@@ -87,7 +87,6 @@ public class SubjectService {
         Optional.ofNullable(request.duration()).ifPresent(existingSubject::setDuration);
         Optional.ofNullable(request.credits()).ifPresent(existingSubject::setCredits);
         Optional.ofNullable(request.prerequisites()).ifPresent(existingSubject::setPrerequisites);
-        Optional.ofNullable(request.active()).ifPresent(existingSubject::setActive);
         existingSubject.setUpdatedBy(RequestUtils.getCurrentUsername());
 
         Subject updatedSubject = subjectRepository.save(existingSubject);
@@ -101,10 +100,8 @@ public class SubjectService {
 
         Subject subject = findSubjectScoped(id);
 
-        subject.setActive(false);
-        subject.setUpdatedBy(RequestUtils.getCurrentUsername());
-        subjectRepository.save(subject);
-        log.info("Subject deactivated successfully with ID: {}", id);
+        subjectRepository.delete(subject);
+        log.info("Subject deleted successfully with ID: {}", id);
     }
 
     @Transactional(readOnly = true)
@@ -164,9 +161,7 @@ public class SubjectService {
                 .and(SubjectSpecification.hasDurationRange(request.getMinDuration(), request.getMaxDuration()))
                 .and(SubjectSpecification.hasCreditsRange(request.getMinCredits(), request.getMaxCredits()))
                 .and(SubjectSpecification.hasPrerequisitesContaining(request.getPrerequisites()))
-                .and(SubjectSpecification.isActive(request.getActive()))
-                .and(SubjectSpecification.isNotDeleted())
-                .and(request.getHasChapters() != null && request.getHasChapters() ? 
+                .and(request.getHasChapters() != null && request.getHasChapters() ?
                      SubjectSpecification.hasChapters() : (root, query, cb) -> cb.conjunction())
                 .and(SubjectSpecification.hasMinimumChapters(request.getMinChapters()))
                 .and(SubjectSpecification.hasMaximumChapters(request.getMaxChapters()))

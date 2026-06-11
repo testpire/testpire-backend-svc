@@ -53,9 +53,6 @@ public class TestAssignment {
     private Instant availableUntil;
 
     @Builder.Default
-    private boolean active = true;
-
-    @Builder.Default
     @Column(name = "assigned_at", updatable = false)
     private Instant assignedAt = Instant.now();
 

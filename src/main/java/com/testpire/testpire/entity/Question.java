@@ -5,8 +5,6 @@ import com.testpire.testpire.enums.DifficultyLevel;
 import com.testpire.testpire.enums.TextFormat;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
 
 import java.time.Instant;
 import java.util.List;
@@ -18,8 +16,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@SQLDelete(sql = "UPDATE " + ApplicationConstants.Database.QUESTION_TABLE + " SET deleted = true WHERE id=?")
-@SQLRestriction("deleted = false")
 public class Question {
 
     @Id
@@ -86,12 +82,6 @@ public class Question {
 
     @Column(name = "updated_by")
     private String updatedBy;
-
-    @Builder.Default
-    private boolean deleted = false;
-
-    @Builder.Default
-    private boolean active = true;
 
     @PreUpdate
     protected void onUpdate() {

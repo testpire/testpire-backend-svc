@@ -97,10 +97,6 @@ public class TopicSearchRequestDto {
         return criteria != null ? criteria.getMaxDuration() : null;
     }
     
-    public Boolean getActive() {
-        return criteria != null ? criteria.getActive() : null;
-    }
-    
     public Boolean getHasQuestions() {
         return criteria != null ? criteria.getHasQuestions() : null;
     }

@@ -43,9 +43,6 @@ public class StudentEnrollment {
     private Long instituteId;
 
     @Builder.Default
-    private boolean active = true;
-
-    @Builder.Default
     @Column(name = "enrolled_at")
     private Instant enrolledAt = Instant.now();
 

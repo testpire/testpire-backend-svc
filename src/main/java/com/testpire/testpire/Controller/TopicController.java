@@ -158,7 +158,7 @@ public class TopicController {
     @RequirePermission(Permission.TOPIC_DELETE)
     @Operation(
         summary = "Delete a topic",
-        description = "Soft deletes a topic by ID (sets active to false). Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can delete topics."
+        description = "Permanently deletes a topic by ID. Only users with SUPER_ADMIN, INST_ADMIN, or TEACHER roles can delete topics."
     )
     @ApiResponses(value = {
         @ApiResponse(
@@ -343,7 +343,6 @@ public class TopicController {
                     .maxOrderIndex(request.getMaxOrderIndex())
                     .minDuration(request.getMinDuration())
                     .maxDuration(request.getMaxDuration())
-                    .active(request.getActive())
                     .hasQuestions(request.getHasQuestions())
                     .minQuestions(request.getMinQuestions())
                     .maxQuestions(request.getMaxQuestions())
@@ -425,8 +424,6 @@ public class TopicController {
             @RequestParam(required = false) Integer minDuration,
             @Parameter(description = "Maximum duration (optional)", example = "120")
             @RequestParam(required = false) Integer maxDuration,
-            @Parameter(description = "Active status (optional)", example = "true")
-            @RequestParam(required = false) Boolean active,
             @Parameter(description = "Has questions (optional)", example = "true")
             @RequestParam(required = false) Boolean hasQuestions,
             @Parameter(description = "Minimum questions (optional)", example = "1")
@@ -488,7 +485,6 @@ public class TopicController {
                     .maxOrderIndex(maxOrderIndex)
                     .minDuration(minDuration)
                     .maxDuration(maxDuration)
-                    .active(active)
                     .hasQuestions(hasQuestions)
                     .minQuestions(minQuestions)
                     .maxQuestions(maxQuestions)

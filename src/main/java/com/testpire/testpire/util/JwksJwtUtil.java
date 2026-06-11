@@ -193,7 +193,7 @@ public class JwksJwtUtil {
             
             log.info("Extracted user from token: username={}, role={}, email={}, instituteId={}", username, role, email, instituteId);
             
-            return new UserDto(username, email, firstName, lastName, role, true, instituteId);
+            return new UserDto(username, email, firstName, lastName, role, instituteId);
         } catch (Exception e) {
             log.error("Error extracting user from token", e);
             throw new RuntimeException("Failed to extract user from JWT token", e);

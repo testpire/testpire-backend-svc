@@ -18,8 +18,7 @@ public record TopicResponseDto(
         Instant createdAt,
         Instant updatedAt,
         String createdBy,
-        String updatedBy,
-        boolean active
+        String updatedBy
 ) {
     public static TopicResponseDto fromEntity(Topic topic) {
         return new TopicResponseDto(
@@ -36,8 +35,7 @@ public record TopicResponseDto(
                 topic.getCreatedAt(),
                 topic.getUpdatedAt(),
                 topic.getCreatedBy(),
-                topic.getUpdatedBy(),
-                topic.isActive()
+                topic.getUpdatedBy()
         );
     }
 }

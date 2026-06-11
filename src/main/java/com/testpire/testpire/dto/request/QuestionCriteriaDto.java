@@ -32,7 +32,6 @@ public class QuestionCriteriaDto {
     private Boolean hasOptions;
     private Integer minOptions;
     private Integer maxOptions;
-    private Boolean active;
     private Instant createdAfter;
     private Instant createdBefore;
     private String createdBy;

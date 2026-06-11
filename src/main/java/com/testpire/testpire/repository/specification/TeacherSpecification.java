@@ -132,14 +132,6 @@ public class TeacherSpecification {
         };
     }
     
-    public static Specification<TeacherDetails> isEnabled(Boolean enabled) {
-        return (root, query, criteriaBuilder) -> {
-            if (enabled == null) return null;
-            Join<TeacherDetails, User> userJoin = root.join("user");
-            return criteriaBuilder.equal(userJoin.get("enabled"), enabled);
-        };
-    }
-    
     public static Specification<TeacherDetails> hasSearchText(String searchText) {
         return (root, query, criteriaBuilder) -> {
             if (searchText == null || searchText.trim().isEmpty()) return null;

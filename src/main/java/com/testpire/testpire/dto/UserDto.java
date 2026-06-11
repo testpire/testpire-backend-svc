@@ -9,6 +9,5 @@ public record UserDto(
     String firstName,
     String lastName,
     UserRole role,
-    boolean enabled,
     Long instituteId
 ) {}

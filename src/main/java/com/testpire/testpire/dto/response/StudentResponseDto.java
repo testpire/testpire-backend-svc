@@ -14,7 +14,6 @@ public record StudentResponseDto(
     String firstName,
     String lastName,
     UserRole role,
-    Boolean enabled,
     Long instituteId,
     String phone,
     String course,
@@ -45,7 +44,6 @@ public record StudentResponseDto(
             user.getFirstName(),
             user.getLastName(),
             user.getRole(),
-            null,                 // enabled
             user.getInstituteId(),
             null,                 // phone
             studentDetails != null ? studentDetails.getCourse() : null,
@@ -78,7 +76,6 @@ public record StudentResponseDto(
             user.getFirstName(),
             user.getLastName(),
             user.getRole(),
-            user.isEnabled(),
             user.getInstituteId(),
             studentDetails != null ? studentDetails.getPhone() : null,
             studentDetails != null ? studentDetails.getCourse() : null,

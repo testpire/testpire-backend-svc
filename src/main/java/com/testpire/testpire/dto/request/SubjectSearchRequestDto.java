@@ -85,10 +85,6 @@ public class SubjectSearchRequestDto {
         return criteria != null ? criteria.getPrerequisites() : null;
     }
     
-    public Boolean getActive() {
-        return criteria != null ? criteria.getActive() : null;
-    }
-    
     public Boolean getHasChapters() {
         return criteria != null ? criteria.getHasChapters() : null;
     }

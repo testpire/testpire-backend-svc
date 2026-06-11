@@ -16,7 +16,6 @@ public record InstituteResponseDto(
     String state,
     String country,
     String postalCode,
-    Boolean active,
     Instant createdAt,
     Instant updatedAt,
     String createdBy,
@@ -24,7 +23,7 @@ public record InstituteResponseDto(
 ) {
     /**
      * Minimal projection for the UNAUTHENTICATED /institutes/code/{code} lookup (used by the
-     * signup-by-code flow). Exposes only id, name, code and active status — never contact details
+     * signup-by-code flow). Exposes only id, name and code — never contact details
      * (email/phone/address) which would otherwise allow anonymous tenant data harvesting.
      */
     public static InstituteResponseDto publicView(Institute institute) {
@@ -33,7 +32,6 @@ public record InstituteResponseDto(
             institute.getName(),
             institute.getCode(),
             null, null, null, null, null, null, null, null, null, // description..postalCode
-            true,                                                  // active
             null, null, null, null                                 // createdAt, updatedAt, createdBy, updatedBy
         );
     }
@@ -52,7 +50,6 @@ public record InstituteResponseDto(
             institute.getState(),
             institute.getCountry(),
             institute.getPostalCode(),
-            true,
             institute.getCreatedAt(),
             institute.getUpdatedAt(),
             institute.getCreatedBy(),

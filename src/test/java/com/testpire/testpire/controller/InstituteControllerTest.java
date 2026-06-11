@@ -44,7 +44,7 @@ class InstituteControllerTest extends BaseControllerTest {
         return Institute.builder()
                 .id(1L).name("Test Academy").code("TEST01")
                 .email("test@academy.com").phone("+911234567890")
-                .address("123 Main St").active(true)
+                .address("123 Main St")
                 .createdAt(Instant.now()).updatedAt(Instant.now())
                 .build();
     }

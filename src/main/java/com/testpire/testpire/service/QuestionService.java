@@ -48,7 +48,7 @@ public class QuestionService {
         // existing question in place rather than creating a duplicate — keeping the upload idempotent.
         if (request.externalId() != null && !request.externalId().isBlank()) {
             Optional<Question> existing = questionRepository
-                    .findByInstituteIdAndExternalIdAndActiveTrueAndDeletedFalse(
+                    .findByInstituteIdAndExternalId(
                             request.instituteId(), request.externalId());
             if (existing.isPresent()) {
                 return updateQuestionFromRequest(existing.get(), request);
@@ -135,18 +135,14 @@ public class QuestionService {
     }
 
     /**
-     * Soft-deletes any existing options for the question, persists the supplied options, and updates
+     * Hard-deletes any existing options for the question, persists the supplied options, and updates
      * {@code correctOptionId}. Shared by the create and idempotent-update paths.
      */
     private void rebuildOptions(Question question, List<CreateOptionRequestDto> optionRequests) {
         List<Option> existingOptions =
-                optionRepository.findByQuestionIdAndActiveTrueAndDeletedFalseOrderByOptionOrder(question.getId());
+                optionRepository.findByQuestionIdOrderByOptionOrder(question.getId());
         if (!existingOptions.isEmpty()) {
-            existingOptions.forEach(option -> {
-                option.setDeleted(true);
-                option.setActive(false);
-            });
-            optionRepository.saveAll(existingOptions);
+            optionRepository.deleteAll(existingOptions);
         }
 
         List<Option> options = optionRequests.stream()
@@ -185,14 +181,14 @@ public class QuestionService {
     private Question findQuestionScoped(Long id) {
         Long instituteId = getCurrentUserInstituteId();
         return (instituteId != null
-                ? questionRepository.findByIdAndInstituteIdAndActiveTrueAndDeletedFalse(id, instituteId)
-                : questionRepository.findByIdAndActiveTrueAndDeletedFalse(id))
+                ? questionRepository.findByIdAndInstituteId(id, instituteId)
+                : questionRepository.findById(id))
                 .orElseThrow(() -> new IllegalArgumentException("Question not found with ID: " + id));
     }
 
     private QuestionResponseDto convertToResponseDto(Question question) {
-        List<Option> options = optionRepository.findByQuestionIdAndActiveTrueAndDeletedFalseOrderByOptionOrder(question.getId());
-        
+        List<Option> options = optionRepository.findByQuestionIdOrderByOptionOrder(question.getId());
+
         return QuestionResponseDto.builder()
                 .id(question.getId())
                 .externalId(question.getExternalId())
@@ -215,7 +211,6 @@ public class QuestionService {
                 .updatedAt(question.getUpdatedAt())
                 .createdBy(question.getCreatedBy())
                 .updatedBy(question.getUpdatedBy())
-                .active(question.isActive())
                 .build();
     }
 
@@ -231,7 +226,6 @@ public class QuestionService {
                 .updatedAt(option.getUpdatedAt())
                 .createdBy(option.getCreatedBy())
                 .updatedBy(option.getUpdatedBy())
-                .active(option.isActive())
                 .build();
     }
 
@@ -252,19 +246,9 @@ public class QuestionService {
         question.setTextFormat(request.textFormat() != null ? request.textFormat() : TextFormat.PLAIN);
         question.setUpdatedBy(getCurrentUsername());
 
-        if (request.active() != null) {
-            question.setActive(request.active());
-        }
-
-        // Update options
-        List<Option> existingOptions = optionRepository.findByQuestionIdAndActiveTrueAndDeletedFalseOrderByOptionOrder(id);
-        
-        // Remove existing options
-        existingOptions.forEach(option -> {
-            option.setDeleted(true);
-            option.setActive(false);
-        });
-        optionRepository.saveAll(existingOptions);
+        // Update options — hard-delete the existing ones, then create the new set.
+        List<Option> existingOptions = optionRepository.findByQuestionIdOrderByOptionOrder(id);
+        optionRepository.deleteAll(existingOptions);
 
         // Create new options; question is captured here before the reassignment below.
         final Question savedQuestion = question;
@@ -300,11 +284,8 @@ public class QuestionService {
 
         Question question = findQuestionScoped(id);
 
-        // Soft delete question (options will be cascade deleted)
-        question.setDeleted(true);
-        question.setActive(false);
-        question.setUpdatedBy(getCurrentUsername());
-        questionRepository.save(question);
+        // Hard delete question (options are cascade-deleted via orphanRemoval / FK ON DELETE CASCADE)
+        questionRepository.delete(question);
 
         log.info("Successfully deleted question with ID: {}", id);
     }
@@ -318,8 +299,8 @@ public class QuestionService {
         log.info("Getting questions for topic: {} in institute: {}", topicId, instituteId);
 
         List<Question> questions = (instituteId != null)
-                ? questionRepository.findByTopicIdAndInstituteIdAndActiveTrueAndDeletedFalse(topicId, instituteId)
-                : questionRepository.findByTopicIdAndActiveTrueAndDeletedFalse(topicId);
+                ? questionRepository.findByTopicIdAndInstituteId(topicId, instituteId)
+                : questionRepository.findByTopicId(topicId);
         
         List<QuestionResponseDto> questionDtos = questions.stream()
                 .map(this::convertToResponseDto)
@@ -334,7 +315,7 @@ public class QuestionService {
     public QuestionListResponseDto getQuestionsByInstitute(Long instituteId) {
         log.info("Getting questions for institute: {}", instituteId);
 
-        List<Question> questions = questionRepository.findByInstituteIdAndActiveTrueAndDeletedFalse(instituteId);
+        List<Question> questions = questionRepository.findByInstituteId(instituteId);
         
         List<QuestionResponseDto> questionDtos = questions.stream()
                 .map(this::convertToResponseDto)
@@ -382,9 +363,7 @@ public class QuestionService {
                 .and(QuestionSpecification.hasQuestionType(request.getQuestionType()))
                 .and(QuestionSpecification.hasMarksRange(request.getMinMarks(), request.getMaxMarks()))
                 .and(QuestionSpecification.hasNegativeMarksRange(request.getMinNegativeMarks(), request.getMaxNegativeMarks()))
-                .and(QuestionSpecification.isActive(request.getActive()))
-                .and(QuestionSpecification.isNotDeleted())
-                .and(request.getHasQuestionImage() != null && request.getHasQuestionImage() ? 
+                .and(request.getHasQuestionImage() != null && request.getHasQuestionImage() ?
                      QuestionSpecification.hasQuestionImage() : (root, query, cb) -> cb.conjunction())
                 .and(request.getHasExplanation() != null && request.getHasExplanation() ? 
                      QuestionSpecification.hasExplanation() : (root, query, cb) -> cb.conjunction())

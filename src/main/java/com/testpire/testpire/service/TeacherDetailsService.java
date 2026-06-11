@@ -139,7 +139,6 @@ public class TeacherDetailsService {
                 .and(TeacherSpecification.hasExperienceYearsRange(request.getMinExperienceYears(), request.getMaxExperienceYears()))
                 .and(TeacherSpecification.hasSpecializationContaining(request.getSpecialization()))
                 .and(TeacherSpecification.hasBioContaining(request.getBio()))
-                .and(TeacherSpecification.isEnabled(request.getEnabled()))
                 .and(TeacherSpecification.createdAfter(request.getCreatedAfter()))
                 .and(TeacherSpecification.createdBefore(request.getCreatedBefore()))
                 .and(TeacherSpecification.createdBy(request.getCreatedBy()));

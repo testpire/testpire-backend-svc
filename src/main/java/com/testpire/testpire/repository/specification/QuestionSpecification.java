@@ -144,19 +144,6 @@ public class QuestionSpecification {
         };
     }
 
-    public static Specification<Question> isActive(Boolean active) {
-        return (root, query, criteriaBuilder) -> {
-            if (active == null) {
-                return criteriaBuilder.conjunction();
-            }
-            return criteriaBuilder.equal(root.get("active"), active);
-        };
-    }
-
-    public static Specification<Question> isNotDeleted() {
-        return (root, query, criteriaBuilder) -> 
-            criteriaBuilder.equal(root.get("deleted"), false);
-    }
 
     public static Specification<Question> hasQuestionImage() {
         return (root, query, criteriaBuilder) -> 

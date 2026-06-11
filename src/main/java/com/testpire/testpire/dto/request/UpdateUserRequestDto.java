@@ -6,6 +6,5 @@ public record UpdateUserRequestDto(
     String firstName,
     String lastName,
     UserRole role,
-    Long instituteId,
-    Boolean enabled
+    Long instituteId
 ) {}

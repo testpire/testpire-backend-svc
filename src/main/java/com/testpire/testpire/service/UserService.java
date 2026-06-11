@@ -21,6 +21,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final InstituteService instituteService;
+    private final CognitoService cognitoService;
 
     public User createUser(String username, String firstName, String lastName,
                            UserRole role, Long instituteId, String cognitoUserId, String createdBy) {
@@ -44,7 +45,6 @@ public class UserService {
                 .role(role)
                 .instituteId(instituteId)
                 .cognitoUserId(cognitoUserId)
-                .enabled(true)
                 .createdBy(createdBy)
                 .build();
 
@@ -79,7 +79,6 @@ public class UserService {
                 .role(role)
                 .instituteId(request.instituteId())
                 .cognitoUserId(cognitoUserId)
-                .enabled(true)
                 .createdBy(createdBy)
                 .build();
 
@@ -133,7 +132,6 @@ public class UserService {
         existingUser.setFirstName(user.getFirstName());
         existingUser.setLastName(user.getLastName());
         existingUser.setInstituteId(user.getInstituteId());
-        existingUser.setEnabled(user.isEnabled());
         existingUser.setUpdatedBy(RequestUtils.getCurrentUsername());
 
         User savedUser = userRepository.save(existingUser);
@@ -143,13 +141,15 @@ public class UserService {
 
     public void deleteUser(Long id) {
         log.info("Deleting user with ID: {}", id);
-        
+
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + id));
-        
-        user.setEnabled(false);
-        userRepository.save(user);
-        log.info("User deactivated successfully with ID: {}", id);
+
+        // Remove the Cognito account first so it isn't orphaned, then hard-delete the DB row
+        // (cascades to student/teacher details, enrollments, and test attempts via FK ON DELETE CASCADE).
+        cognitoService.deleteUser(user.getUsername());
+        userRepository.delete(user);
+        log.info("User deleted successfully with ID: {}", id);
     }
 
     public User getUserById(Long id) {
@@ -173,29 +173,29 @@ public class UserService {
     }
 
     public List<User> getUsersByRole(UserRole role) {
-        return userRepository.findByRoleAndEnabledTrue(role);
+        return userRepository.findByRole(role);
     }
 
     public List<User> getUsersByInstitute(Long instituteId) {
-        return userRepository.findByInstituteIdAndEnabledTrue(instituteId);
+        return userRepository.findByInstituteId(instituteId);
     }
 
     public List<User> getUsersByRoleAndInstitute(UserRole role, Long instituteId) {
-        return userRepository.findByRoleAndInstituteIdAndEnabledTrue(role, instituteId);
+        return userRepository.findByRoleAndInstituteId(role, instituteId);
     }
 
     public List<User> searchUsersByRoleAndInstitute(UserRole role, Long instituteId, String searchTerm) {
         if (instituteId == null) {
             // For SUPER_ADMIN - search across all institutes
-            return userRepository.findByRoleAndEnabledTrueAndNameOrEmailContaining(role, searchTerm);
+            return userRepository.findByRoleAndNameOrEmailContaining(role, searchTerm);
         } else {
             // For INST_ADMIN and TEACHER - search within their institute
-            return userRepository.findByRoleAndInstituteIdAndEnabledTrueAndNameOrEmailContaining(role, instituteId, searchTerm);
+            return userRepository.findByRoleAndInstituteIdAndNameOrEmailContaining(role, instituteId, searchTerm);
         }
     }
 
-    public List<User> getAllActiveUsers() {
-        return userRepository.findByEnabledTrue();
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
     }
 
     public boolean userExists(String username) {

@@ -33,7 +33,7 @@ class InstituteServiceTest {
     private static Institute entity(Long id, String code) {
         return Institute.builder()
                 .id(id).name("Test Academy").code(code)
-                .email(code.toLowerCase() + "@test.com").active(true).build();
+                .email(code.toLowerCase() + "@test.com").build();
     }
 
     // ── CREATE ───────────────────────────────────────────────────────────────

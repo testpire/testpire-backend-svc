@@ -56,10 +56,7 @@ public class User {
     
     @Column(name = ApplicationConstants.Database.COGNITO_USER_ID_COLUMN)
     private String cognitoUserId;
-    
-    @Builder.Default
-    private boolean enabled = true;
-    
+
     @Builder.Default
     @Column(name = ApplicationConstants.Database.CREATED_AT_COLUMN)
     private Instant createdAt = Instant.now();
