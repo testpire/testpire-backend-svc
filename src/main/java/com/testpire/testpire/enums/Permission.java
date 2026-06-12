@@ -61,6 +61,12 @@ public enum Permission {
     TOPIC_DELETE("Delete a topic"),
     TOPIC_READ("View/search topics"),
 
+    // --- Topic material (teaching resources: ppt/pdf/video/note/link) ---
+    TOPIC_MATERIAL_CREATE("Add a teaching material to a topic"),
+    TOPIC_MATERIAL_UPDATE("Update a topic's teaching material"),
+    TOPIC_MATERIAL_DELETE("Delete a topic's teaching material"),
+    TOPIC_MATERIAL_READ("View/download a topic's teaching materials"),
+
     // --- Question ---
     QUESTION_CREATE("Create a question"),
     QUESTION_UPDATE("Update a question"),

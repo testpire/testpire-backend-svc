@@ -7,7 +7,15 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -15,7 +23,9 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.time.Duration;
 import java.util.Base64;
+import java.util.Optional;
 
 /**
  * Low-level S3 access: writes bytes under a caller-supplied key and returns that key
@@ -27,6 +37,7 @@ import java.util.Base64;
 public class S3Service {
 
     private final S3Client s3Client;
+    private final S3Presigner s3Presigner;
     private final String bucketName;
     private final String region;
     private final String publicBaseUrl;
@@ -43,6 +54,67 @@ public class S3Service {
                 .region(Region.of(region))
                 .credentialsProvider(awsCredentialsProvider)
                 .build();
+
+        this.s3Presigner = S3Presigner.builder()
+                .region(Region.of(region))
+                .credentialsProvider(awsCredentialsProvider)
+                .build();
+    }
+
+    /**
+     * Mint a presigned PUT URL so a client can upload bytes directly to S3 (the bytes never pass
+     * through this service). {@code contentType} is baked into the signature — the client MUST send a
+     * matching {@code Content-Type} header. The URL is valid for {@code ttl}.
+     */
+    public URL generatePresignedPutUrl(String key, String contentType, Duration ttl) {
+        PutObjectRequest objectRequest = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .contentType(contentType)
+                .build();
+
+        PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
+                .signatureDuration(ttl)
+                .putObjectRequest(objectRequest)
+                .build();
+
+        return s3Presigner.presignPutObject(presignRequest).url();
+    }
+
+    /** Mint a short-lived presigned GET URL for downloading/viewing a stored object. */
+    public URL generatePresignedGetUrl(String key, Duration ttl) {
+        GetObjectRequest objectRequest = GetObjectRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .build();
+
+        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                .signatureDuration(ttl)
+                .getObjectRequest(objectRequest)
+                .build();
+
+        return s3Presigner.presignGetObject(presignRequest).url();
+    }
+
+    /** HEAD an object; empty if it does not exist. Used to verify a client actually uploaded. */
+    public Optional<HeadObjectResponse> headObject(String key) {
+        try {
+            return Optional.of(s3Client.headObject(HeadObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .build()));
+        } catch (NoSuchKeyException e) {
+            return Optional.empty();
+        }
+    }
+
+    /** Delete an object. Best-effort: a missing object is not an error. */
+    public void deleteObject(String key) {
+        s3Client.deleteObject(DeleteObjectRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .build());
+        log.info("Deleted object from S3: {}", key);
     }
 
     /** Single upload primitive. Writes {@code bytes} at {@code key} and returns the key. */

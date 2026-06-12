@@ -123,6 +123,7 @@ public final class ApplicationConstants {
     public static final String COURSE_SUBJECTS_TABLE = "course_subjects";
     public static final String CHAPTERS_TABLE = "chapters";
     public static final String TOPICS_TABLE = "topics";
+    public static final String TOPIC_MATERIALS_TABLE = "topic_materials";
     public static final String TESTS_TABLE = "tests";
     public static final String TEST_QUESTIONS_TABLE = "test_questions";
     public static final String TEST_ASSIGNMENTS_TABLE = "test_assignments";
