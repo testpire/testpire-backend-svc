@@ -17,6 +17,7 @@ import com.testpire.testpire.dto.response.ChapterListResponseDto;
 import com.testpire.testpire.dto.response.ChapterResponseDto;
 import com.testpire.testpire.service.ChapterService;
 import com.testpire.testpire.util.JwksJwtUtil;
+import com.testpire.testpire.util.IncludeUtils;
 import com.testpire.testpire.util.RequestUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -232,10 +233,12 @@ public class ChapterController {
     })
     public ResponseEntity<ApiResponseDto> getChapterById(
             @Parameter(description = "Chapter ID", required = true, example = "1")
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            @Parameter(description = "Comma-separated children to expand: topics", example = "topics")
+            @RequestParam(required = false) String include) {
         try {
             log.info("Getting chapter with ID: {}", id);
-            ChapterResponseDto chapter = chapterService.getChapterById(id);
+            ChapterResponseDto chapter = chapterService.getChapterById(id, IncludeUtils.parse(include));
             return ResponseEntity.ok(ApiResponseDto.success("Chapter retrieved successfully", chapter));
         } catch (Exception e) {
             log.error("Error getting chapter", e);
@@ -277,11 +280,13 @@ public class ChapterController {
     })
     public ResponseEntity<ApiResponseDto> getChapterByCode(
             @Parameter(description = "Chapter code", required = true, example = "CH01")
-            @PathVariable String code) {
+            @PathVariable String code,
+            @Parameter(description = "Comma-separated children to expand: topics", example = "topics")
+            @RequestParam(required = false) String include) {
         try {
             Long instituteId = RequestUtils.getCurrentUserInstituteId();
             log.info("Getting chapter with code: {} for institute: {}", code, instituteId);
-            ChapterResponseDto chapter = chapterService.getChapterByCode(code, instituteId);
+            ChapterResponseDto chapter = chapterService.getChapterByCode(code, instituteId, IncludeUtils.parse(include));
             return ResponseEntity.ok(ApiResponseDto.success("Chapter retrieved successfully", chapter));
         } catch (Exception e) {
             log.error("Error getting chapter by code", e);
@@ -321,7 +326,10 @@ public class ChapterController {
             )
         )
     })
-    public ResponseEntity<ApiResponseDto> searchChaptersAdvanced(@Valid @RequestBody ChapterSearchRequestDto request) {
+    public ResponseEntity<ApiResponseDto> searchChaptersAdvanced(
+            @Valid @RequestBody ChapterSearchRequestDto request,
+            @Parameter(description = "Comma-separated children to expand: topics", example = "topics")
+            @RequestParam(required = false) String include) {
         try {
             Long instituteId = RequestUtils.resolveInstituteId(request.getInstituteId());
             log.info("Advanced search for chapters with criteria: {}", request);
@@ -353,7 +361,7 @@ public class ChapterController {
                     .sorting(request.getSorting())
                     .build();
                     
-            ChapterListResponseDto chapters = chapterService.searchChaptersWithSpecification(requestWithInstituteId);
+            ChapterListResponseDto chapters = chapterService.searchChaptersWithSpecification(requestWithInstituteId, IncludeUtils.parse(include));
             return ResponseEntity.ok(ApiResponseDto.success("Chapters retrieved successfully", chapters));
         } catch (Exception e) {
             log.error("Error in advanced search", e);
@@ -433,7 +441,9 @@ public class ChapterController {
             @Parameter(description = "Sort by field (optional)", example = "createdAt")
             @RequestParam(required = false, defaultValue = "createdAt") String sortBy,
             @Parameter(description = "Sort direction (optional)", example = "desc")
-            @RequestParam(required = false, defaultValue = "desc") String sortDirection) {
+            @RequestParam(required = false, defaultValue = "desc") String sortDirection,
+            @Parameter(description = "Comma-separated children to expand: topics", example = "topics")
+            @RequestParam(required = false) String include) {
         try {
             // No instituteId GET param; non-SA scoped to JWT, SA honors X-Institute-Id header.
             Long instituteId = RequestUtils.resolveInstituteId(null);
@@ -496,7 +506,7 @@ public class ChapterController {
                     .sorting(sorting)
                     .build();
             
-            ChapterListResponseDto chapters = chapterService.searchChaptersWithSpecification(request);
+            ChapterListResponseDto chapters = chapterService.searchChaptersWithSpecification(request, IncludeUtils.parse(include));
             return ResponseEntity.ok(ApiResponseDto.success("Chapters retrieved successfully", chapters));
         } catch (Exception e) {
             log.error("Error in advanced search", e);

@@ -1,9 +1,11 @@
 package com.testpire.testpire.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.testpire.testpire.entity.Chapter;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 
 public record ChapterResponseDto(
         Long id,
@@ -19,9 +21,14 @@ public record ChapterResponseDto(
         Instant updatedAt,
         String createdBy,
         String updatedBy,
+        @JsonInclude(JsonInclude.Include.NON_NULL)
         List<TopicResponseDto> topics
 ) {
     public static ChapterResponseDto fromEntity(Chapter chapter) {
+        return fromEntity(chapter, Set.of());
+    }
+
+    public static ChapterResponseDto fromEntity(Chapter chapter, Set<String> includes) {
         return new ChapterResponseDto(
                 chapter.getId(),
                 chapter.getName(),
@@ -36,11 +43,11 @@ public record ChapterResponseDto(
                 chapter.getUpdatedAt(),
                 chapter.getCreatedBy(),
                 chapter.getUpdatedBy(),
-                chapter.getTopics() != null ?
+                includes.contains("topics") && chapter.getTopics() != null ?
                     chapter.getTopics().stream()
                         .map(TopicResponseDto::fromEntity)
-                        .toList() : 
-                    List.of()
+                        .toList() :
+                    null
         );
     }
 }

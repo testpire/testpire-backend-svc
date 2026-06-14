@@ -17,6 +17,7 @@ import com.testpire.testpire.dto.response.CourseListResponseDto;
 import com.testpire.testpire.dto.response.CourseResponseDto;
 import com.testpire.testpire.service.CourseService;
 import com.testpire.testpire.util.JwksJwtUtil;
+import com.testpire.testpire.util.IncludeUtils;
 import com.testpire.testpire.util.RequestUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -233,10 +234,12 @@ public class CourseController {
     })
     public ResponseEntity<ApiResponseDto> getCourseById(
             @Parameter(description = "Course ID", required = true, example = "1")
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            @Parameter(description = "Comma-separated children to expand: subjects,chapters,topics", example = "subjects,chapters,topics")
+            @RequestParam(required = false) String include) {
         try {
             log.info("Getting course with ID: {}", id);
-            CourseResponseDto course = courseService.getCourseById(id);
+            CourseResponseDto course = courseService.getCourseById(id, IncludeUtils.parse(include));
             return ResponseEntity.ok(ApiResponseDto.success("Course retrieved successfully", course));
         } catch (Exception e) {
             log.error("Error getting course", e);
@@ -280,11 +283,13 @@ public class CourseController {
             @Parameter(description = "Course code", required = true, example = "CS101")
             @PathVariable String code,
             @Parameter(description = "Institute ID (required for SUPER_ADMIN)")
-            @RequestParam(required = false) Long instituteId) {
+            @RequestParam(required = false) Long instituteId,
+            @Parameter(description = "Comma-separated children to expand: subjects,chapters,topics", example = "subjects,chapters,topics")
+            @RequestParam(required = false) String include) {
         try {
             Long resolvedInstituteId = RequestUtils.resolveInstituteId(instituteId);
             log.info("Getting course with code: {} for institute: {}", code, resolvedInstituteId);
-            CourseResponseDto course = courseService.getCourseByCode(code, resolvedInstituteId);
+            CourseResponseDto course = courseService.getCourseByCode(code, resolvedInstituteId, IncludeUtils.parse(include));
             return ResponseEntity.ok(ApiResponseDto.success("Course retrieved successfully", course));
         } catch (Exception e) {
             log.error("Error getting course by code", e);
@@ -324,7 +329,10 @@ public class CourseController {
             )
         )
     })
-    public ResponseEntity<ApiResponseDto> searchCoursesAdvanced(@Valid @RequestBody CourseSearchRequestDto request) {
+    public ResponseEntity<ApiResponseDto> searchCoursesAdvanced(
+            @Valid @RequestBody CourseSearchRequestDto request,
+            @Parameter(description = "Comma-separated children to expand: subjects,chapters,topics", example = "subjects,chapters,topics")
+            @RequestParam(required = false) String include) {
         try {
             log.info("Advanced search for courses with criteria: {}", request);
             if (request.getCriteria() == null) {
@@ -332,7 +340,7 @@ public class CourseController {
             }
             Long instituteId = RequestUtils.resolveInstituteId(request.getCriteria().getInstituteId());
             request.getCriteria().setInstituteId(instituteId);
-            CourseListResponseDto courses = courseService.searchCoursesWithSpecification(request);
+            CourseListResponseDto courses = courseService.searchCoursesWithSpecification(request, IncludeUtils.parse(include));
             return ResponseEntity.ok(ApiResponseDto.success("Courses retrieved successfully", courses));
         } catch (Exception e) {
             log.error("Error in advanced search", e);
@@ -408,7 +416,9 @@ public class CourseController {
             @Parameter(description = "Sort by field (optional)", example = "createdAt")
             @RequestParam(required = false, defaultValue = "createdAt") String sortBy,
             @Parameter(description = "Sort direction (optional)", example = "desc")
-            @RequestParam(required = false, defaultValue = "desc") String sortDirection) {
+            @RequestParam(required = false, defaultValue = "desc") String sortDirection,
+            @Parameter(description = "Comma-separated children to expand: subjects,chapters,topics", example = "subjects,chapters,topics")
+            @RequestParam(required = false) String include) {
         try {
             // No instituteId GET param; non-SA scoped to JWT, SA honors X-Institute-Id header.
             Long instituteId = RequestUtils.resolveInstituteId(null);
@@ -469,7 +479,7 @@ public class CourseController {
                     .sorting(sorting)
                     .build();
             
-            CourseListResponseDto courses = courseService.searchCoursesWithSpecification(request);
+            CourseListResponseDto courses = courseService.searchCoursesWithSpecification(request, IncludeUtils.parse(include));
             return ResponseEntity.ok(ApiResponseDto.success("Courses retrieved successfully", courses));
         } catch (Exception e) {
             log.error("Error in advanced search", e);

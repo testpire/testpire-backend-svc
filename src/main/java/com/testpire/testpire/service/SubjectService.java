@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -105,9 +106,9 @@ public class SubjectService {
     }
 
     @Transactional(readOnly = true)
-    public SubjectResponseDto getSubjectById(Long id) {
+    public SubjectResponseDto getSubjectById(Long id, Set<String> includes) {
         Subject subject = findSubjectScoped(id);
-        return SubjectResponseDto.fromEntity(subject);
+        return SubjectResponseDto.fromEntity(subject, includes);
     }
 
     /**
@@ -124,14 +125,14 @@ public class SubjectService {
     }
 
     @Transactional(readOnly = true)
-    public SubjectResponseDto getSubjectByCode(String code, Long instituteId) {
+    public SubjectResponseDto getSubjectByCode(String code, Long instituteId, Set<String> includes) {
         Subject subject = subjectRepository.findByCodeAndInstituteId(code, instituteId)
                 .orElseThrow(() -> new IllegalArgumentException("Subject not found with code: " + code));
-        return SubjectResponseDto.fromEntity(subject);
+        return SubjectResponseDto.fromEntity(subject, includes);
     }
 
     @Transactional(readOnly = true)
-    public SubjectListResponseDto searchSubjectsWithSpecification(SubjectSearchRequestDto request) {
+    public SubjectListResponseDto searchSubjectsWithSpecification(SubjectSearchRequestDto request, Set<String> includes) {
         log.info("Searching subjects with specification: {}", request);
 
         // Build specification
@@ -145,7 +146,7 @@ public class SubjectService {
 
         // Convert to DTOs
         List<SubjectResponseDto> subjectDtos = subjectPage.getContent().stream()
-                .map(SubjectResponseDto::fromEntity)
+                .map(subject -> SubjectResponseDto.fromEntity(subject, includes))
                 .toList();
 
         return SubjectListResponseDto.of(subjectDtos, subjectPage.getTotalElements());

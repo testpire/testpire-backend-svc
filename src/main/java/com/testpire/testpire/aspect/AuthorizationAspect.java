@@ -3,6 +3,7 @@ package com.testpire.testpire.aspect;
 import com.testpire.testpire.annotation.RequirePermission;
 import com.testpire.testpire.constants.ApplicationConstants;
 import com.testpire.testpire.dto.UserDto;
+import com.testpire.testpire.dto.response.ApiResponseDto;
 import com.testpire.testpire.service.CognitoService;
 import com.testpire.testpire.service.PermissionService;
 import com.testpire.testpire.util.JwksJwtUtil;
@@ -19,7 +20,6 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.Arrays;
-import java.util.Map;
 
 @Aspect
 @Component
@@ -48,9 +48,7 @@ public class AuthorizationAspect {
           requirePermission.requireAll())) {
         log.warn("Access DENIED for user: {} with role: {} trying to access endpoint requiring: {}",
             user.username(), user.role(), Arrays.toString(requirePermission.value()));
-        return createErrorResponse("Insufficient permissions. Required: " +
-            Arrays.toString(requirePermission.value()) + ", but user role " + user.role() +
-            " does not hold it");
+        return forbidden("You do not have permission to perform this action.");
       }
 
       log.info("Access GRANTED for user: {} with role: {}", user.username(), user.role());
@@ -58,7 +56,7 @@ public class AuthorizationAspect {
 
     } catch (Exception e) {
       log.error("Authorization error", e);
-      return createErrorResponse("Authorization failed: " + e.getMessage());
+      return unauthorized("Authentication failed.");
     }
   }
 
@@ -71,7 +69,7 @@ public class AuthorizationAspect {
     ServletRequestAttributes attributes =
         (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
     if (attributes == null) {
-      return createErrorResponse("Unable to get request context");
+      return unauthorized("Unable to resolve the request context.");
     }
 
     HttpServletRequest request = attributes.getRequest();
@@ -79,13 +77,13 @@ public class AuthorizationAspect {
 
     if (authHeader == null ||
         !authHeader.startsWith(ApplicationConstants.Headers.BEARER_PREFIX)) {
-      return createErrorResponse("Authorization header missing or invalid");
+      return unauthorized("Authorization header is missing or invalid.");
     }
 
     String token = authHeader.substring(ApplicationConstants.Headers.BEARER_PREFIX.length());
 
     if (!jwtUtil.isTokenValid(token)) {
-      return createErrorResponse("Invalid or expired token");
+      return unauthorized("Invalid or expired token.");
     }
 
     String username = jwtUtil.extractUsername(token);
@@ -101,8 +99,13 @@ public class AuthorizationAspect {
     return user;
   }
 
-  private ResponseEntity<Map<String, String>> createErrorResponse(String message) {
-    return ResponseEntity.status(HttpStatus.FORBIDDEN)
-        .body(Map.of("error", "Access Denied", "message", message));
+  /** 401 -- caller is not authenticated (missing/invalid token, unresolvable identity). */
+  private ResponseEntity<ApiResponseDto> unauthorized(String message) {
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponseDto.error(message));
+  }
+
+  /** 403 -- caller is authenticated but lacks the required permission. */
+  private ResponseEntity<ApiResponseDto> forbidden(String message) {
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponseDto.error(message));
   }
 }

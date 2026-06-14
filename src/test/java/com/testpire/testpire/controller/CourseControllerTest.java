@@ -106,7 +106,7 @@ class CourseControllerTest extends BaseControllerTest {
 
     @Test
     void getCourseById_found_returns200() throws Exception {
-        when(courseService.getCourseById(1L)).thenReturn(sampleCourse());
+        when(courseService.getCourseById(eq(1L), any())).thenReturn(sampleCourse());
 
         mockMvc.perform(get("/api/courses/1"))
                 .andExpect(status().isOk())
@@ -116,7 +116,7 @@ class CourseControllerTest extends BaseControllerTest {
 
     @Test
     void getCourseById_notFound_returns400() throws Exception {
-        when(courseService.getCourseById(999L))
+        when(courseService.getCourseById(eq(999L), any()))
                 .thenThrow(new IllegalArgumentException("Course not found with ID: 999"));
 
         mockMvc.perform(get("/api/courses/999"))
@@ -126,7 +126,7 @@ class CourseControllerTest extends BaseControllerTest {
 
     @Test
     void getCourseByCode_withInstituteId_returns200() throws Exception {
-        when(courseService.getCourseByCode(eq("PHY101"), eq(2L))).thenReturn(sampleCourse());
+        when(courseService.getCourseByCode(eq("PHY101"), eq(2L), any())).thenReturn(sampleCourse());
 
         mockMvc.perform(get("/api/courses/code/PHY101").param("instituteId", "2"))
                 .andExpect(status().isOk())
@@ -162,7 +162,7 @@ class CourseControllerTest extends BaseControllerTest {
 
     @Test
     void searchCourses_advancedPost_returns200() throws Exception {
-        when(courseService.searchCoursesWithSpecification(any()))
+        when(courseService.searchCoursesWithSpecification(any(), any()))
                 .thenReturn(CourseListResponseDto.of(List.of(sampleCourse()), 1L));
 
         mockMvc.perform(post("/api/courses/search/advanced")
@@ -174,7 +174,7 @@ class CourseControllerTest extends BaseControllerTest {
 
     @Test
     void searchCourses_advancedGet_returns200() throws Exception {
-        when(courseService.searchCoursesWithSpecification(any()))
+        when(courseService.searchCoursesWithSpecification(any(), any()))
                 .thenReturn(CourseListResponseDto.of(List.of(sampleCourse()), 1L));
 
         mockMvc.perform(get("/api/courses/search/advanced")

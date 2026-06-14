@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -103,9 +104,9 @@ public class CourseService {
     }
 
     @Transactional(readOnly = true)
-    public CourseResponseDto getCourseById(Long id) {
+    public CourseResponseDto getCourseById(Long id, Set<String> includes) {
         Course course = findCourseScoped(id);
-        return CourseResponseDto.fromEntity(course);
+        return CourseResponseDto.fromEntity(course, includes);
     }
 
     private List<Subject> resolveSubjectCodes(List<String> codes, Long instituteId) {
@@ -134,15 +135,15 @@ public class CourseService {
     }
 
     @Transactional(readOnly = true)
-    public CourseResponseDto getCourseByCode(String code, Long instituteId) {
+    public CourseResponseDto getCourseByCode(String code, Long instituteId, Set<String> includes) {
         Course course = courseRepository.findByCodeAndInstituteId(code, instituteId)
                 .orElseThrow(() -> new IllegalArgumentException("Course not found with code: " + code));
-        return CourseResponseDto.fromEntity(course);
+        return CourseResponseDto.fromEntity(course, includes);
     }
 
 
     @Transactional(readOnly = true)
-    public CourseListResponseDto searchCoursesWithSpecification(CourseSearchRequestDto request) {
+    public CourseListResponseDto searchCoursesWithSpecification(CourseSearchRequestDto request, Set<String> includes) {
         log.info("Searching courses with specification: {}", request);
 
         // Build specification
@@ -156,7 +157,7 @@ public class CourseService {
 
         // Convert to DTOs
         List<CourseResponseDto> courseDtos = coursePage.getContent().stream()
-                .map(CourseResponseDto::fromEntity)
+                .map(course -> CourseResponseDto.fromEntity(course, includes))
                 .toList();
 
         return CourseListResponseDto.of(courseDtos, coursePage.getTotalElements());

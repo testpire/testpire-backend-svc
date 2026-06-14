@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -103,9 +104,9 @@ public class ChapterService {
     }
 
     @Transactional(readOnly = true)
-    public ChapterResponseDto getChapterById(Long id) {
+    public ChapterResponseDto getChapterById(Long id, Set<String> includes) {
         Chapter chapter = findChapterScoped(id);
-        return ChapterResponseDto.fromEntity(chapter);
+        return ChapterResponseDto.fromEntity(chapter, includes);
     }
 
     /**
@@ -122,14 +123,14 @@ public class ChapterService {
     }
 
     @Transactional(readOnly = true)
-    public ChapterResponseDto getChapterByCode(String code, Long instituteId) {
+    public ChapterResponseDto getChapterByCode(String code, Long instituteId, Set<String> includes) {
         Chapter chapter = chapterRepository.findByCodeAndInstituteId(code, instituteId)
                 .orElseThrow(() -> new IllegalArgumentException("Chapter not found with code: " + code));
-        return ChapterResponseDto.fromEntity(chapter);
+        return ChapterResponseDto.fromEntity(chapter, includes);
     }
 
     @Transactional(readOnly = true)
-    public ChapterListResponseDto searchChaptersWithSpecification(ChapterSearchRequestDto request) {
+    public ChapterListResponseDto searchChaptersWithSpecification(ChapterSearchRequestDto request, Set<String> includes) {
         log.info("Searching chapters with specification: {}", request);
 
         // Build specification
@@ -143,7 +144,7 @@ public class ChapterService {
 
         // Convert to DTOs
         List<ChapterResponseDto> chapterDtos = chapterPage.getContent().stream()
-                .map(ChapterResponseDto::fromEntity)
+                .map(chapter -> ChapterResponseDto.fromEntity(chapter, includes))
                 .toList();
 
         return ChapterListResponseDto.of(chapterDtos, chapterPage.getTotalElements());

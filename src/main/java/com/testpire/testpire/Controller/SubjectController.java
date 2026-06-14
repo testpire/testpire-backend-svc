@@ -17,6 +17,7 @@ import com.testpire.testpire.dto.response.SubjectListResponseDto;
 import com.testpire.testpire.dto.response.SubjectResponseDto;
 import com.testpire.testpire.service.SubjectService;
 import com.testpire.testpire.util.JwksJwtUtil;
+import com.testpire.testpire.util.IncludeUtils;
 import com.testpire.testpire.util.RequestUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -232,10 +233,12 @@ public class SubjectController {
     })
     public ResponseEntity<ApiResponseDto> getSubjectById(
             @Parameter(description = "Subject ID", required = true, example = "1")
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            @Parameter(description = "Comma-separated children to expand: chapters,topics", example = "chapters,topics")
+            @RequestParam(required = false) String include) {
         try {
             log.info("Getting subject with ID: {}", id);
-            SubjectResponseDto subject = subjectService.getSubjectById(id);
+            SubjectResponseDto subject = subjectService.getSubjectById(id, IncludeUtils.parse(include));
             return ResponseEntity.ok(ApiResponseDto.success("Subject retrieved successfully", subject));
         } catch (Exception e) {
             log.error("Error getting subject", e);
@@ -277,11 +280,13 @@ public class SubjectController {
     })
     public ResponseEntity<ApiResponseDto> getSubjectByCode(
             @Parameter(description = "Subject code", required = true, example = "DS101")
-            @PathVariable String code) {
+            @PathVariable String code,
+            @Parameter(description = "Comma-separated children to expand: chapters,topics", example = "chapters,topics")
+            @RequestParam(required = false) String include) {
         try {
             Long instituteId = RequestUtils.getCurrentUserInstituteId();
             log.info("Getting subject with code: {} for institute: {}", code, instituteId);
-            SubjectResponseDto subject = subjectService.getSubjectByCode(code, instituteId);
+            SubjectResponseDto subject = subjectService.getSubjectByCode(code, instituteId, IncludeUtils.parse(include));
             return ResponseEntity.ok(ApiResponseDto.success("Subject retrieved successfully", subject));
         } catch (Exception e) {
             log.error("Error getting subject by code", e);
@@ -321,7 +326,10 @@ public class SubjectController {
             )
         )
     })
-    public ResponseEntity<ApiResponseDto> searchSubjectsAdvanced(@Valid @RequestBody SubjectSearchRequestDto request) {
+    public ResponseEntity<ApiResponseDto> searchSubjectsAdvanced(
+            @Valid @RequestBody SubjectSearchRequestDto request,
+            @Parameter(description = "Comma-separated children to expand: chapters,topics", example = "chapters,topics")
+            @RequestParam(required = false) String include) {
         try {
             Long instituteId = RequestUtils.resolveInstituteId(request.getInstituteId());
             log.info("Advanced search for subjects with criteria: {}", request);
@@ -353,7 +361,7 @@ public class SubjectController {
                     .sorting(request.getSorting())
                     .build();
                     
-            SubjectListResponseDto subjects = subjectService.searchSubjectsWithSpecification(requestWithInstituteId);
+            SubjectListResponseDto subjects = subjectService.searchSubjectsWithSpecification(requestWithInstituteId, IncludeUtils.parse(include));
             return ResponseEntity.ok(ApiResponseDto.success("Subjects retrieved successfully", subjects));
         } catch (Exception e) {
             log.error("Error in advanced search", e);
@@ -433,7 +441,9 @@ public class SubjectController {
             @Parameter(description = "Sort by field (optional)", example = "createdAt")
             @RequestParam(required = false, defaultValue = "createdAt") String sortBy,
             @Parameter(description = "Sort direction (optional)", example = "desc")
-            @RequestParam(required = false, defaultValue = "desc") String sortDirection) {
+            @RequestParam(required = false, defaultValue = "desc") String sortDirection,
+            @Parameter(description = "Comma-separated children to expand: chapters,topics", example = "chapters,topics")
+            @RequestParam(required = false) String include) {
         try {
             // No instituteId GET param; non-SA scoped to JWT, SA honors X-Institute-Id header.
             Long instituteId = RequestUtils.resolveInstituteId(null);
@@ -496,7 +506,7 @@ public class SubjectController {
                     .sorting(sorting)
                     .build();
             
-            SubjectListResponseDto subjects = subjectService.searchSubjectsWithSpecification(request);
+            SubjectListResponseDto subjects = subjectService.searchSubjectsWithSpecification(request, IncludeUtils.parse(include));
             return ResponseEntity.ok(ApiResponseDto.success("Subjects retrieved successfully", subjects));
         } catch (Exception e) {
             log.error("Error in advanced search", e);
